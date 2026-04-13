@@ -1,15 +1,8 @@
----
-name: setup-windows
-description: Define the development flow for a Windows WPF desktop app (.NET 8 / C# / CommunityToolkit.Mvvm). Interviews the user for project-specific details, then generates Phase 1 documents including architecture, coding standards, invariants, and directory structure.
-disable-model-invocation: true
----
+# Phase 1 セットアップ: Windows デスクトップアプリ（WPF / .NET 8 / C#）
 
-# セットアップスキル: Windows デスクトップアプリ（WPF / .NET 8 / C#）
-
-> **実行タイミング**: `init-project.md` 実行後、Phase 1 開始時に実行する
+> **実行タイミング**: `init-project` スキルの Q4 で Windows を選択した場合に続けて実行する
 >
-> **目的**: このスキルを実行することで、Windows WPF アプリ開発に必要な
-> 構成・設計・開発手順がドキュメントとして確定し、
+> **目的**: Windows WPF アプリ開発に必要な構成・設計・開発手順がドキュメントとして確定し、
 > チームメンバーとAIエージェントが同じ前提で開発を進められる状態になる。
 
 ---

@@ -1,15 +1,8 @@
----
-name: setup-web
-description: Define the development flow for a web app (React 18 / TypeScript / Vite + ASP.NET Core 8 / EF Core / PostgreSQL). Interviews the user for project-specific details, then generates Phase 1 documents including architecture, API spec, coding standards, and invariants.
-disable-model-invocation: true
----
+# Phase 1 セットアップ: Web アプリ（React / ASP.NET Core / .NET 8）
 
-# セットアップスキル: Web アプリ（React / ASP.NET Core / .NET 8）
-
-> **実行タイミング**: `init-project.md` 実行後、Phase 1 開始時に実行する
+> **実行タイミング**: `init-project` スキルの Q4 で Web を選択した場合に続けて実行する
 >
-> **目的**: このスキルを実行することで、React フロントエンド + ASP.NET Core バックエンドの
-> 構成・設計・開発手順がドキュメントとして確定し、
+> **目的**: React フロントエンド + ASP.NET Core バックエンドの構成・設計・開発手順がドキュメントとして確定し、
 > チームメンバーとAIエージェントが同じ前提で開発を進められる状態になる。
 
 ---
