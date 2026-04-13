@@ -1,3 +1,9 @@
+---
+name: init-project
+description: Initialize a new project. Interviews the user to capture project overview, tech stack, and development workflow rules, then creates overview.md, decisions.md, and CONTEXT.md. Run once at project start (Phase 0).
+disable-model-invocation: true
+---
+
 # スキル: プロジェクト初期化
 
 > **実行タイミング**: プロジェクト開始時に一度だけ実行する（`document_architecture.md` Phase 0）

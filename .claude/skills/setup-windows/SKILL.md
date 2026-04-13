@@ -1,3 +1,9 @@
+---
+name: setup-windows
+description: Define the development flow for a Windows WPF desktop app (.NET 8 / C# / CommunityToolkit.Mvvm). Interviews the user for project-specific details, then generates Phase 1 documents including architecture, coding standards, invariants, and directory structure.
+disable-model-invocation: true
+---
+
 # セットアップスキル: Windows デスクトップアプリ（WPF / .NET 8 / C#）
 
 > **実行タイミング**: `init-project.md` 実行後、Phase 1 開始時に実行する
