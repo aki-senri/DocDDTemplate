@@ -40,7 +40,6 @@ settings.json = トリガー（いつ自動実行するか）
 このリポジトリを新しいプロジェクトのリポジトリにコピーするか、テンプレートとして使用します。
 
 ```
-document_architecture.md  ← そのまま残す（DocDD の定義書）
 .claude/                   ← そのまま残す（スキル・設定）
 ```
 
@@ -88,7 +87,6 @@ Claude Code で以下を実行します：
 
 ```
 プロジェクトルート/
-├── document_architecture.md   # DocDD の定義書（変更しない）
 ├── .claude/
 │   ├── settings.json          # フック設定（コード変更時の自動リマインド）
 │   └── skills/                # 各スキルの定義
@@ -149,7 +147,7 @@ tracks:
 
 ## 詳細仕様
 
-`document_architecture.md` を参照してください。DocDD の全定義（ドキュメント構成・スキルフォーマット・statusライフサイクル・exec-planの運用ルール）が記載されています。
+各スキルの `SKILL.md` を参照してください。ドキュメント構成・必須/任意の判断基準・statusライフサイクル・exec-planテンプレートは `init-project/SKILL.md` に集約されています。
 
 ---
 

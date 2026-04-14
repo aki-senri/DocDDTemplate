@@ -6,13 +6,13 @@ disable-model-invocation: true
 
 # スキル: プロジェクト初期化
 
-> **実行タイミング**: プロジェクト開始時に一度だけ実行する（`document_architecture.md` Phase 0 → Phase 1）
+> **実行タイミング**: プロジェクト開始時に一度だけ実行する（Phase 0 → Phase 1）
 >
 > **目的**: チームメンバー（人間・AIエージェント双方）が「このプロジェクトをどう動かすか」を
 > 一つのファイル（CONTEXT.md）から理解できる状態を作り、
 > 続けてプラットフォーム固有の開発フロー定義（Phase 1）まで完了させる。
 >
-> **前提**: リポジトリが作成済みで、`document_architecture.md` が配置されていること。
+> **前提**: リポジトリが作成済みであること。
 
 ---
 
@@ -33,8 +33,8 @@ disable-model-invocation: true
 | Windows（WPF / .NET 8） | [setup-windows.md](setup-windows.md) | 6ファイル + CONTEXT.md更新 |
 | Web（React / ASP.NET Core） | [setup-web.md](setup-web.md) | 7ファイル + CONTEXT.md更新 |
 
-ファイルの構成は `document_architecture.md` の定義に従う。
 内容はインタビューの回答をもとにエージェントが生成する（固定テンプレートではない）。
+生成するドキュメントの一覧と必須/任意の判断基準は下記「ドキュメント構成」セクションを参照。
 
 ---
 
@@ -102,7 +102,7 @@ disable-model-invocation: true
 
 ### `CONTEXT.md` の構成（このスキルが生成する版）
 
-`document_architecture.md` が定義する必須セクションに「開発ルール」を加えた構成。
+以下の必須セクションで構成する。
 
 ```
 ## プロジェクト概要（3行）
@@ -118,7 +118,7 @@ disable-model-invocation: true
   AI活用範囲            ← Q3-4
 
 ## ドキュメント構成
-← document_architecture.md の定義から生成（パス一覧）
+← 下記「ドキュメント構成」セクションのパス一覧から生成
 
 ## 現在フェーズ・優先タスク
   フェーズ: Phase 1（ナレッジベース構築）開始
@@ -147,6 +147,73 @@ Phase 0 のドキュメント生成が完了したら、続けて Phase 1 を実
 ### Q4 = その他の場合
 
 Phase 0 完了を報告し、Phase 1 は手動でセットアップするよう案内する。
+
+---
+
+## ドキュメント構成
+
+プロジェクトで管理するドキュメントの全一覧。`必須` は常に作成し、`任意` は条件を満たす場合のみ作成する。
+
+### 必須/任意の判断基準
+
+| ファイル | 必須/任意 | 必要な条件 |
+|---------|---------|----------|
+| `docs/00_project/overview.md` | 必須 | 常に |
+| `docs/00_project/glossary.md` | 任意 | 用語の誤解リスクがある場合 |
+| `docs/00_project/decisions.md` | 必須 | 常に（技術選定ADRを記録） |
+| `docs/01_requirements/functional/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `docs/01_requirements/functional/{platform}.md` | 必須 | 常に（プラットフォームごとに1ファイル） |
+| `docs/01_requirements/non_functional/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `docs/01_requirements/non_functional/{platform}.md` | 必須 | 常に |
+| `docs/01_requirements/user_stories/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `docs/01_requirements/user_stories/{platform}.md` | 必須 | 常に |
+| `docs/01_requirements/constraints.md` | 必須 | 常に |
+| `docs/02_design/architecture.md` | 必須 | 常に |
+| `docs/02_design/data_model.md` | 任意 | DBや永続化ストレージを持つ場合 |
+| `docs/02_design/api_spec.md` | 任意 | 外部公開APIを持つ場合 |
+| `docs/02_design/ui_flows.md` | 任意 | UIを持つ場合 |
+| `docs/03_implementation/coding_standards.md` | 必須 | 常に |
+| `docs/03_implementation/directory_structure.md` | 必須 | 常に |
+| `docs/03_implementation/patterns.md` | 必須 | 常に |
+| `docs/03_implementation/dependencies.md` | 必須 | 常に |
+| `docs/03_implementation/invariants.md` | 必須 | 常に |
+| `docs/04_quality/test_strategy.md` | 必須 | 常に |
+| `docs/04_quality/review_checklist.md` | 必須 | 常に |
+| `docs/04_quality/security.md` | 任意 | 外部通信・認証・機密データを扱う場合 |
+| `docs/04_quality/performance.md` | 任意 | パフォーマンス要件が明示されている場合 |
+| `docs/05_operations/environments.md` | 任意 | dev/staging/prod の環境分離が必要な場合 |
+| `docs/05_operations/deployment.md` | 必須 | 常に |
+| `docs/05_operations/monitoring.md` | 必須 | 常に |
+| `docs/06_ai_context/CONTEXT.md` | 必須 | 常に |
+
+### common / platform 分割基準
+
+| 状況 | ルール |
+|------|--------|
+| プラットフォームが1つだけ | `common.md` は作成しない。すべて `{platform}.md` に記述する |
+| プラットフォームが2つ以上 | 全プラットフォームに共通する要件を `common.md` に記述する |
+| 「共通だが実装方法が異なる」要件 | `common.md` に要件を記述し、各 `{platform}.md` で実装制約を補記する |
+
+### ドキュメントのフロントマター
+
+各ドキュメントには以下のフロントマターを付与する。
+
+```yaml
+---
+status: draft    # draft | active | deprecated
+tracks:          # （任意）対応するコードのglobパターン
+  - src/**/models/**
+---
+```
+
+**`status:` 遷移ルール:**
+
+| 遷移 | トリガー |
+|------|---------|
+| （新規）→ `draft` | ファイル作成時 |
+| `draft` → `active` | PRマージ時。または作成から7日以内にレビューを受けた場合 |
+| `active` → `deprecated` | 対応コード/機能が削除された場合。または後継ドキュメントが `active` になった場合 |
+| `deprecated` → （削除） | `deprecated` から30日経過後に削除可 |
 
 ---
 

@@ -42,7 +42,7 @@ disable-model-invocation: true
 
 | ファイルパス | 役割 |
 |-------------|------|
-| `exec-plans/active/YYYY-MM-{Q1}.md` | 実行計画本体（`document_architecture.md` §9.2 のテンプレートに従う） |
+| `exec-plans/active/YYYY-MM-{Q1}.md` | 実行計画本体（下記テンプレートに従う） |
 
 ---
 
