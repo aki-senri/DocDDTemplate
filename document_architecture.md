@@ -399,7 +399,207 @@ exec-plans/
 
 ---
 
-## 6. 未決事項・今後の検討ポイント
+## 6. スキルの標準フォーマット定義
+
+> すべてのスキルファイルはこのフォーマットに従う。
+> フォーマットに従うことで、ガベージコレクションエージェントが「スキルに定義されたファイルが実際に存在するか」を自動検証できる。
+
+### 6.1 フロントマター（必須）
+
+```yaml
+---
+name: skill-name          # ケバブケース。スキル呼び出し時の識別子
+description: |            # いつ使うかを1〜2行で説明
+  ...
+disable-model-invocation: true   # Claude が勝手に呼び出さないようにする場合は true
+---
+```
+
+### 6.2 必須セクション
+
+| セクション | 内容 |
+|-----------|------|
+| `## 実行タイミング` | いつ・何をきっかけに使うスキルかを明示 |
+| `## このスキルが作るもの / このスキルがすること` | 成果物一覧（ファイルパス・役割・テンプレート参照） |
+| `## 手順` | コマンドや確認ステップをリスト形式で記述 |
+| `## 完了条件` | チェックリスト形式。エージェントが完了判定に使う |
+
+### 6.3 成果物一覧の記述形式
+
+生成ファイルがある場合は以下の表形式で記述する。
+
+```markdown
+| ファイルパス | 役割 | テンプレート参照 |
+|-------------|------|----------------|
+| `docs/xxx/yyy.md` | ～の定義 | §テンプレート名 または インライン |
+```
+
+### 6.4 コードテンプレートの埋め込み
+
+初期テンプレートが必要なファイルは、スキル内にインラインで含める。
+
+````markdown
+#### `{ファイルパス}` のテンプレート
+
+```{言語}
+// テンプレートの内容
+```
+````
+
+---
+
+## 7. ドキュメントの必須/任意区別と分割基準
+
+### 7.1 必須/任意区別
+
+各ドキュメントに `必須/任意` を定義する。任意ファイルはそのファイルが必要になる条件を明記する。
+
+| ファイル | 必須/任意 | 必要な条件 |
+|---------|---------|----------|
+| `00_project/overview.md` | 必須 | 常に |
+| `00_project/glossary.md` | 任意 | 用語の誤解リスクがある場合 |
+| `00_project/decisions.md` | 必須 | 常に（技術選定ADRを記録） |
+| `01_requirements/functional/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `01_requirements/functional/{platform}.md` | 必須 | 常に（プラットフォームごとに1ファイル） |
+| `01_requirements/non_functional/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `01_requirements/non_functional/{platform}.md` | 必須 | 常に |
+| `01_requirements/user_stories/common.md` | 任意 | 複数プラットフォームが存在する場合 |
+| `01_requirements/user_stories/{platform}.md` | 必須 | 常に |
+| `01_requirements/constraints.md` | 必須 | 常に |
+| `02_design/architecture.md` | 必須 | 常に |
+| `02_design/data_model.md` | 任意 | DBや永続化ストレージを持つ場合 |
+| `02_design/api_spec.md` | 任意 | 外部公開APIを持つ場合 |
+| `02_design/ui_flows.md` | 任意 | UIを持つ場合 |
+| `03_implementation/coding_standards.md` | 必須 | 常に |
+| `03_implementation/directory_structure.md` | 必須 | 常に |
+| `03_implementation/patterns.md` | 必須 | 常に |
+| `03_implementation/dependencies.md` | 必須 | 常に |
+| `03_implementation/invariants.md` | 必須 | 常に |
+| `04_quality/test_strategy.md` | 必須 | 常に |
+| `04_quality/review_checklist.md` | 必須 | 常に |
+| `04_quality/security.md` | 任意 | 外部通信・認証・機密データを扱う場合 |
+| `04_quality/performance.md` | 任意 | パフォーマンス要件が明示されている場合 |
+| `05_operations/environments.md` | 任意 | dev/staging/prod の環境分離が必要な場合 |
+| `05_operations/deployment.md` | 必須 | 常に |
+| `05_operations/monitoring.md` | 必須 | 常に |
+| `06_ai_context/CONTEXT.md` | 必須 | 常に |
+
+### 7.2 common/platform 分割基準
+
+| 状況 | ルール |
+|------|--------|
+| プラットフォームが1つだけ | `common.md` は作成しない。すべて `{platform}.md` に記述する |
+| プラットフォームが2つ以上 | 全プラットフォームに共通する要件を `common.md` に記述する |
+| 「共通だが実装方法が異なる」要件 | `common.md` に要件を記述し、各 `{platform}.md` で実装制約を補記する |
+
+---
+
+## 8. ドキュメントのライフサイクル管理
+
+### 8.1 `status:` フィールド
+
+すべてのドキュメントのフロントマターに `status:` を記述する。
+
+```yaml
+---
+status: draft    # draft | active | deprecated
+tracks:          # （任意）このドキュメントが対応するコード資産（glob パターン）
+  - src/**/models/**
+---
+```
+
+### 8.2 `status:` 遷移ルール
+
+| 遷移 | トリガー |
+|------|---------|
+| （新規）→ `draft` | ファイル作成時。内容が未確定の場合 |
+| `draft` → `active` | PRマージ時。または作成から7日以内にレビューを受けた場合 |
+| `active` → `deprecated` | 対応するコード/機能が削除された場合。または後継ドキュメントが `active` になった場合 |
+| `deprecated` → （削除） | `deprecated` から30日経過後に削除可 |
+
+### 8.3 `tracks:` フィールド（doc-to-codeマッピング）
+
+`tracks:` フィールドに glob パターンを記述することで、ドキュメントとコード資産の対応関係を定義する。
+パスパターンはプロジェクトの言語・ディレクトリ構成に応じて記述する。
+
+```yaml
+---
+status: active
+tracks:
+  - src/**/models/**          # プロジェクトの言語・構成に応じたパスを記述する
+  - src/**/repositories/**
+---
+```
+
+**運用ルール：**
+- `check-doc-freshness` スキルは `tracks:` フィールドを読み取り、変更されたコードファイルに対応するドキュメントを特定する
+- `gc` スキルは `tracks:` フィールドを使ってドキュメント鮮度の全件スキャンを行う
+- `tracks:` がないドキュメントはGCの対象外となる
+
+**`tracks:` を設定すべきドキュメントと、パスパターンの例：**
+
+| ドキュメント | tracks パターンの例（言語・構成に応じて変更する） |
+|------------|----------------------------------------------|
+| `data_model.md` | `src/**/models/**`, `src/**/entities/**` |
+| `api_spec.md` | `src/**/controllers/**`, `src/**/routes/**`, `src/**/api/**` |
+| `invariants.md` | `src/**` |
+| `coding_standards.md` | `src/**` |
+| `directory_structure.md` | `src/**`, `frontend/**`, `backend/**` |
+
+---
+
+## 9. exec-plans のライフサイクル管理
+
+### 9.1 ステータス遷移
+
+| 状態 | 説明 | 配置場所 |
+|------|------|---------|
+| `active` | 進行中 | `exec-plans/active/` |
+| `completed` | 完了済み | `exec-plans/completed/` |
+| `abandoned` | 中断・破棄 | `exec-plans/completed/`（ファイル内に理由を記録） |
+
+### 9.2 各計画ファイルの構成（テンプレート）
+
+```markdown
+---
+status: active
+created: YYYY-MM-DD
+completed:           # 完了日（完了時に記入）
+---
+
+# {機能名・タスク名}
+
+## 目標・スコープ
+（3行以内）
+
+## 受け入れ条件
+- [ ] 条件1
+- [ ] 条件2
+
+## タスク分解
+- [ ] タスク1
+- [ ] タスク2
+
+## 進捗ログ
+### YYYY-MM-DD
+- 実施内容
+
+## 判断ログ
+### YYYY-MM-DD
+- 判断内容と理由
+```
+
+### 9.3 CONTEXT.md との連動ルール
+
+| exec-plans の変化 | CONTEXT.md の更新内容 |
+|-----------------|-------------------|
+| 新規 `active/` ファイル作成 | 優先タスクを更新 |
+| `active/` → `completed/` 移動 | 現在フェーズ・優先タスクを更新 |
+| フェーズ移行（Phase 1→2 等） | 現在フェーズを更新 |
+
+---
+
+## 10. 未決事項・今後の検討ポイント
 
 | 項目 | 内容 | 優先度 |
 |------|------|--------|

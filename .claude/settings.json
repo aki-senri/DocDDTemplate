@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$j = $input | ConvertFrom-Json; $f = $j.tool_input.file_path; if (!$f) { exit 0 }; if ($f -match 'exec-plans[/\\\\]completed') { Write-Output '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[DocDD] 実行計画が completed に移動しました。update-context スキルで CONTEXT.md の現在フェーズ・優先タスクを更新してください。\"}}' } elseif ($f -match 'exec-plans[/\\\\]active') { Write-Output '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[DocDD] exec-plans/active を更新しました。CONTEXT.md の優先タスクが最新かどうか、必要に応じて update-context スキルを実行してください。\"}}' } elseif ($f -notmatch '\\.(md|txt|json|yaml|yml|toml|xml|html|css|svg|png|jpg|gif|ico|lock|sum)$') { Write-Output '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"[DocDD] コードファイルを変更しました。docs/ のドキュメントとの乖離が生じていないか、必要に応じて check-doc-freshness スキルを実行してください。\"}}' }",
+            "statusMessage": "DocDD: ドキュメント整合性を確認中...",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
