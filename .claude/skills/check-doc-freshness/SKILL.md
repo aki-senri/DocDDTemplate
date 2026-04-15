@@ -1,118 +1,118 @@
 ---
 name: check-doc-freshness
 description: |
-  変更されたコードファイルに対応するドキュメントの鮮度をチェックするスキル。
-  docs/**/*.md の tracks: フィールドを読み取り、変更コードと乖離しているドキュメントを特定・更新する。
-  pre-pr スキルから内部的に呼び出されるほか、単独でも実行可能。
+  Skill to check the freshness of documents corresponding to changed code files.
+  Reads the tracks: field in docs/**/*.md frontmatter, identifies documents that have diverged from the changed code, and updates them.
+  Can be called internally by the pre-pr skill, or run standalone.
 disable-model-invocation: true
 ---
 
-# スキル: ドキュメント鮮度チェック
+# Skill: Document Freshness Check
 
-> **実行タイミング**:
-> - コード変更後（`pre-pr` スキルから自動呼び出し）
-> - 単独で特定ファイルの変更後に確認したいとき
-> - `gc` スキルから全件スキャン時（全ファイルを対象）
+> **When to run**:
+> - After code changes (called automatically from the `pre-pr` skill)
+> - When you want to verify a specific file change on its own
+> - During full-scan mode from the `gc` skill (targets all files)
 >
-> **目的**: コードとドキュメントの乖離を早期に検出し、ドキュメントの陳腐化を防ぐ。
+> **Purpose**: Detect divergence between code and documentation early, and prevent documentation from becoming stale.
 >
-> **前提**: 各ドキュメントのフロントマターに `tracks:` フィールドが設定されていること（`init-project` スキルの「ドキュメント構成」セクションを参照）
+> **Prerequisites**: Each document's frontmatter must have a `tracks:` field set (see the "Document structure" section of the `init-project` skill)
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. 変更されたコードファイルのパスを収集する
-2. `docs/**/*.md` の `tracks:` フィールドを照合する
-3. 乖離しているドキュメントを特定する
-4. 更新が必要な箇所を指摘・修正する
+1. Collect the paths of changed code files
+2. Match against the `tracks:` fields in `docs/**/*.md`
+3. Identify documents that have diverged
+4. Flag and fix sections that need updating
 
 ---
 
-## 手順
+## Steps
 
-### ステップ 1: 変更ファイルの収集
+### Step 1: Collect changed files
 
-呼び出し元によって対象が異なる。
+The target varies depending on the caller.
 
-| 呼び出し元 | 対象ファイル |
-|-----------|------------|
-| `pre-pr` から呼ばれた場合 | `git diff --name-only main...HEAD`（またはブランチ差分）で変更ファイルを列挙 |
-| 単独実行の場合 | ユーザーに「チェックするファイルパスを教えてください」と確認する |
-| `gc` から呼ばれた場合 | リポジトリ内の全コードファイルを対象にする |
+| Caller | Target files |
+|--------|-------------|
+| Called from `pre-pr` | List changed files via `git diff --name-only main...HEAD` (or branch diff) |
+| Standalone execution | Ask the user: "Please provide the file path(s) to check" |
+| Called from `gc` | Target all code files in the repository |
 
-### ステップ 2: `tracks:` フィールドの照合
+### Step 2: Match against `tracks:` fields
 
-`docs/**/*.md` を順番に読み込み、フロントマターの `tracks:` フィールドを確認する。
+Read `docs/**/*.md` one by one and check the `tracks:` field in the frontmatter.
 
 ```yaml
 ---
 status: active
 tracks:
-  - src/**/models/**        # 例: 言語・構成に応じたパス
+  - src/**/models/**        # example: path depends on language and structure
   - src/**/repositories/**
 ---
 ```
 
-> `tracks:` のパスパターンはプロジェクトの言語・ディレクトリ構成によって異なる。
-> 設定例（言語別）:
+> The path patterns in `tracks:` vary by project language and directory structure.
+> Configuration examples (by language):
 > - C#: `src/**/Models/*.cs`, `src/**/Services/*.cs`
 > - TypeScript: `src/**/types/*.ts`, `src/**/api/*.ts`
 > - Python: `src/**/models/*.py`, `src/**/repositories/*.py`
 > - Go: `internal/**/domain/*.go`, `internal/**/repository/*.go`
 
-- `tracks:` がないドキュメントはスキップする
-- `tracks:` のパターンと変更ファイルの照合には glob マッチングを使う（`*` は1階層、`**` は複数階層）
-- マッチしたドキュメントを「要確認リスト」に追加する
+- Skip documents without `tracks:`
+- Use glob matching for `tracks:` patterns against changed files (`*` = one level, `**` = multiple levels)
+- Add matched documents to the "needs review" list
 
-### ステップ 3: 乖離の確認
+### Step 3: Check for divergence
 
-「要確認リスト」のドキュメントを1件ずつ読み込み、以下の観点で乖離を確認する。
+Read each document in the "needs review" list one by one and check for divergence from the following angles.
 
-| ドキュメント種別 | 確認ポイント |
-|----------------|------------|
-| `data_model.md` | Model クラスの追加・変更が ERD や説明に反映されているか |
-| `api_spec.md` | エンドポイントの追加・変更・削除がドキュメントに反映されているか |
-| `directory_structure.md` | 新しいディレクトリ・ファイルの配置が記述されているか |
-| `patterns.md` | 新しいパターン・規約が導入されていた場合に記録されているか |
-| `dependencies.md` | 新しいライブラリ・バージョン変更が反映されているか |
-| `coding_standards.md` | 規約の追加・変更が反映されているか |
-| `invariants.md` | 新しい不変条件が追加・変更されていないか |
+| Document type | Check points |
+|---------------|-------------|
+| `data_model.md` | Are Model class additions/changes reflected in the ERD and descriptions? |
+| `api_spec.md` | Are endpoint additions, changes, and deletions reflected in the document? |
+| `directory_structure.md` | Is the placement of new directories/files described? |
+| `patterns.md` | If a new pattern or convention was introduced, is it recorded? |
+| `dependencies.md` | Are new libraries and version changes reflected? |
+| `coding_standards.md` | Are convention additions/changes reflected? |
+| `invariants.md` | Have any new invariants been added or changed? |
 
-### ステップ 4: 更新の実施
+### Step 4: Apply updates
 
-乖離が見つかったドキュメントを更新する。
+Update any documents where divergence was found.
 
-1. 変更内容を確認し、ドキュメントの該当箇所を特定する
-2. 更新内容を決定し、ドキュメントを編集する
-3. フロントマターの `status:` が `deprecated` になっていないか確認する（なっていれば後継ドキュメントに記載する）
+1. Review the changes and identify the relevant sections of the document
+2. Determine the update content and edit the document
+3. Check that the `status:` in the frontmatter is not `deprecated` (if it is, record the content in the successor document instead)
 
 ---
 
-## 結果レポートの出力形式
+## Result report format
 
 ```
-=== ドキュメント鮮度チェック結果 ===
+=== Document freshness check results ===
 
-チェック対象コード: {変更ファイル数}件
-照合したドキュメント: {照合件数}件
+Code files checked: {count}
+Documents matched: {count}
 
-✅ 問題なし: {件数}件
-⚠️ 更新が必要だった（対応済み）: {件数}件
-  - docs/02_design/data_model.md: Model.Xxx を追記
+✅ No issues: {count}
+⚠️ Updates needed (addressed): {count}
+  - docs/02_design/data_model.md: Added Model.Xxx
   - ...
-❌ 未対応（手動確認が必要）: {件数}件
-  - docs/xxx/yyy.md: {理由}
+❌ Not addressed (manual review needed): {count}
+  - docs/xxx/yyy.md: {reason}
 
 ---
-総合: ✅ 問題なし / ⚠️ 更新済み / ❌ 手動対応が必要
+Overall: ✅ No issues / ⚠️ Updated / ❌ Manual action required
 ```
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] 変更されたコードファイルを列挙した
-- [ ] すべての `tracks:` フィールドと照合した
-- [ ] 乖離しているドキュメントをすべて更新した（または N/A 理由を説明した）
-- [ ] 結果レポートを出力した
+- [ ] Listed all changed code files
+- [ ] Matched against all `tracks:` fields
+- [ ] Updated all diverged documents (or explained N/A reason)
+- [ ] Output the result report

@@ -1,127 +1,127 @@
 ---
 name: run-tests
 description: |
-  テストを実行し、結果を仕様（AC-ID）と照合するスキル。
-  テスト失敗時は「テストが仕様を正しく表現しているか」を判定してから対処を決める決定ゲートを含む。
-  実装の挙動に合わせてテストを修正することを禁止する。
-  pre-pr・start-feature・complete-exec-plan から内部的に呼び出されるほか、単独でも実行可能。
+  Skill to run tests and verify results against the spec (AC-IDs).
+  When tests fail, includes a decision gate to determine whether the test correctly expresses the spec before deciding on action.
+  Prohibits modifying tests to match implementation behavior.
+  Can be called internally by pre-pr, start-feature, and complete-exec-plan, or run standalone.
 disable-model-invocation: true
 ---
 
-# スキル: テスト実行・仕様照合
+# Skill: Test Execution & Spec Verification
 
-> **実行タイミング**:
-> - コード変更後（随時）
-> - `start-feature` スキルのベースライン確認時
-> - `pre-pr` スキルから呼び出し
-> - `complete-exec-plan` スキルの完了確認時
+> **When to run**:
+> - After code changes (at any time)
+> - During baseline verification in the `start-feature` skill
+> - Called from the `pre-pr` skill
+> - During completion verification in the `complete-exec-plan` skill
 >
-> **目的**: テストを「仕様の実行可能な表現」として位置づけ、実装が仕様を満たしていることを保証する。
-> テスト失敗を「テスト修正の契機」ではなく「仕様適合の検証ゲート」として扱う。
+> **Purpose**: Position tests as "executable expressions of the spec" and ensure the implementation satisfies the spec.
+> Treat test failures as a "spec compliance verification gate" rather than an opportunity to modify tests.
 >
-> **前提**:
-> - `docs/04_quality/test_strategy.md` が存在し、`test_command` フィールドが設定されていること
+> **Prerequisites**:
+> - `docs/04_quality/test_strategy.md` must exist and have the `test_command` field set
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. `test_strategy.md` からテストコマンドを読み取る
-2. テストを実行する
-3. 全通過の場合: AC-ID カバレッジを確認する
-4. 失敗の場合: **仕様照合ゲート**を通じて対処方針を決定する
+1. Read the test command from `test_strategy.md`
+2. Run the tests
+3. If all pass: verify AC-ID coverage
+4. If failures: determine the course of action through the **spec alignment gate**
 
 ---
 
-## 手順
+## Steps
 
-### ステップ 1: テストコマンドの読み取り
+### Step 1: Read the test command
 
-`docs/04_quality/test_strategy.md` のフロントマターを読み込む。
+Load the frontmatter of `docs/04_quality/test_strategy.md`.
 
 ```yaml
 ---
 test_command: dotnet test
-test_command_fe: npm test        # FE/BE 分離の場合（任意）
-test_command_be: dotnet test     # FE/BE 分離の場合（任意）
+test_command_fe: npm test        # if FE/BE are separate (optional)
+test_command_be: dotnet test     # if FE/BE are separate (optional)
 coverage_threshold: 80
 ---
 ```
 
-- `test_command` も `test_command_fe/be` も定義されていない場合:
-  「`test_strategy.md` に `test_command` を追加してください」と案内して終了する
+- If neither `test_command` nor `test_command_fe/be` is defined:
+  Guide the user to add `test_command` to `test_strategy.md` and stop.
 
-### ステップ 2: テスト実行
+### Step 2: Run tests
 
-フロントマターに従いコマンドを実行する。
+Execute commands according to the frontmatter.
 
-- `test_command_fe` / `test_command_be` が両方ある場合は両方実行する
-- 実行結果（合否・件数・失敗テスト名）を記録する
+- If both `test_command_fe` and `test_command_be` are present, run both
+- Record the results (pass/fail, count, names of failed tests)
 
-### ステップ 3: 全通過の場合 — AC カバレッジ確認
+### Step 3: If all pass — AC coverage check
 
-テストがすべて通過した場合、AC-ID のカバレッジを確認する。
+If all tests pass, verify AC-ID coverage.
 
-1. `exec-plans/active/` の実行計画を読み込み、`## 受け入れ条件` の AC-XXX を一覧する
-2. テストファイルを読み込み、各 AC-ID に対応するテストが存在するか確認する
+1. Load execution plans in `exec-plans/active/` and list the AC-XXX items in `## Acceptance Criteria`
+2. Read test files and verify that a test exists for each AC-ID
 
 ```
-受け入れ条件カバレッジ:
+Acceptance criteria coverage:
   ✅ AC-001 → AuthServiceTest: Login_WithInvalidPassword_Returns401
   ✅ AC-002 → AuthServiceTest: Session_Expired_RequiresReauth
-  ❌ AC-003 → テスト未作成
+  ❌ AC-003 → No test created
 ```
 
-- 未カバーの AC-ID がある場合は警告し、テスト作成を促す
-- `pre-pr` または `complete-exec-plan` から呼ばれた場合、未カバーの AC-ID があれば処理を保留する
+- If any AC-IDs are uncovered, issue a warning and prompt to create tests
+- If called from `pre-pr` or `complete-exec-plan`, put processing on hold if there are uncovered AC-IDs
 
-### ステップ 4: 失敗の場合 — 仕様照合ゲート
+### Step 4: If failures — spec alignment gate
 
-**テストが失敗した場合、テストや実装を修正する前に必ずこのゲートを通る。**
+**When tests fail, always go through this gate before modifying tests or implementation.**
 
-失敗した各テストについて、以下の情報を提示する。
+For each failed test, present the following information.
 
 ```
-❌ テスト失敗: AuthServiceTest.Login_WithInvalidPassword_Returns401
+❌ Test failure: AuthServiceTest.Login_WithInvalidPassword_Returns401
 
-  対応する仕様:
-    AC-001（exec-plans/active/{plan-name}.md）
-    「無効なパスワードでログインすると 401 が返る」
+  Corresponding spec:
+    AC-001 (exec-plans/active/{plan-name}.md)
+    "Login with an invalid password should return 401"
 
-  テスト内容:
-    期待値: StatusCode = 401
-    実際の値: StatusCode = 500
+  Test details:
+    Expected: StatusCode = 401
+    Actual:   StatusCode = 500
 
   ─────────────────────────────────────────
-  判断してください:
+  Please decide:
 
-    A) テストは仕様を正しく表現している
-       → 実装にバグがある。実装を修正してください。
+    A) The test correctly expresses the spec
+       → There is a bug in the implementation. Please fix the implementation.
 
-    B) 仕様が変更され、テストが古くなっている
-       → 仕様（AC-001）の内容を確認し、仕様に基づいてテストを修正してください。
-       ⚠️  実装の挙動に合わせてテストを修正することは禁止です。
-           必ず仕様文書（AC-ID）を根拠にしてください。
+    B) The spec has changed and the test is outdated
+       → Confirm the content of the spec (AC-001) and modify the test based on the spec.
+       ⚠️  Modifying tests to match implementation behavior is prohibited.
+           Always ground test modifications in a spec document (AC-ID).
   ─────────────────────────────────────────
 ```
 
-**A を選択した場合:**
-- 実装の修正を促して終了する
-- テストは変更しない
+**If A is chosen:**
+- Prompt to fix the implementation and stop
+- Do not change the tests
 
-**B を選択した場合:**
-1. 変更する仕様文書（AC-ID の元 exec-plan）を特定する
-2. 仕様が実際に変更されたことを確認する
-3. 変更理由を exec-plan の `## 判断ログ` に記録する
-4. 仕様に基づいてテストを修正する
-5. テストを再実行してステップ 3 へ戻る
+**If B is chosen:**
+1. Identify the spec document (the exec-plan containing the AC-ID) to be changed
+2. Confirm the spec has actually changed
+3. Record the reason for the change in the exec-plan's `## Decision Log`
+4. Modify the test based on the spec
+5. Re-run the tests and return to Step 3
 
 ---
 
-## AC-ID タグ付け規約
+## AC-ID tagging convention
 
-テストと仕様の対応を追跡するため、テストコードに AC-ID を記載する。
-（プロジェクト固有の規約は `test_strategy.md` に記載する）
+Tag tests with AC-IDs to track the correspondence between tests and specs.
+(Project-specific conventions are recorded in `test_strategy.md`)
 
 **C# / xUnit:**
 ```csharp
@@ -132,35 +132,35 @@ public void Login_WithInvalidPassword_Returns401() { ... }
 
 **TypeScript / Vitest:**
 ```typescript
-describe('AC-001: 無効なパスワードでのログイン', () => {
-  it('401 を返す', () => { ... });
+describe('AC-001: Login with invalid password', () => {
+  it('returns 401', () => { ... });
 });
 ```
 
 ---
 
-## 結果レポートの出力形式
+## Result report format
 
 ```
-=== テスト実行結果 ===
+=== Test execution results ===
 
-コマンド : {test_command}
-結果     : ✅ 全 {n} 件通過 / ❌ {n} 件失敗
+Command  : {test_command}
+Result   : ✅ All {n} tests passed / ❌ {n} test(s) failed
 
-【AC カバレッジ】
-✅ AC-001 → テスト対応あり
-✅ AC-002 → テスト対応あり
-❌ AC-003 → テスト未作成
+[AC Coverage]
+✅ AC-001 → Test exists
+✅ AC-002 → Test exists
+❌ AC-003 → No test created
 
 ---
-総合: ✅ 問題なし / ❌ 仕様照合ゲートを確認してください
+Overall: ✅ No issues / ❌ Please review the spec alignment gate
 ```
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] テストコマンドを実行した
-- [ ] 全通過の場合: AC-ID カバレッジを確認した
-- [ ] 失敗の場合: 仕様照合ゲートを通じて「実装修正」または「仕様根拠のテスト修正」を決定した
-- [ ] 結果レポートを出力した
+- [ ] Test command was run
+- [ ] If all passed: AC-ID coverage was verified
+- [ ] If failures: determined "fix implementation" or "fix test based on spec" through the spec alignment gate
+- [ ] Output the result report

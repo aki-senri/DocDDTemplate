@@ -1,60 +1,60 @@
-# Phase 1 セットアップ: Web アプリ（React / ASP.NET Core / .NET 8）
+# Phase 1 Setup: Web App (React / ASP.NET Core / .NET 8)
 
-> **実行タイミング**: `init-project` スキルの Q4 で Web を選択した場合に続けて実行する
+> **When to run**: Run after selecting Web in Q4 of the `init-project` skill
 >
-> **目的**: React フロントエンド + ASP.NET Core バックエンドの構成・設計・開発手順がドキュメントとして確定し、
-> チームメンバーとAIエージェントが同じ前提で開発を進められる状態になる。
+> **Purpose**: Finalize the configuration, design, and development procedures for a React frontend + ASP.NET Core backend as documents,
+> so that team members and AI agents can develop from the same baseline.
 
 ---
 
-## 確定事項（このスキルが定める標準）
+## Fixed decisions (standards defined by this skill)
 
-以下はプロジェクト固有の事情がない限り変更しない。
-変更する場合は `docs/00_project/decisions.md` に理由を記録すること。
+Do not change the following unless there is a project-specific reason.
+If a change is made, record the reason in `docs/00_project/decisions.md`.
 
-### 技術スタック
+### Tech stack
 
-#### フロントエンド（FE）
+#### Frontend (FE)
 
-| 項目 | 採用技術 | 理由 |
-|------|---------|------|
-| 言語 | TypeScript 5.x | 型安全性、IDEサポート |
-| UI ライブラリ | React 18.x | エコシステムの成熟度 |
-| ビルドツール | Vite 5.x | 高速な開発サーバー・ビルド |
-| ルーティング | React Router v6 | React の標準ルーティング |
-| サーバー状態管理 | TanStack Query 5.x | API データの取得・キャッシュ・同期 |
-| スタイリング | CSS Modules | スコープ付き CSS、ビルドツール不要 |
-| コード品質 | ESLint + Prettier | 静的解析・フォーマット統一 |
-| テスト | Vitest + React Testing Library | Vite との統合、軽量 |
+| Item | Technology | Reason |
+|------|-----------|--------|
+| Language | TypeScript 5.x | Type safety, IDE support |
+| UI library | React 18.x | Mature ecosystem |
+| Build tool | Vite 5.x | Fast dev server and builds |
+| Routing | React Router v6 | Standard routing for React |
+| Server state management | TanStack Query 5.x | API data fetching, caching, and synchronization |
+| Styling | CSS Modules | Scoped CSS, no build tool needed |
+| Code quality | ESLint + Prettier | Static analysis and unified formatting |
+| Testing | Vitest + React Testing Library | Vite integration, lightweight |
 
-#### バックエンド（BE）
+#### Backend (BE)
 
-| 項目 | 採用技術 | 理由 |
-|------|---------|------|
-| 言語 | C# 12 | .NET 8 のデフォルト |
-| ランタイム | .NET 8 | LTS、2026年11月まで標準サポート |
-| フレームワーク | ASP.NET Core 8 Web API | .NET 標準の REST API フレームワーク |
-| ORM | Entity Framework Core 8 | LINQ によるタイプセーフなクエリ |
-| DB | PostgreSQL 15 | Web アプリの標準。スケーラビリティ |
-| API 仕様 | OpenAPI（Swagger / Swashbuckle） | FE との契約として自動生成 |
-| 認証 | ASP.NET Core Identity + JWT | 標準認証基盤 |
-| ロギング | Serilog 3.x | 構造化ログ |
-| テスト | xUnit 2.x + Moq 4.x | .NET 標準テストスタック |
+| Item | Technology | Reason |
+|------|-----------|--------|
+| Language | C# 12 | Default for .NET 8 |
+| Runtime | .NET 8 | LTS, standard support until November 2026 |
+| Framework | ASP.NET Core 8 Web API | Standard .NET REST API framework |
+| ORM | Entity Framework Core 8 | Type-safe queries with LINQ |
+| DB | PostgreSQL 15 | Standard for web apps; scalable |
+| API spec | OpenAPI (Swagger / Swashbuckle) | Auto-generated as the contract with FE |
+| Authentication | ASP.NET Core Identity + JWT | Standard authentication infrastructure |
+| Logging | Serilog 3.x | Structured logging |
+| Testing | xUnit 2.x + Moq 4.x | Standard .NET test stack |
 
-#### インフラ
+#### Infrastructure
 
-| 項目 | 採用技術 |
-|------|---------|
+| Item | Technology |
+|------|-----------|
 | CI | GitHub Actions |
-| FE デプロイ | 静的ホスティング（Vercel / Azure Static Web Apps） |
-| BE デプロイ | コンテナ（Docker + Azure App Service / Cloud Run） |
+| FE deployment | Static hosting (Vercel / Azure Static Web Apps) |
+| BE deployment | Container (Docker + Azure App Service / Cloud Run) |
 
-### アーキテクチャ
+### Architecture
 
-#### 全体構成
+#### Overall structure
 
 ```
-[ブラウザ]
+[Browser]
     │ HTTPS / JSON
     ▼
 [React SPA]  ─── TanStack Query ───► [ASP.NET Core Web API]
@@ -64,49 +64,49 @@
                                         [PostgreSQL]
 ```
 
-#### FE アーキテクチャ：Feature ベース構成
+#### FE architecture: Feature-based structure
 
-関連するコンポーネント・フック・型をひとつの機能単位（Feature）にまとめる。
-共通コンポーネントのみ `shared/` に置く。
+Group related components, hooks, and types into a single feature unit.
+Only shared components go in `shared/`.
 
 ```
 src/
-├── features/           # 機能単位で分割
+├── features/           # Split by feature
 │   └── {featureName}/
-│       ├── components/ # その機能専用のコンポーネント
-│       ├── hooks/      # その機能専用のフック
-│       ├── api/        # TanStack Query のクエリ定義
-│       └── types.ts    # その機能の型定義
+│       ├── components/ # Components specific to this feature
+│       ├── hooks/      # Hooks specific to this feature
+│       ├── api/        # TanStack Query query definitions
+│       └── types.ts    # Type definitions for this feature
 ├── shared/
-│   ├── components/     # 汎用UIコンポーネント
-│   ├── hooks/          # 汎用フック
-│   └── types/          # 共通型定義
-├── pages/              # ルートに対応するページコンポーネント
-└── lib/                # 設定・ユーティリティ
+│   ├── components/     # General-purpose UI components
+│   ├── hooks/          # General-purpose hooks
+│   └── types/          # Common type definitions
+├── pages/              # Page components corresponding to routes
+└── lib/                # Config and utilities
 ```
 
-#### BE アーキテクチャ：レイヤードアーキテクチャ
+#### BE architecture: Layered architecture
 
-依存の方向は一方向のみ。FE との契約は OpenAPI 仕様で管理する。
+Dependencies are one-directional only. Contracts with FE are managed via OpenAPI spec.
 
 ```
-Controller → Service → Repository → Model（Entity）
+Controller → Service → Repository → Model (Entity)
 ```
 
-| レイヤー | 責務 | 置き場所 |
-|---------|------|---------|
-| Controller | HTTP リクエスト受付・レスポンス返却のみ | `Controllers/` |
-| Service | ビジネスロジック | `Services/` |
-| Repository | DB アクセスの抽象化（EF Core） | `Repositories/` |
-| Model | DB エンティティ・DTO | `Models/` |
+| Layer | Responsibility | Location |
+|-------|---------------|---------|
+| Controller | Receives HTTP requests and returns responses only | `Controllers/` |
+| Service | Business logic | `Services/` |
+| Repository | Abstraction of DB access (EF Core) | `Repositories/` |
+| Model | DB entities and DTOs | `Models/` |
 
-### ディレクトリ構成
+### Directory structure
 
-モノレポ構成。FE と BE を同一リポジトリで管理する。
+Monorepo structure. FE and BE managed in the same repository.
 
 ```
 {APP_NAME}/
-├── frontend/                         # React アプリ
+├── frontend/                         # React app
 │   ├── src/
 │   │   ├── features/
 │   │   ├── shared/
@@ -126,10 +126,10 @@ Controller → Service → Repository → Model（Entity）
 │   │   ├── Repositories/
 │   │   │   └── Interfaces/
 │   │   ├── Models/
-│   │   │   ├── Entities/             # DB エンティティ
-│   │   │   └── DTOs/                 # リクエスト・レスポンス型
-│   │   ├── Infrastructure/           # DI・EF Core 設定・ロギング
-│   │   └── Program.cs                # DI 構築・ミドルウェア設定
+│   │   │   ├── Entities/             # DB entities
+│   │   │   └── DTOs/                 # Request and response types
+│   │   ├── Infrastructure/           # DI, EF Core config, logging
+│   │   └── Program.cs                # DI setup and middleware config
 │   └── {APP_NAME}.Api.Tests/
 │       ├── Services/
 │       ├── Controllers/
@@ -141,118 +141,118 @@ Controller → Service → Repository → Model（Entity）
         └── ci-backend.yml
 ```
 
-### 主要な不変条件
+### Key invariants
 
 #### FE
 
-| # | 条件 |
-|---|------|
-| INV-FE-001 | Feature 間の直接インポート禁止（`features/A` が `features/B` を参照しない） |
-| INV-FE-002 | API 通信はすべて `features/{name}/api/` の TanStack Query フック経由 |
-| INV-FE-003 | コンポーネントは props の型定義を必ず持つ（`any` 禁止） |
-| INV-FE-004 | ページコンポーネントにロジックを書かない（フック・コンポーネントに切り出す） |
+| # | Condition |
+|---|-----------|
+| INV-FE-001 | Direct imports between features are prohibited (`features/A` must not reference `features/B`) |
+| INV-FE-002 | All API communication must go through TanStack Query hooks in `features/{name}/api/` |
+| INV-FE-003 | Components must always have a props type definition (`any` is prohibited) |
+| INV-FE-004 | Do not write logic in page components (extract to hooks or components) |
 
 #### BE
 
-| # | 条件 |
-|---|------|
-| INV-BE-001 | Controller → Service → Repository の依存方向のみ許可 |
-| INV-BE-002 | Controller はロジックを持たず Service に委譲する |
-| INV-BE-003 | Service は Repository インターフェースに依存する（実装クラスに直接依存しない） |
-| INV-BE-004 | 入力バリデーションは Controller 入口（FluentValidation または DataAnnotations）で行う |
-| INV-BE-005 | `async void` は禁止。すべて `async Task` または `async Task<T>` |
-| INV-BE-006 | DB エンティティを Controller のレスポンスとして直接返さない（必ず DTO に変換） |
-| INV-T01 | テストを実装の挙動に合わせて修正してはならない。テスト修正は必ず仕様（AC-ID）を根拠とすること |
+| # | Condition |
+|---|-----------|
+| INV-BE-001 | Only the Controller → Service → Repository dependency direction is allowed |
+| INV-BE-002 | Controller must not contain logic; delegate to Service |
+| INV-BE-003 | Service must depend on the Repository interface (not directly on the implementation class) |
+| INV-BE-004 | Input validation is performed at the Controller entry point (FluentValidation or DataAnnotations) |
+| INV-BE-005 | `async void` is prohibited; use `async Task` or `async Task<T>` |
+| INV-BE-006 | Do not return DB entities directly as Controller responses (always convert to DTOs) |
+| INV-T01 | Tests must not be modified to match implementation behavior. Test modifications must always be grounded in a spec (AC-ID) |
 
-### コーディング規約の要点
+### Key coding conventions
 
 ```typescript
-// FE: コンポーネントは Props 型を定義する
+// FE: Define a Props type for components
 type TaskCardProps = {
   title: string;
   onComplete: () => void;
 };
 export function TaskCard({ title, onComplete }: TaskCardProps) { ... }
 
-// FE: API フックは TanStack Query で定義する
+// FE: Define API hooks with TanStack Query
 export function useTaskList() {
   return useQuery({ queryKey: ['tasks'], queryFn: fetchTasks });
 }
 ```
 
 ```csharp
-// BE: Controller はロジックなし
+// BE: Controller has no logic
 [HttpGet]
 public async Task<IActionResult> GetAll(CancellationToken ct)
     => Ok(await _taskService.GetAllAsync(ct));
 
-// BE: private フィールドは _camelCase
+// BE: private fields use _camelCase
 private readonly ITaskService _taskService;
 
-// BE: 非同期メソッドは Async サフィックス
+// BE: async methods use Async suffix
 public async Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct = default)
 ```
 
 ---
 
-## インタビュー（プロジェクト固有）
+## Interview (project-specific)
 
-エージェントは以下のみ確認する。技術スタックは確定事項のため聞かない。
+The agent only asks the following. The tech stack is already fixed and should not be asked about.
 
-| # | 質問 | 使用先 |
-|---|------|--------|
-| Q1 | アプリ名は？（PascalCase） | ソリューション名・パッケージ名・ディレクトリ名 |
-| Q2 | 認証機能は必要ですか？ | JWT / ASP.NET Core Identity の有効化判断 |
-| Q3 | FE と BE を同一リポジトリで管理しますか？（デフォルト: はい） | モノレポ構成の確認 |
-| Q4 | 外部 API（決済・メール・地図等）との連携はありますか？ | Infrastructure 層の初期構成確認 |
-
----
-
-## 生成ドキュメント一覧
-
-| ファイル | 内容 | Phase |
-|---------|------|-------|
-| `docs/02_design/architecture.md` | 全体構成図・FE/BE レイヤー図 | 1 |
-| `docs/02_design/api_spec.md` | OpenAPI ベースの API 仕様方針 | 1 |
-| `docs/03_implementation/directory_structure.md` | FE・BE ディレクトリ構成 | 1 |
-| `docs/03_implementation/coding_standards.md` | TypeScript / C# コーディング規約 | 1 |
-| `docs/03_implementation/dependencies.md` | npm パッケージ・NuGet パッケージ一覧 | 1 |
-| `docs/03_implementation/invariants.md` | INV-FE-001〜004 + INV-BE-001〜006 + INV-T01 | 1 |
-| `docs/03_implementation/patterns.md` | Feature ベース構成・Repository パターン・DTO 変換 | 1 |
-| `docs/04_quality/test_strategy.md` | テスト方針・test_command_fe/be・AC-ID タグ付け規約 | 1 |
-| `CONTEXT.md` 追記 | FE / BE 技術スタック・命名規則の大原則を更新 | 0→1 |
+| # | Question | Used for |
+|---|----------|---------|
+| Q1 | What is the app name? (PascalCase) | Solution name, package name, directory name |
+| Q2 | Is authentication required? | Deciding whether to enable JWT / ASP.NET Core Identity |
+| Q3 | Will FE and BE be managed in the same repository? (default: yes) | Confirming monorepo structure |
+| Q4 | Is there any external API integration (payments, email, maps, etc.)? | Confirming the initial structure of the Infrastructure layer |
 
 ---
 
-## 開発サイクル（このプロジェクトでの標準フロー）
+## Documents to generate
+
+| File | Content | Phase |
+|------|---------|-------|
+| `docs/02_design/architecture.md` | Overall structure diagram, FE/BE layer diagrams | 1 |
+| `docs/02_design/api_spec.md` | API specification policy based on OpenAPI | 1 |
+| `docs/03_implementation/directory_structure.md` | FE and BE directory structure | 1 |
+| `docs/03_implementation/coding_standards.md` | TypeScript / C# coding conventions | 1 |
+| `docs/03_implementation/dependencies.md` | npm package and NuGet package list | 1 |
+| `docs/03_implementation/invariants.md` | INV-FE-001–004 + INV-BE-001–006 + INV-T01 | 1 |
+| `docs/03_implementation/patterns.md` | Feature-based structure, Repository pattern, DTO conversion | 1 |
+| `docs/04_quality/test_strategy.md` | Test policy, test_command_fe/be, AC-ID tagging convention | 1 |
+| `CONTEXT.md` update | Update FE/BE tech stack and core naming convention sections | 0→1 |
+
+---
+
+## Development cycle (standard flow for this project)
 
 ```
-1. exec-plans/active/ から作業を選ぶ
+1. Select work from exec-plans/active/
         ↓
-2. docs/02_design/api_spec.md で対象 API のインターフェースを確認・定義する
-   （BE 実装前に FE との契約を先に決める）
+2. Confirm / define the target API interface in docs/02_design/api_spec.md
+   (Decide the FE contract before BE implementation)
         ↓
-3. feature/{issue-or-task-name} ブランチで実装
-   ├── BE: Controller → Service → Repository の順に作成
-   └── FE: api/ → hooks/ → components/ → pages/ の順に作成
+3. Implement on feature/{issue-or-task-name} branch
+   ├── BE: Create in order: Controller → Service → Repository
+   └── FE: Create in order: api/ → hooks/ → components/ → pages/
         ↓
-4. テストを追加
-   ├── BE: xUnit（Service・Controller カバレッジ 80% 以上）[Trait("AC", "AC-XXX")] で AC-ID を記載
-   └── FE: Vitest + RTL（フック・コンポーネントの主要ロジック）describe('AC-XXX: ...') で AC-ID を記載
+4. Add tests
+   ├── BE: xUnit (80%+ coverage for Service and Controller) — include AC-ID with [Trait("AC", "AC-XXX")]
+   └── FE: Vitest + RTL (main logic of hooks and components) — include AC-ID with describe('AC-XXX: ...')
         ↓
-5. docs/04_quality/review_checklist.md でセルフレビュー
+5. Self-review with docs/04_quality/review_checklist.md
         ↓
-6. PR 作成 → レビュー → マージ
-   ├── CI-BE: dotnet build + dotnet test + Roslyn アナライザー
+6. Create PR → Review → Merge
+   ├── CI-BE: dotnet build + dotnet test + Roslyn analyzers
    └── CI-FE: tsc + eslint + vitest
         ↓
-7. exec-plans/active/ の進捗ログを更新
+7. Update progress log in exec-plans/active/
 ```
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] 上記「生成ドキュメント一覧」の全ファイルが作成されている
-- [ ] `docs/06_ai_context/CONTEXT.md` の技術スタック・命名規則セクションが更新されている
-- [ ] `CONTEXT.md` の現在フェーズが「Phase 2（要件定義・設計）」になっている
+- [ ] All files in the "Documents to generate" list above have been created
+- [ ] The tech stack and naming convention sections of `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The current phase in `CONTEXT.md` is set to "Phase 2 (requirements & design)"

@@ -1,52 +1,52 @@
 ---
 name: create-exec-plan
 description: |
-  新しい実行計画を exec-plans/active/ に作成する。
-  Phase 2（要件定義・設計）以降で、機能実装・ドキュメント整備・リファクタリング等のまとまった作業を開始するときに使う。
+  Creates a new execution plan in exec-plans/active/.
+  Used when starting a substantial piece of work (feature implementation, documentation, refactoring, etc.) in Phase 2 (requirements/design) or later.
 disable-model-invocation: true
 ---
 
-# スキル: 実行計画の作成
+# Skill: Create Execution Plan
 
-> **実行タイミング**: まとまった作業（機能実装・フェーズ移行・ドキュメント整備等）を開始するとき
+> **When to run**: When starting a substantial piece of work (feature implementation, phase transition, documentation, etc.)
 >
-> **目的**: 作業の目標・受け入れ条件・タスク分解をリポジトリに記録し、
-> エージェントと人間が同じ計画をもとに進捗を追跡できる状態を作る。
+> **Purpose**: Record the goals, acceptance criteria, and task breakdown of the work in the repository,
+> so that both agents and humans can track progress against the same plan.
 >
-> **前提**: `exec-plans/active/` ディレクトリが存在すること（なければ作成する）
+> **Prerequisites**: The `exec-plans/active/` directory must exist (create it if it doesn't)
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. インタビューで計画内容を収集する
-2. `exec-plans/active/YYYY-MM-{name}.md` を生成する
-3. `docs/06_ai_context/CONTEXT.md` の「現在フェーズ・優先タスク」を更新する
-
----
-
-## インタビュー
-
-エージェントは以下を **1問ずつ順番に** 確認する。
-
-| # | 質問 | 使用先 |
-|---|------|--------|
-| Q1 | この計画の名前を教えてください（英数字・ハイフン。例: `user-auth`, `refactor-service-layer`） | ファイル名 |
-| Q2 | 目標・スコープを3行以内で教えてください | `## 目標・スコープ` |
-| Q3 | 完了したとみなせる受け入れ条件を列挙してください（`AC-001`, `AC-002`, ... と採番する） | `## 受け入れ条件` |
-| Q4 | タスクを分解してください（チェックリスト形式で） | `## タスク分解` |
+1. Collect plan details via an interview
+2. Generate `exec-plans/active/YYYY-MM-{name}.md`
+3. Update the "Current Phase & Priority Tasks" section of `docs/06_ai_context/CONTEXT.md`
 
 ---
 
-## 生成ファイル一覧
+## Interview
 
-| ファイルパス | 役割 |
-|-------------|------|
-| `exec-plans/active/YYYY-MM-{Q1}.md` | 実行計画本体（下記テンプレートに従う） |
+The agent asks the following questions **one at a time, in order**.
+
+| # | Question | Used for |
+|---|----------|----------|
+| Q1 | What is the name of this plan? (alphanumeric and hyphens, e.g. `user-auth`, `refactor-service-layer`) | Filename |
+| Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
+| Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
+| Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
 
 ---
 
-## `exec-plans/active/YYYY-MM-{name}.md` のテンプレート
+## Files to generate
+
+| File path | Role |
+|-----------|------|
+| `exec-plans/active/YYYY-MM-{Q1}.md` | The execution plan itself (follows the template below) |
+
+---
+
+## Template for `exec-plans/active/YYYY-MM-{name}.md`
 
 ```markdown
 ---
@@ -55,51 +55,51 @@ created: YYYY-MM-DD
 completed:
 ---
 
-# {Q1: 計画名}
+# {Q1: Plan name}
 
-## 目標・スコープ
-{Q2の回答}
+## Goal & Scope
+{Answer to Q2}
 
-## 受け入れ条件
-- [ ] AC-001: {条件1}
-- [ ] AC-002: {条件2}
+## Acceptance Criteria
+- [ ] AC-001: {Criterion 1}
+- [ ] AC-002: {Criterion 2}
 
-## タスク分解
-{Q4の回答をチェックリスト形式で}
+## Task Breakdown
+{Answer to Q4 in checklist format}
 
-## 進捗ログ
+## Progress Log
 
 ### YYYY-MM-DD
-- 計画を作成した
+- Plan created
 
-## 判断ログ
+## Decision Log
 
 ```
 
 ---
 
-## 手順
+## Steps
 
-1. Q1〜Q4 のインタビューを完了する
-2. 今日の日付を `YYYY-MM-DD` 形式で確認する
-3. `exec-plans/active/` ディレクトリが存在しない場合は作成する
-4. 上記テンプレートに回答を反映して `exec-plans/active/YYYY-MM-{name}.md` を作成する
-5. `docs/06_ai_context/CONTEXT.md` の「現在フェーズ・優先タスク」セクションを更新する
-   - 優先タスクに今回作成した計画ファイルへのリンクを追加する
+1. Complete the Q1–Q4 interview
+2. Confirm today's date in `YYYY-MM-DD` format
+3. Create the `exec-plans/active/` directory if it doesn't exist
+4. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
+5. Update the "Current Phase & Priority Tasks" section of `docs/06_ai_context/CONTEXT.md`
+   - Add a link to the newly created plan file in the priority tasks section
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] `exec-plans/active/YYYY-MM-{name}.md` が作成されている
-- [ ] ファイルに `status: active`・`created: YYYY-MM-DD`・目標・受け入れ条件・タスク分解が記載されている
-- [ ] `docs/06_ai_context/CONTEXT.md` の優先タスクが更新されている
+- [ ] `exec-plans/active/YYYY-MM-{name}.md` has been created
+- [ ] The file contains `status: active`, `created: YYYY-MM-DD`, goal, acceptance criteria, and task breakdown
+- [ ] The priority tasks in `docs/06_ai_context/CONTEXT.md` have been updated
 
-完了後にエージェントが出力する報告:
+Final report output by the agent:
 
 ```
-=== 実行計画を作成しました ===
+=== Execution plan created ===
 
-ファイル: exec-plans/active/YYYY-MM-{name}.md
-次のステップ: start-feature スキルを使って実装を開始してください
+File: exec-plans/active/YYYY-MM-{name}.md
+Next step: Use the start-feature skill to begin implementation
 ```

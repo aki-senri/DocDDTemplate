@@ -1,118 +1,118 @@
 ---
 name: check-invariants
 description: |
-  docs/03_implementation/invariants.md に定義された不変条件を実装コードに対して確認するスキル。
-  pre-pr スキルから内部的に呼び出されるほか、実装中に単独で確認したいときにも使える。
+  Skill to verify the invariants defined in docs/03_implementation/invariants.md against implementation code.
+  Can be called internally by the pre-pr skill, or used standalone during implementation.
 disable-model-invocation: true
 ---
 
-# スキル: 不変条件チェック
+# Skill: Invariant Check
 
-> **実行タイミング**:
-> - 実装が完了したとき（`pre-pr` スキルから自動呼び出し）
-> - 実装中に随時確認したいとき
-> - `gc` スキルから全件スキャン時
+> **When to run**:
+> - When implementation is complete (called automatically from the `pre-pr` skill)
+> - At any time during implementation when you want to verify
+> - During full-scan mode from the `gc` skill
 >
-> **目的**: `invariants.md` で定義された不変条件の違反を CI より前に検出し、修正コストを下げる。
+> **Purpose**: Detect violations of the invariants defined in `invariants.md` before CI, reducing the cost of fixing issues.
 >
-> **前提**: `docs/03_implementation/invariants.md` が存在すること（Phase 1 完了が前提）
+> **Prerequisites**: `docs/03_implementation/invariants.md` must exist (Phase 1 must be complete)
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. `invariants.md` を読み込み、適用すべき条件を把握する
-2. 変更されたコードファイルを対象に条件を確認する
-3. 違反を報告し、修正指示を付与する
+1. Load `invariants.md` and understand the conditions to apply
+2. Check the conditions against the changed code files
+3. Report violations and provide fix instructions
 
 ---
 
-## 手順
+## Steps
 
-### ステップ 1: invariants.md の読み込み
+### Step 1: Load invariants.md
 
-`docs/03_implementation/invariants.md` を読み込み、すべての INV 条件を把握する。
+Load `docs/03_implementation/invariants.md` and understand all INV conditions.
 
-各 INV は以下の形式で定義されている（内容はプロジェクトのアーキテクチャ・言語によって異なる）:
+Each INV is defined in the following format (contents vary by project architecture and language):
 
 ```markdown
-| # | 条件 | 違反時 |
-|---|------|--------|
-| INV-001 | {レイヤー間の依存方向ルール} | ビルドエラー |
-| INV-002 | {ファイルサイズ上限} | 警告 |
-| INV-003 | {命名規則} | ビルド警告 |
+| # | Condition | On violation |
+|---|-----------|-------------|
+| INV-001 | {Layer dependency direction rule} | Build error |
+| INV-002 | {File size limit} | Warning |
+| INV-003 | {Naming convention} | Build warning |
 ```
 
-「違反時」の重大度に応じてチェックの優先度を設定する:
-- `ビルドエラー` → 必ず修正が必要
-- `警告` → 修正を強く推奨
-- `レビュー指摘` → コンテキストに応じて判断
+Set check priority based on the severity of "On violation":
+- `Build error` → must be fixed
+- `Warning` → strongly recommended to fix
+- `Review comment` → decide based on context
 
-### ステップ 2: 変更ファイルの収集
+### Step 2: Collect changed files
 
-| 呼び出し元 | 対象ファイル |
-|-----------|------------|
-| `pre-pr` から呼ばれた場合 | `git diff --name-only main...HEAD` で変更ファイルを列挙 |
-| 単独実行の場合 | ユーザーに「チェックするファイルまたはディレクトリを教えてください」と確認する |
-| `gc` から呼ばれた場合 | `src/**` 配下の全コードファイルを対象にする |
+| Caller | Target files |
+|--------|-------------|
+| Called from `pre-pr` | List changed files via `git diff --name-only main...HEAD` |
+| Standalone execution | Ask the user: "Please provide the file or directory to check" |
+| Called from `gc` | Target all code files under `src/**` |
 
-### ステップ 3: 条件の確認
+### Step 3: Verify conditions
 
-`invariants.md` の各 INV を読み込み、その内容に基づいて変更ファイルを確認する。
-**INV の内容はプロジェクトごとに異なる**ため、以下はチェック手法の例として参照すること。
+Load each INV in `invariants.md` and verify the changed files based on its contents.
+**INV contents differ per project**, so the following are examples of check techniques only.
 
-**依存方向の確認:**
-- ファイルの `import` / `require` / `using` 等（言語に応じた依存宣言）を読み込み、INV で禁止された方向の依存がないか確認する
-- 例: UI 層がデータアクセス層を直接参照していないか
+**Checking dependency direction:**
+- Load `import` / `require` / `using` statements (or the dependency declaration syntax for the language) from each file and verify no dependencies go in the direction prohibited by the INV
+- Example: Does the UI layer directly reference the data access layer?
 
-**ファイルサイズの確認:**
-- ファイルの行数をカウントし、INV で定義された上限を超えていないか確認する
+**Checking file size:**
+- Count the lines in each file and verify they do not exceed the limit defined in the INV
 
-**命名規則の確認:**
-- INV で定義された命名パターン（例: `_camelCase`、`PascalCase`、`kebab-case` 等）に従っているか確認する
+**Checking naming conventions:**
+- Verify that names follow the patterns defined in the INV (e.g., `_camelCase`, `PascalCase`, `kebab-case`, etc.)
 
-**言語・フレームワーク固有の禁止パターンの確認:**
-- INV に記載された禁止パターン（例: 特定の API の誤用、副作用を持つ関数の制限など）がないか確認する
+**Checking language/framework-specific forbidden patterns:**
+- Verify that forbidden patterns listed in the INV (e.g., misuse of specific APIs, restrictions on side-effect-producing functions) are not present
 
-**その他:**
-- `invariants.md` の各 INV に記載された条件をそのまま確認の基準とする
+**Other:**
+- Use each INV's stated conditions directly as the verification criteria
 
-### ステップ 4: 修正指示の生成
+### Step 4: Generate fix instructions
 
-違反が見つかった場合は以下の形式で報告する。
-
-```
-❌ INV-001 違反: {ファイルパス}
-   内容: {何がどのルールに違反しているか}
-   修正: {具体的な修正方法}
-   参考: docs/03_implementation/patterns.md §{関連セクション}
-```
-
----
-
-## 結果レポートの出力形式
+If violations are found, report them in the following format.
 
 ```
-=== 不変条件チェック結果 ===
-
-チェックした INV: {件数}件
-チェックしたファイル: {件数}件
-
-✅ 問題なし: {件数}件
-❌ 違反あり（ビルドエラー相当）: {件数}件
-  {違反詳細と修正指示}
-⚠️ 警告（修正推奨）: {件数}件
-  {警告詳細と修正指示}
-
----
-総合: ✅ すべてパス / ❌ 修正が必要
+❌ INV-001 violation: {file path}
+   Details: {what violates which rule}
+   Fix: {specific fix instructions}
+   Reference: docs/03_implementation/patterns.md §{related section}
 ```
 
 ---
 
-## 完了条件
+## Result report format
 
-- [ ] `invariants.md` を読み込んだ
-- [ ] すべての INV について変更ファイルを確認した
-- [ ] 違反がある場合は修正指示を付与した
-- [ ] 結果レポートを出力した
+```
+=== Invariant check results ===
+
+INVs checked: {count}
+Files checked: {count}
+
+✅ No issues: {count}
+❌ Violations (build error level): {count}
+  {violation details and fix instructions}
+⚠️ Warnings (fix recommended): {count}
+  {warning details and fix instructions}
+
+---
+Overall: ✅ All passed / ❌ Fixes required
+```
+
+---
+
+## Completion criteria
+
+- [ ] Loaded `invariants.md`
+- [ ] Checked changed files against all INVs
+- [ ] Provided fix instructions for all violations
+- [ ] Output the result report

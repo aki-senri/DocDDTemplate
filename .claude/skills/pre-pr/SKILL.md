@@ -1,158 +1,158 @@
 ---
 name: pre-pr
 description: |
-  PR を作成する前に行う総合チェックスキル。
-  invariants の確認・ドキュメント鮮度チェック・レビューチェックリスト・exec-plan 進捗更新を一括で行う。
+  Comprehensive pre-PR check skill run before creating a pull request.
+  Runs invariant checks, document freshness checks, review checklist, tests, and exec-plan progress update all at once.
 disable-model-invocation: true
 ---
 
-# スキル: PR 前の総合チェック
+# Skill: Pre-PR Comprehensive Check
 
-> **実行タイミング**: 実装が完了し、PR を作成する直前
+> **When to run**: After implementation is complete, immediately before creating a PR
 >
-> **目的**: CIに到達する前に品質基準・ドキュメント整合性・進捗記録の漏れをすべて検出し、
-> PR のレビュー所要時間を最小化する。
+> **Purpose**: Detect all quality standard violations, documentation inconsistencies, and missing progress records
+> before reaching CI, minimizing PR review time.
 >
-> **前提**:
-> - 実装が完了していること
-> - `docs/03_implementation/invariants.md` が存在すること
-> - `docs/04_quality/review_checklist.md` が存在すること
+> **Prerequisites**:
+> - Implementation must be complete
+> - `docs/03_implementation/invariants.md` must exist
+> - `docs/04_quality/review_checklist.md` must exist
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-以下を順番に実行する。すべてパスすれば PR 作成を許可する。
+Runs the following steps in order. If all pass, PR creation is allowed.
 
 ```
-① check-invariants    → 不変条件の確認
-② check-doc-freshness → ドキュメント鮮度の確認
-③ review_checklist    → コードレビューチェックリスト
-④ run-tests           → テスト実行・仕様照合
-⑤ exec-plan 更新      → 進捗ログへの記録
-```
-
----
-
-## 手順
-
-### ① 不変条件チェック（check-invariants）
-
-`docs/03_implementation/invariants.md` を読み込み、各 INV に対して以下を確認する。
-
-1. 変更されたファイルを列挙する（`git diff --name-only HEAD` または変更内容から把握）
-2. 各 INV の内容を確認し、変更ファイルに対して適用すべき条件を抽出する
-3. 違反している条件があれば報告し、修正指示を付与する
-4. 違反がない場合は「✅ invariants: すべてパス」と表示する
-
-**確認の基準は `docs/03_implementation/invariants.md` に従う。**
-典型的な違反パターンの例（プロジェクトの invariants.md の内容に応じて読み替える）:
-
-| よくある INV の種類 | 確認ポイントの例 |
-|------------------|----------------|
-| レイヤー依存方向 | 上位レイヤーが下位レイヤーの実装に直接依存していないか |
-| ファイルサイズ上限 | 行数が INV で定義された上限を超えていないか |
-| 命名規則 | INV で定義された命名パターンに従っているか |
-| 禁止パターン | 言語・FW 固有の禁止 API・アンチパターンが使われていないか |
-| バリデーション位置 | 入力検証が INV で定めた層で行われているか |
-
----
-
-### ② ドキュメント鮮度チェック（check-doc-freshness）
-
-変更されたコードファイルに対応するドキュメントが最新かどうかを確認する。
-
-1. 変更されたファイルのパスを列挙する
-2. `docs/**/*.md` のフロントマターにある `tracks:` フィールドを確認する
-3. 変更ファイルが `tracks:` のパターンにマッチするドキュメントを特定する
-4. 該当ドキュメントを開き、コードの変更内容と乖離がないか確認する
-5. 乖離がある場合は更新箇所を特定して修正する
-6. 乖離がない場合は「✅ doc-freshness: すべてパス」と表示する
-
-**確認が必要な典型ケース:**
-
-| コード変更 | 確認すべきドキュメント |
-|----------|-------------------|
-| Model / Entity の追加・変更 | `docs/02_design/data_model.md` |
-| API エンドポイントの追加・変更 | `docs/02_design/api_spec.md` |
-| ディレクトリ構成の変更 | `docs/03_implementation/directory_structure.md` |
-| 新しいパターン・規約の導入 | `docs/03_implementation/patterns.md` |
-| 外部ライブラリの追加 | `docs/03_implementation/dependencies.md` |
-
----
-
-### ③ レビューチェックリスト
-
-`docs/04_quality/review_checklist.md` を読み込み、各項目を確認する。
-
-- ✅ パスした項目
-- ❌ 未対応の項目（修正が必要）
-- N/A 該当しない項目
-
----
-
-### ④ テスト実行・仕様照合（run-tests）
-
-`run-tests` スキルを実行する。
-
-1. テストが全通過すること
-2. すべての AC-ID にテストが対応していること（カバレッジ確認）
-3. テストファイルに変更がある場合は、変更が仕様（AC-ID）に基づいていることを確認する
-
-**テストファイル変更の検証:**
-
-`git diff --name-only main...HEAD` でテストファイルの変更を検出した場合、以下を確認する。
-
-```
-⚠️ テストファイルの変更を検出:
-  AuthServiceTest.cs が変更されています。
-  変更理由を判断ログに記録してください:
-    [ ] 仕様変更（AC-XXX の更新）に伴うテスト修正
-    [ ] 新しい受け入れ条件に対するテスト追加
-    [ ] リファクタリング（テストの振る舞いは変えていない）
-    ❌ 実装の挙動に合わせたテスト修正（これは NG）
-```
-
-- テスト失敗がある場合: `run-tests` の仕様照合ゲートで解決してから再実行する
-- 未カバーの AC-ID がある場合: テストを追加してから再実行する
-
----
-
-### ⑤ exec-plan 進捗更新
-
-実装した作業に対応する `exec-plans/active/*.md` を更新する。
-
-1. 実装した機能・修正に対応するタスクにチェックを付ける（`- [x]`）
-2. 進捗ログに今日の日付と実施内容を追記する
-3. すべての受け入れ条件を満たしている場合は、`complete-exec-plan` スキルの実行を案内する
-
----
-
-## 結果レポートの出力形式
-
-```
-=== pre-pr チェック結果 ===
-
-① invariants      : ✅ すべてパス  / ❌ {件数}件の違反あり
-② doc-freshness   : ✅ すべてパス  / ⚠️ {件数}件の更新が必要
-③ review_checklist: ✅ すべてパス  / ❌ {件数}件の未対応あり
-④ run-tests       : ✅ 全通過・AC カバレッジ完全  / ❌ {件数}件失敗または未カバー AC あり
-⑤ exec-plan       : ✅ 進捗を更新した
-
----
-{問題がある場合は具体的な修正指示を列挙}
----
-
-PR 作成の可否: ✅ 問題なし / ❌ 上記を修正してから再実行してください
+① check-invariants    → Verify invariants
+② check-doc-freshness → Verify documentation freshness
+③ review_checklist    → Code review checklist
+④ run-tests           → Run tests and verify against spec
+⑤ exec-plan update    → Record progress in log
 ```
 
 ---
 
-## 完了条件
+## Steps
 
-- [ ] ① 〜 ⑤ の全チェックが完了している
-- [ ] 問題がある場合はすべて修正済み、または「N/A」として理由を説明できる
-- [ ] テスト失敗があった場合は仕様照合ゲートを通じて解決している
-- [ ] テストファイルの変更がある場合は変更理由を判断ログに記録している
-- [ ] exec-plan の進捗ログが更新されている
-- [ ] 「PR 作成の可否: ✅ 問題なし」の出力がある
+### ① Invariant check (check-invariants)
+
+Load `docs/03_implementation/invariants.md` and verify the following for each INV.
+
+1. List changed files (`git diff --name-only HEAD` or from the known changes)
+2. Review each INV and extract conditions applicable to the changed files
+3. Report any violations and provide fix instructions
+4. If no violations: display "✅ invariants: all passed"
+
+**The check criteria follow `docs/03_implementation/invariants.md`.**
+Typical violation pattern examples (adapt according to the project's invariants.md contents):
+
+| Common INV types | Example check points |
+|-----------------|---------------------|
+| Layer dependency direction | Does an upper layer directly depend on a lower layer's implementation? |
+| File size limit | Does the line count exceed the limit defined in the INV? |
+| Naming conventions | Does the file follow the naming pattern defined in the INV? |
+| Forbidden patterns | Are language/framework-specific forbidden APIs or antipatterns used? |
+| Validation location | Is input validation performed in the layer specified by the INV? |
+
+---
+
+### ② Document freshness check (check-doc-freshness)
+
+Verify that documents corresponding to changed code files are up to date.
+
+1. List the paths of changed files
+2. Check the `tracks:` field in the frontmatter of `docs/**/*.md`
+3. Identify documents whose `tracks:` pattern matches the changed files
+4. Open each matching document and check for discrepancies with the code changes
+5. If discrepancies exist, identify the update locations and fix them
+6. If no discrepancies: display "✅ doc-freshness: all passed"
+
+**Typical cases requiring a check:**
+
+| Code change | Documents to check |
+|------------|-------------------|
+| Model / Entity added or changed | `docs/02_design/data_model.md` |
+| API endpoint added or changed | `docs/02_design/api_spec.md` |
+| Directory structure changed | `docs/03_implementation/directory_structure.md` |
+| New pattern or convention introduced | `docs/03_implementation/patterns.md` |
+| External library added | `docs/03_implementation/dependencies.md` |
+
+---
+
+### ③ Review checklist
+
+Load `docs/04_quality/review_checklist.md` and verify each item.
+
+- ✅ Passed
+- ❌ Not addressed (requires fix)
+- N/A Not applicable
+
+---
+
+### ④ Test execution & spec verification (run-tests)
+
+Run the `run-tests` skill.
+
+1. All tests must pass
+2. Every AC-ID must have a corresponding test (coverage check)
+3. If there are changes to test files, confirm the changes are grounded in a spec (AC-ID)
+
+**Test file change verification:**
+
+If test file changes are detected via `git diff --name-only main...HEAD`, verify the following:
+
+```
+⚠️ Test file changes detected:
+  AuthServiceTest.cs has been modified.
+  Please record the reason for the change in the decision log:
+    [ ] Test fix due to spec change (AC-XXX update)
+    [ ] Test addition for new acceptance criteria
+    [ ] Refactoring (no behavioral change to tests)
+    ❌ Test fix to match implementation behavior (this is NOT allowed)
+```
+
+- If tests fail: resolve through the `run-tests` spec alignment gate before re-running
+- If AC-IDs are uncovered: add tests before re-running
+
+---
+
+### ⑤ exec-plan progress update
+
+Update the `exec-plans/active/*.md` corresponding to the implemented work.
+
+1. Check off completed tasks (`- [x]`)
+2. Append today's date and a description of what was done to the progress log
+3. If all acceptance criteria are met, guide the user to run the `complete-exec-plan` skill
+
+---
+
+## Result report format
+
+```
+=== pre-pr check results ===
+
+① invariants      : ✅ all passed  / ❌ {count} violation(s)
+② doc-freshness   : ✅ all passed  / ⚠️ {count} update(s) needed
+③ review_checklist: ✅ all passed  / ❌ {count} item(s) not addressed
+④ run-tests       : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
+⑤ exec-plan       : ✅ Progress updated
+
+---
+{If there are issues, list specific fix instructions here}
+---
+
+PR creation status: ✅ No issues / ❌ Fix the above and re-run
+```
+
+---
+
+## Completion criteria
+
+- [ ] All checks ① through ⑤ are complete
+- [ ] All issues have been fixed, or documented as "N/A" with explanation
+- [ ] If tests failed, they were resolved through the spec alignment gate
+- [ ] If test files were changed, the reason is recorded in the decision log
+- [ ] The progress log in exec-plan has been updated
+- [ ] Output shows "PR creation status: ✅ No issues"

@@ -1,158 +1,158 @@
-# Phase 1 セットアップ: Windows デスクトップアプリ（WPF / .NET 8 / C#）
+# Phase 1 Setup: Windows Desktop App (WPF / .NET 8 / C#)
 
-> **実行タイミング**: `init-project` スキルの Q4 で Windows を選択した場合に続けて実行する
+> **When to run**: Run after selecting Windows in Q4 of the `init-project` skill
 >
-> **目的**: Windows WPF アプリ開発に必要な構成・設計・開発手順がドキュメントとして確定し、
-> チームメンバーとAIエージェントが同じ前提で開発を進められる状態になる。
+> **Purpose**: Finalize the configuration, design, and development procedures needed for Windows WPF app development as documents,
+> so that team members and AI agents can develop from the same baseline.
 
 ---
 
-## 確定事項（このスキルが定める標準）
+## Fixed decisions (standards defined by this skill)
 
-以下はプロジェクト固有の事情がない限り変更しない。
-変更する場合は `docs/00_project/decisions.md` に理由を記録すること。
+Do not change the following unless there is a project-specific reason.
+If a change is made, record the reason in `docs/00_project/decisions.md`.
 
-### 技術スタック
+### Tech stack
 
-| 項目 | 採用技術 | 理由 |
-|------|---------|------|
-| 言語 | C# 12 | .NET 8 のデフォルト |
-| ランタイム | .NET 8（Desktop Runtime） | LTS、2026年11月まで標準サポート |
-| UI フレームワーク | WPF | オーバーレイ・最前面制御の実績が豊富。WinUI 3より成熟 |
-| MVVM ライブラリ | CommunityToolkit.Mvvm 8.x | Microsoft公式、Source Generator でボイラープレートを最小化 |
-| DI コンテナ | Microsoft.Extensions.DependencyInjection 8.x | .NET 標準、学習コスト低 |
-| ローカル DB | Microsoft.Data.Sqlite 8.x | ローカル完結型アプリの標準。ORM不要な複雑度 |
-| ロギング | Serilog 3.x + Serilog.Sinks.File | ファイルローテーション付きログ |
-| テスト | xUnit 2.x + Moq 4.x | .NET 標準テストスタック |
-| パッケージング | MSIX | Windows 10/11 標準。クリーンアンインストール保証 |
-| CI | GitHub Actions（windows-latest） | MSBuild が使える環境 |
+| Item | Technology | Reason |
+|------|-----------|--------|
+| Language | C# 12 | Default for .NET 8 |
+| Runtime | .NET 8 (Desktop Runtime) | LTS, standard support until November 2026 |
+| UI framework | WPF | Proven track record for overlay and always-on-top control; more mature than WinUI 3 |
+| MVVM library | CommunityToolkit.Mvvm 8.x | Official Microsoft library; minimizes boilerplate with Source Generators |
+| DI container | Microsoft.Extensions.DependencyInjection 8.x | .NET standard; low learning curve |
+| Local DB | Microsoft.Data.Sqlite 8.x | Standard for locally self-contained apps; no ORM needed for this level of complexity |
+| Logging | Serilog 3.x + Serilog.Sinks.File | File logging with rotation |
+| Testing | xUnit 2.x + Moq 4.x | Standard .NET test stack |
+| Packaging | MSIX | Windows 10/11 standard; guarantees clean uninstall |
+| CI | GitHub Actions (windows-latest) | Environment where MSBuild is available |
 
-### アーキテクチャ
+### Architecture
 
-レイヤードアーキテクチャ + MVVM。**依存の方向は一方向のみ**。
+Layered architecture + MVVM. **Dependencies are one-directional only.**
 
 ```
 View → ViewModel → Service → Repository → Model
 ```
 
-| レイヤー | 責務 | 置き場所 |
-|---------|------|---------|
-| View | UI描画・入力受付のみ。ロジックなし | `Views/` |
-| ViewModel | UI状態・コマンド定義。Service に委譲 | `ViewModels/` |
-| Service | ビジネスロジック。Repository を通じてデータ操作 | `Services/` |
-| Repository | DB アクセスの抽象化（インターフェース経由） | `Repositories/` |
-| Model | データ構造定義のみ。ロジックなし | `Models/` |
+| Layer | Responsibility | Location |
+|-------|---------------|---------|
+| View | UI rendering and input only. No logic | `Views/` |
+| ViewModel | UI state and command definitions. Delegates to Service | `ViewModels/` |
+| Service | Business logic. Data operations through Repository | `Services/` |
+| Repository | Abstraction of DB access (via interface) | `Repositories/` |
+| Model | Data structure definitions only. No logic | `Models/` |
 
-### ディレクトリ構成
+### Directory structure
 
 ```
 {APP_NAME}.sln
 ├── src/
 │   └── {APP_NAME}/
-│       ├── App.xaml / App.xaml.cs    # DI構築・起動処理
-│       ├── Models/                   # データ構造
+│       ├── App.xaml / App.xaml.cs    # DI setup and startup
+│       ├── Models/                   # Data structures
 │       ├── ViewModels/               # MVVM ViewModel
-│       ├── Views/                    # XAML ウィンドウ・ダイアログ
+│       ├── Views/                    # XAML windows and dialogs
 │       ├── Services/
-│       │   └── Interfaces/           # サービスインターフェース
+│       │   └── Interfaces/           # Service interfaces
 │       ├── Repositories/
-│       │   └── Interfaces/           # リポジトリインターフェース
-│       ├── Infrastructure/           # DI設定・DB初期化・ロギング
-│       └── Assets/                   # アイコン・テーマ
+│       │   └── Interfaces/           # Repository interfaces
+│       ├── Infrastructure/           # DI config, DB init, logging
+│       └── Assets/                   # Icons and themes
 └── tests/
-    └── {APP_NAME}.Tests/             # xUnit テストプロジェクト
+    └── {APP_NAME}.Tests/             # xUnit test project
         ├── Services/
         ├── ViewModels/
         └── Repositories/
 ```
 
-### 主要な不変条件
+### Key invariants
 
-実装中は以下を守る。違反は Roslyn アナライザー + CI で自動検出する。
+Follow the rules below during implementation. Violations are automatically detected by Roslyn analyzers + CI.
 
-| # | 条件 | 違反時 |
-|---|------|--------|
-| INV-001 | View → ViewModel → Service → Repository → Model の依存方向のみ許可 | ビルドエラー |
-| INV-002 | ViewModel はロジックを持たず Service に委譲する | ビルドエラー |
-| INV-003 | `.xaml.cs` にビジネスロジックを書かない（50行超で警告） | 警告 |
-| INV-004 | `.cs` 300行・`.xaml` 200行・`App.xaml.cs` 100行が上限 | 警告/エラー |
-| INV-005 | `async void` は WPF イベントハンドラ以外禁止 | ビルドエラー |
-| INV-006 | `private` フィールドは `_camelCase`、非同期メソッドは `Async` サフィックス | ビルド警告 |
-| INV-007 | 外部ネットワーク通信禁止 | 警告 |
-| INV-008 | 入力バリデーションは Service 層の入口で行う | レビュー指摘 |
-| INV-T01 | テストを実装の挙動に合わせて修正してはならない。テスト修正は必ず仕様（AC-ID）を根拠とすること | レビュー指摘 |
+| # | Condition | On violation |
+|---|-----------|-------------|
+| INV-001 | Only the View → ViewModel → Service → Repository → Model dependency direction is allowed | Build error |
+| INV-002 | ViewModel must not contain logic; delegate to Service | Build error |
+| INV-003 | Do not write business logic in `.xaml.cs` (warning if over 50 lines) | Warning |
+| INV-004 | `.cs` 300 lines, `.xaml` 200 lines, `App.xaml.cs` 100 lines maximum | Warning/Error |
+| INV-005 | `async void` is prohibited except for WPF event handlers | Build error |
+| INV-006 | `private` fields use `_camelCase`; async methods use `Async` suffix | Build warning |
+| INV-007 | External network communication is prohibited | Warning |
+| INV-008 | Input validation is performed at the Service layer entry point | Review comment |
+| INV-T01 | Tests must not be modified to match implementation behavior. Test modifications must always be grounded in a spec (AC-ID) | Review comment |
 
-### コーディング規約の要点
+### Key coding conventions
 
 ```csharp
-// ViewModel: ObservableObject 継承 + Source Generator を使う
+// ViewModel: inherit ObservableObject + use Source Generator
 [ObservableProperty] private string _currentTask = string.Empty;
 [RelayCommand] private async Task ChangeTaskAsync() { ... }
 
-// 非同期: 常に CancellationToken を受け取る
+// Async: always accept CancellationToken
 public async Task<IEnumerable<TaskItem>> GetAllAsync(CancellationToken ct = default)
 
-// private フィールド: _camelCase
+// private fields: _camelCase
 private readonly ITaskService _taskService;
 ```
 
 ---
 
-## インタビュー（プロジェクト固有）
+## Interview (project-specific)
 
-エージェントは以下のみ確認する。技術スタックは確定事項のため聞かない。
+The agent only asks the following. The tech stack is already fixed and should not be asked about.
 
-| # | 質問 | 使用先 |
-|---|------|--------|
-| Q1 | アプリ名は？（PascalCase） | ソリューション名・名前空間・実行ファイル名 |
-| Q2 | データを永続化しますか？（SQLite使用の有無） | `feat-sqlite` の有効化判断 |
-| Q3 | インターネット接続が必要ですか？（通常は不要） | INV-007 の適用範囲確認 |
-| Q4 | マルチウィンドウ構成ですか？（メインウィンドウ以外に何かある場合） | Views/ の初期構成確認 |
-
----
-
-## 生成ドキュメント一覧
-
-| ファイル | 内容 | Phase |
-|---------|------|-------|
-| `docs/02_design/architecture.md` | レイヤー図・DI構成・プロジェクト構成 | 1 |
-| `docs/03_implementation/directory_structure.md` | ディレクトリ構成（Q1のアプリ名を反映） | 1 |
-| `docs/03_implementation/coding_standards.md` | C# / WPF コーディング規約 | 1 |
-| `docs/03_implementation/dependencies.md` | NuGetパッケージ一覧・バージョン管理方針 | 1 |
-| `docs/03_implementation/invariants.md` | INV-001〜008 + INV-T01（Roslyn 強制ルール） | 1 |
-| `docs/03_implementation/patterns.md` | MVVM・Repository・DI の実装パターン | 1 |
-| `docs/04_quality/test_strategy.md` | テスト方針・test_command・AC-ID タグ付け規約 | 1 |
-| `CONTEXT.md` 追記 | 技術スタック・命名規則の大原則を更新 | 0→1 |
+| # | Question | Used for |
+|---|----------|---------|
+| Q1 | What is the app name? (PascalCase) | Solution name, namespace, executable name |
+| Q2 | Will you persist data? (whether to use SQLite) | Deciding whether to enable `feat-sqlite` |
+| Q3 | Does the app require internet access? (usually not needed) | Confirming the scope of INV-007 |
+| Q4 | Is it a multi-window layout? (if there are windows other than the main window) | Confirming the initial structure of Views/ |
 
 ---
 
-## 開発サイクル（このプロジェクトでの標準フロー）
+## Documents to generate
+
+| File | Content | Phase |
+|------|---------|-------|
+| `docs/02_design/architecture.md` | Layer diagram, DI configuration, project structure | 1 |
+| `docs/03_implementation/directory_structure.md` | Directory structure (reflects Q1 app name) | 1 |
+| `docs/03_implementation/coding_standards.md` | C# / WPF coding conventions | 1 |
+| `docs/03_implementation/dependencies.md` | NuGet package list and version management policy | 1 |
+| `docs/03_implementation/invariants.md` | INV-001–008 + INV-T01 (Roslyn enforcement rules) | 1 |
+| `docs/03_implementation/patterns.md` | MVVM, Repository, and DI implementation patterns | 1 |
+| `docs/04_quality/test_strategy.md` | Test policy, test_command, AC-ID tagging convention | 1 |
+| `CONTEXT.md` update | Update tech stack and core naming convention sections | 0→1 |
+
+---
+
+## Development cycle (standard flow for this project)
 
 ```
-1. exec-plans/active/ から作業を選ぶ
+1. Select work from exec-plans/active/
         ↓
-2. docs/01_requirements/user_stories/windows.md で受け入れ条件を確認
+2. Confirm acceptance criteria in docs/01_requirements/user_stories/windows.md
         ↓
-3. docs/03_implementation/invariants.md を確認（実装前に必読）
+3. Confirm docs/03_implementation/invariants.md (required reading before implementation)
         ↓
-4. feature/{issue-or-task-name} ブランチで実装
-   └── View → ViewModel → Service → Repository の順に作成
+4. Implement on feature/{issue-or-task-name} branch
+   └── Create in order: View → ViewModel → Service → Repository
         ↓
-5. xUnit テストを追加（ViewModel・Service カバレッジ 80% 以上）
-   └── テストには AC-ID を [Trait("AC", "AC-XXX")] で記載する
+5. Add xUnit tests (80%+ coverage for ViewModel and Service layers)
+   └── Include AC-ID in tests with [Trait("AC", "AC-XXX")]
         ↓
-6. docs/04_quality/review_checklist.md でセルフレビュー
+6. Self-review with docs/04_quality/review_checklist.md
         ↓
-7. PR 作成 → レビュー → マージ
-   └── CI（GitHub Actions）: dotnet build + dotnet test + Roslyn アナライザー
+7. Create PR → Review → Merge
+   └── CI (GitHub Actions): dotnet build + dotnet test + Roslyn analyzers
         ↓
-8. exec-plans/active/ の進捗ログを更新
+8. Update progress log in exec-plans/active/
 ```
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] 上記「生成ドキュメント一覧」の全ファイルが作成されている
-- [ ] `docs/06_ai_context/CONTEXT.md` の技術スタック・命名規則セクションが更新されている
-- [ ] `CONTEXT.md` の現在フェーズが「Phase 2（要件定義・設計）」になっている
+- [ ] All files in the "Documents to generate" list above have been created
+- [ ] The tech stack and naming convention sections of `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The current phase in `CONTEXT.md` is set to "Phase 2 (requirements & design)"

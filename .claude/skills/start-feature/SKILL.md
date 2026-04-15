@@ -1,137 +1,137 @@
 ---
 name: start-feature
 description: |
-  機能実装を開始するときの準備スキル。
-  exec-plans から作業を選択し、必要なドキュメントを確認してから実装に入る。
-  「何を実装するか迷っている」「実装前に何を確認すべきか」というときに使う。
+  Preparation skill for starting feature implementation.
+  Selects work from exec-plans and reviews the necessary documents before beginning implementation.
+  Use when you're unsure what to implement or need to know what to confirm before starting.
 disable-model-invocation: true
 ---
 
-# スキル: 機能実装の開始
+# Skill: Start Feature Implementation
 
-> **実行タイミング**: `exec-plans/active/` から新しい作業を選んで実装を始めるとき
+> **When to run**: When selecting new work from `exec-plans/active/` and beginning implementation
 >
-> **目的**: 実装前の確認漏れを防ぎ、エージェントが正しい前提で実装を開始できる状態を作る。
+> **Purpose**: Prevent overlooked pre-implementation checks and ensure the agent can start implementation with the correct assumptions.
 >
-> **前提**:
-> - `exec-plans/active/` に実行中の計画が存在すること
-> - Phase 1（ナレッジベース構築）が完了していること（`docs/03_implementation/invariants.md` が存在すること）
+> **Prerequisites**:
+> - An active plan must exist in `exec-plans/active/`
+> - Phase 1 (knowledge base construction) must be complete (`docs/03_implementation/invariants.md` must exist)
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. 実行計画を確認・選択する
-2. 実装に必要なドキュメントを読み込む
-3. ブランチ名を決定する
-4. 作業開始を進捗ログに記録する
+1. Confirm and select the execution plan
+2. Load the documents needed for implementation
+3. Determine the branch name
+4. Record the start of work in the progress log
 
 ---
 
-## 手順
+## Steps
 
-### ステップ 0: ベースラインテストの確認
+### Step 0: Baseline test verification
 
-実装を開始する前に、現在の状態でテストが全通過していることを確認する。
+Before starting implementation, verify that all tests currently pass.
 
-- `run-tests` スキルを実行する（AC カバレッジ確認は省略可）
-- **全通過 → 次のステップへ進む**
-- **失敗がある場合 → このブランチでの実装は開始しない**
-  - 仕様照合ゲートで対処方針を決定し、先に修正する
-  - テストがグリーンな状態で実装を始めることで「自分の変更による失敗か既存の失敗か」を明確に区別できる
+- Run the `run-tests` skill (AC coverage check can be skipped)
+- **All pass → proceed to the next step**
+- **If there are failures → do not start implementation on this branch**
+  - Determine the course of action through the spec alignment gate and fix the issues first
+  - Starting implementation from a green test state makes it clear whether failures are caused by your changes or were pre-existing
 
-### ステップ 1: 実行計画の確認
+### Step 1: Confirm the execution plan
 
-`exec-plans/active/` 内のファイルを一覧表示し、作業する計画をユーザーに確認する。
+List the files in `exec-plans/active/` and confirm the plan to work on with the user.
 
-- 計画が1件のみの場合はそれを選択する
-- 計画が複数の場合は選択を促す
-- 計画がない場合は `create-exec-plan` スキルの実行を促して終了する
+- If there is only one plan, select it
+- If there are multiple plans, prompt the user to select one
+- If there are no plans, prompt to run the `create-exec-plan` skill and stop
 
-### ステップ 2: 必須ドキュメントの読み込み
+### Step 2: Load required documents
 
-以下のドキュメントを読み込み、実装前提を確認する。
+Load the following documents and confirm the implementation prerequisites.
 
-| ドキュメント | 確認内容 |
-|-------------|---------|
-| `docs/06_ai_context/CONTEXT.md` | 現在フェーズ・開発ルール・技術スタック |
-| `docs/03_implementation/invariants.md` | 守るべき不変条件（INV-XXX） |
-| 選択した `exec-plans/active/*.md` | 受け入れ条件・タスク分解 |
+| Document | Content to confirm |
+|----------|-------------------|
+| `docs/06_ai_context/CONTEXT.md` | Current phase, development rules, tech stack |
+| `docs/03_implementation/invariants.md` | Invariants to follow (INV-XXX) |
+| Selected `exec-plans/active/*.md` | Acceptance criteria and task breakdown |
 
-プラットフォームに応じて以下も読み込む:
+Also load the following depending on the platform:
 
-| 条件 | 追加で読むドキュメント |
-|------|-------------------|
-| 要件定義フェーズの場合 | `docs/01_requirements/user_stories/{platform}.md` |
-| 設計が必要な場合 | `docs/02_design/architecture.md` |
-| Web アプリの場合 | `docs/02_design/api_spec.md` |
+| Condition | Additional documents to read |
+|-----------|----------------------------|
+| Requirements definition phase | `docs/01_requirements/user_stories/{platform}.md` |
+| Design needed | `docs/02_design/architecture.md` |
+| Web application | `docs/02_design/api_spec.md` |
 
-### ステップ 3: ブランチ名の決定
+### Step 3: Determine the branch name
 
-CONTEXT.md の「ブランチ運用」ルールに従い、ブランチ名を提案する。
+Suggest a branch name following the "branch strategy" rule in CONTEXT.md.
 
-- 標準的なパターン: `feature/{exec-plan-name}`
-- 例: `feature/user-auth`
+- Standard pattern: `feature/{exec-plan-name}`
+- Example: `feature/user-auth`
 
-### ステップ 4: 進捗ログの更新
+### Step 4: Update the progress log
 
-選択した `exec-plans/active/*.md` に以下を追記する。
+Append the following to the selected `exec-plans/active/*.md`.
 
 ```markdown
 ### YYYY-MM-DD
-- 実装開始。ブランチ: feature/{name}
+- Implementation started. Branch: feature/{name}
 ```
 
 ---
 
-## 実装順序のガイド
+## Implementation order guide
 
-**実装順序の基本原則**: 依存される側（安定した層）から先に実装し、依存する側（不安定な層）を後に実装する。
-具体的な順序は `docs/03_implementation/patterns.md` の定義に従う。
+**Basic principle of implementation order**: Implement from the stable layer (the depended-upon side) first, then the unstable layer (the depending side) afterward.
+The specific order follows the definitions in `docs/03_implementation/patterns.md`.
 
-**一般的なパターン:**
+**Common pattern:**
 ```
-データ構造（Model / Entity / Type）
-  → データアクセス層（Repository / DAO）のインターフェース
-  → ビジネスロジック層（Service / UseCase）のインターフェース
-  → 各層の実装
-  → UI / プレゼンテーション層
+Data structures (Model / Entity / Type)
+  → Data access layer (Repository / DAO) interface
+  → Business logic layer (Service / UseCase) interface
+  → Implementation of each layer
+  → UI / Presentation layer
 ```
 
-> **例（レイヤードアーキテクチャ + MVVM の場合）:**
+> **Example (layered architecture + MVVM):**
 > ```
-> Model → Repository（Interface）→ Service（Interface）
+> Model → Repository (Interface) → Service (Interface)
 >          ↓                         ↓
->         Repository（実装）     Service（実装）→ ViewModel → View
+>         Repository (impl)     Service (impl) → ViewModel → View
 > ```
 >
-> **例（Web API + SPA の場合）:**
+> **Example (Web API + SPA):**
 > ```
-> BE: Entity → Repository（Interface）→ Service → Controller
-> FE: 型定義 → API クライアント → ロジック層 → UI コンポーネント → ページ
+> BE: Entity → Repository (Interface) → Service → Controller
+> FE: Type definitions → API client → Logic layer → UI components → Pages
 > ```
 
-実装順序の詳細と、このプロジェクト固有のパターンは `docs/03_implementation/patterns.md` を参照。
+See `docs/03_implementation/patterns.md` for detailed implementation order and project-specific patterns.
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] ベースラインテストが全通過していることを確認した（ステップ 0）
-- [ ] 実行計画を選択・確認した
-- [ ] `CONTEXT.md`・`invariants.md`・選択した実行計画を読み込んだ
-- [ ] ブランチ名を確定した
-- [ ] 実行計画の進捗ログに「実装開始」を記録した
+- [ ] Confirmed that baseline tests all pass (Step 0)
+- [ ] Execution plan selected and confirmed
+- [ ] Loaded `CONTEXT.md`, `invariants.md`, and the selected execution plan
+- [ ] Branch name finalized
+- [ ] "Implementation started" recorded in the execution plan's progress log
 
-完了後にエージェントが出力する報告:
+Final report output by the agent:
 
 ```
-=== 実装開始の準備が完了しました ===
+=== Ready to start implementation ===
 
-ベースライン: ✅ テスト全通過（{n} 件）
-作業計画    : exec-plans/active/YYYY-MM-{name}.md
-ブランチ    : feature/{name}
-確認済み    : CONTEXT.md / invariants.md / 実行計画
+Baseline  : ✅ All {n} tests passed
+Work plan : exec-plans/active/YYYY-MM-{name}.md
+Branch    : feature/{name}
+Confirmed : CONTEXT.md / invariants.md / execution plan
 
-最初のタスク: {exec-planのタスク分解の先頭項目}
+First task: {first item in exec-plan task breakdown}
 ```

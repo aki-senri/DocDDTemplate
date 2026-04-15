@@ -1,124 +1,124 @@
 ---
 name: update-context
 description: |
-  docs/06_ai_context/CONTEXT.md を現在の状態に合わせて更新するスキル。
-  フェーズ移行・優先タスク変更・技術スタック変更が生じたときに使う。
-  exec-plans の変化後に complete-exec-plan スキルから自動呼び出しされる。
+  Skill to update docs/06_ai_context/CONTEXT.md to reflect the current state.
+  Use when a phase transition, priority task change, or tech stack change occurs.
+  Automatically called from the complete-exec-plan skill after exec-plan changes.
 disable-model-invocation: true
 ---
 
-# スキル: CONTEXT.md の更新
+# Skill: Update CONTEXT.md
 
-> **実行タイミング**:
-> - フェーズが移行したとき（Phase 1 → Phase 2 等）
-> - 優先タスクが変わったとき（exec-plan の追加・完了）
-> - 技術スタックや開発ルールが変更されたとき
-> - `complete-exec-plan` スキルから呼び出されたとき
-> - 定期的に鮮度を確認したいとき（`gc` スキルから呼び出されたとき）
+> **When to run**:
+> - When a phase transition occurs (Phase 1 → Phase 2, etc.)
+> - When priority tasks change (exec-plan added or completed)
+> - When the tech stack or development rules change
+> - When called from the `complete-exec-plan` skill
+> - When you want to periodically verify freshness (when called from the `gc` skill)
 >
-> **目的**: CONTEXT.md を常に「1画面で読めるナビゲーションマップ」として維持する。
-> 内容が肥大化した場合は詳細を別ドキュメントに切り出してポインタに置き換える。
+> **Purpose**: Maintain CONTEXT.md as a "navigation map readable in one screen" at all times.
+> If content becomes too large, extract details to a separate document and replace with a pointer.
 >
-> **前提**: `docs/06_ai_context/CONTEXT.md` が存在すること
+> **Prerequisites**: `docs/06_ai_context/CONTEXT.md` must exist
 
 ---
 
-## このスキルがすること
+## What this skill does
 
-1. 現在の状態を収集する
-2. CONTEXT.md の各セクションを最新状態に更新する
-3. 肥大化していれば詳細を別ドキュメントに切り出す
+1. Collect the current state
+2. Update each section of CONTEXT.md to reflect the latest state
+3. Extract details to a separate document if the file has grown too large
 
 ---
 
-## 手順
+## Steps
 
-### ステップ 1: 現在の状態の収集
+### Step 1: Collect current state
 
-以下を確認する。
+Verify the following.
 
-| 確認項目 | 参照先 |
-|---------|--------|
-| 現在フェーズ | `exec-plans/active/` と `exec-plans/completed/` の状態から判断 |
-| 優先タスク | `exec-plans/active/` 内のファイル一覧 |
-| 技術スタックの変更 | `docs/00_project/decisions.md` の最新エントリ |
-| 開発ルールの変更 | ユーザーへの確認、または `decisions.md` の変更内容 |
+| Item | Reference |
+|------|-----------|
+| Current phase | Determined from the state of `exec-plans/active/` and `exec-plans/completed/` |
+| Priority tasks | List of files in `exec-plans/active/` |
+| Tech stack changes | Latest entries in `docs/00_project/decisions.md` |
+| Development rule changes | Confirmation from user, or changes in `decisions.md` |
 
-**フェーズ判定の基準:**
+**Phase determination criteria:**
 
-| 状態 | フェーズ |
-|------|---------|
-| `docs/00_project/overview.md` がない | Phase 0 未完了 |
-| `docs/03_implementation/invariants.md` がない | Phase 1 未完了 |
-| `docs/01_requirements/` が不完全 | Phase 2 進行中 |
-| `exec-plans/active/` に実装計画がある | Phase 3 進行中 |
-| 定期的な GC のみの作業 | Phase 4（継続的品質維持） |
+| State | Phase |
+|-------|-------|
+| `docs/00_project/overview.md` does not exist | Phase 0 incomplete |
+| `docs/03_implementation/invariants.md` does not exist | Phase 1 incomplete |
+| `docs/01_requirements/` is incomplete | Phase 2 in progress |
+| An implementation plan exists in `exec-plans/active/` | Phase 3 in progress |
+| Only periodic GC work | Phase 4 (continuous quality maintenance) |
 
-### ステップ 2: CONTEXT.md の更新
+### Step 2: Update CONTEXT.md
 
-CONTEXT.md の各セクションを確認し、古い内容を更新する。
+Review each section of CONTEXT.md and update outdated content.
 
-**CONTEXT.md の必須セクション構成:**
+**Required section structure of CONTEXT.md:**
 
 ```markdown
-## プロジェクト概要
-（3行以内・変更がなければそのまま）
+## Project Overview
+(3 lines or fewer; keep as-is if unchanged)
 
-## 技術スタック
-（プラットフォーム別・変更があれば更新）
+## Tech Stack
+(Per platform; update if changed)
 
-## 開発ルール
-- ブランチ運用
-- PR・レビュー方針
-- テスト方針
-- AI活用範囲
+## Development Rules
+- Branch strategy
+- PR & review policy
+- Testing policy
+- AI involvement
 
-## ドキュメント構成
-（各ドキュメントへのパス・変更があれば更新）
+## Document Structure
+(Paths to each document; update if changed)
 
-## 命名規則・コーディングの大原則
-（詳細は invariants.md へのポインタ）
+## Naming Conventions & Core Coding Principles
+(Details as pointer to invariants.md)
 
-## 現在フェーズ・優先タスク    ← 最も更新頻度が高い
-フェーズ: Phase X（説明）
-優先タスク:
+## Current Phase & Priority Tasks    ← Updated most frequently
+Phase: Phase X (description)
+Priority tasks:
   - exec-plans/active/YYYY-MM-{name}.md
 
-## 参照すべきドキュメント
-（変更があれば更新）
+## Reference Documents
+(Update if changed)
 ```
 
-### ステップ 3: 肥大化チェックと切り出し
+### Step 3: Bloat check and extraction
 
-CONTEXT.md が「1画面（約50行）」を超えている場合は、以下の基準で詳細を切り出す。
+If CONTEXT.md exceeds "one screen (approx. 50 lines)", extract details according to the following criteria.
 
-| 肥大化しやすいセクション | 切り出し先 |
-|----------------------|-----------|
-| 技術スタックの詳細 | `docs/00_project/overview.md` |
-| 開発ルールの詳細 | `docs/03_implementation/coding_standards.md` |
-| 命名規則の詳細 | `docs/03_implementation/invariants.md` |
+| Sections prone to bloat | Extraction target |
+|------------------------|------------------|
+| Tech stack details | `docs/00_project/overview.md` |
+| Development rule details | `docs/03_implementation/coding_standards.md` |
+| Naming convention details | `docs/03_implementation/invariants.md` |
 
-切り出した後は、CONTEXT.md に「詳細は {ファイルパス} を参照」のポインタを残す。
+After extraction, leave a "See {file path} for details" pointer in CONTEXT.md.
 
 ---
 
-## 完了条件
+## Completion criteria
 
-- [ ] 現在フェーズが正確に記載されている
-- [ ] 優先タスクが `exec-plans/active/` の現状を反映している
-- [ ] 技術スタック・開発ルールに古い情報がない
-- [ ] CONTEXT.md が50行以内に収まっている（超える場合は切り出しを実施）
-- [ ] 変更内容を簡潔に報告した
+- [ ] Current phase is accurately stated
+- [ ] Priority tasks reflect the current state of `exec-plans/active/`
+- [ ] No outdated information in tech stack or development rules
+- [ ] CONTEXT.md is within 50 lines (extract details if it exceeds this)
+- [ ] Changes have been briefly reported
 
-完了後にエージェントが出力する報告:
+Final report output by the agent:
 
 ```
-=== CONTEXT.md を更新しました ===
+=== CONTEXT.md updated ===
 
-更新内容:
-  - 現在フェーズ: Phase X
-  - 優先タスク: {件数}件
-  - {その他変更点}
+Changes:
+  - Current phase: Phase X
+  - Priority tasks: {count}
+  - {other changes}
 
-行数: {更新後の行数}行（上限: 50行）
+Line count: {updated line count} lines (limit: 50 lines)
 ```
