@@ -1,96 +1,98 @@
 # DocDD Template
 
-**Document-Driven Development（ドキュメント駆動開発）** のスターターテンプレートです。  
-Claude Code と組み合わせることで、AIエージェントがドキュメントを読みながら自律的に開発を進められる環境を構築します。
+A starter template for **Document-Driven Development (DocDD)**.  
+Combined with Claude Code, it creates an environment where AI agents can develop autonomously while reading living documentation.
+
+> 日本語版: [README.ja.md](README.ja.md)
 
 ---
 
-## DocDD とは
+## What is DocDD?
 
-コードと常に同期した「生きたドキュメント」を中心に置き、AIエージェントが開発フロー全体を通じて正しい文脈で動けるようにする開発手法です。
+A development methodology that places "living documentation" — always in sync with code — at the center, enabling AI agents to operate with the correct context throughout the entire development workflow.
 
 ```
-ドキュメント = 定義（何を作るか）
-スキル       = 操作（どうやって進めるか）
-settings.json = トリガー（いつ自動実行するか）
+Documents     = Definitions  (what to build)
+Skills        = Operations   (how to proceed)
+settings.json = Triggers     (when to run automatically)
 ```
 
-- **CONTEXT.md**（≤50行）が常に「今どこにいるか」を示すナビゲーションマップとして機能します
-- `tracks:` フィールドがドキュメントとコードの対応を定義し、乖離を自動検出します
-- フェーズ0〜4の構造化されたワークフローで、要件定義から運用まで一貫して管理します
+- **CONTEXT.md** (≤50 lines) always acts as a navigation map showing "where we are now"
+- `tracks:` fields define the correspondence between documents and code, automatically detecting drift
+- A structured Phase 0–4 workflow manages everything consistently from requirements through operations
 
 ---
 
-## 開発フェーズ
+## Development Phases
 
-| フェーズ | 内容 | 主な成果物 |
-|---------|------|-----------|
-| Phase 0 | プロジェクト初期化 | CONTEXT.md, overview.md, decisions.md |
-| Phase 1 | ナレッジベース構築 | invariants.md, patterns.md, architecture.md |
-| Phase 2 | 要件定義・設計 | user_stories, api_spec.md, data_model.md |
-| Phase 3 | 実装 | コード + ドキュメントの同期維持 |
-| Phase 4 | 品質・運用 | review_checklist.md, test_strategy.md |
+| Phase | Description | Key outputs |
+|-------|-------------|-------------|
+| Phase 0 | Project initialization | CONTEXT.md, overview.md, decisions.md |
+| Phase 1 | Knowledge base construction | invariants.md, patterns.md, architecture.md |
+| Phase 2 | Requirements & design | user_stories, api_spec.md, data_model.md |
+| Phase 3 | Implementation | Code + keeping documentation in sync |
+| Phase 4 | Quality & operations | review_checklist.md, test_strategy.md |
 
 ---
 
-## クイックスタート
+## Quick Start
 
-### 1. テンプレートをコピーする
+### 1. Copy the template
 
-このリポジトリを新しいプロジェクトのリポジトリにコピーするか、テンプレートとして使用します。
+Copy this repository into your new project repository, or use it as a template.
 
 ```
-.claude/                   ← そのまま残す（スキル・設定）
+.claude/                   ← keep as-is (skills and settings)
 ```
 
-### 2. プロジェクトを初期化する
+### 2. Initialize the project
 
-Claude Code で以下を実行します：
+Run the following in Claude Code:
 
 ```
 /init-project
 ```
 
-インタビュー形式でプロジェクト概要・技術スタック・開発ルール・プラットフォームを収集し、Phase 0 → Phase 1 のドキュメントを自動生成します。
+This collects project overview, tech stack, development rules, and platform via an interview, then auto-generates Phase 0 → Phase 1 documents.
 
-### 3. 機能実装を始める
+### 3. Start implementing features
 
 ```
-/create-exec-plan   ← 実行計画を作成
-/start-feature      ← 実装前の確認・ブランチ作成
-（実装）
-/pre-pr             ← PR前の総合チェック
-/complete-exec-plan ← 計画を完了に移動
+/create-exec-plan   ← create an execution plan
+/start-feature      ← pre-implementation review and branch creation
+(implement)
+/pre-pr             ← comprehensive pre-PR check
+/complete-exec-plan ← move plan to completed
 ```
 
 ---
 
-## スキル一覧
+## Skills
 
-| スキル | 用途 |
-|-------|------|
-| `init-project` | プロジェクト初期化（Phase 0 → Phase 1） |
-| `create-exec-plan` | 実行計画（exec-plan）の新規作成 |
-| `start-feature` | 実装開始前の確認・ブランチ名決定 |
-| `pre-pr` | PR前の総合チェック（invariants / doc-freshness / review_checklist / run-tests / exec-plan更新） |
-| `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
-| `run-tests` | テスト実行・仕様照合（テスト失敗時は仕様照合ゲートで対処方針を決定） |
-| `check-invariants` | `invariants.md` の不変条件を実装コードに対して検証 |
-| `check-doc-freshness` | 変更されたコードに対応するドキュメントの鮮度チェック |
-| `update-context` | CONTEXT.md を現在の状態に更新 |
-| `gc` | 定期ガベージコレクション（ドキュメント・アーキテクチャの健全性チェック） |
+| Skill | Purpose |
+|-------|---------|
+| `init-project` | Project initialization (Phase 0 → Phase 1) |
+| `create-exec-plan` | Create a new execution plan (exec-plan) |
+| `start-feature` | Pre-implementation review and branch name decision |
+| `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / review_checklist / run-tests / exec-plan update) |
+| `complete-exec-plan` | Move execution plan from `active/` to `completed/` |
+| `run-tests` | Run tests and verify against spec (spec alignment gate determines action on failure) |
+| `check-invariants` | Verify invariants in `invariants.md` against implementation code |
+| `check-doc-freshness` | Check freshness of documents corresponding to changed code |
+| `update-context` | Update CONTEXT.md to reflect current state |
+| `gc` | Periodic garbage collection (documentation and architecture health check) |
 
-スキルの実行は Claude Code のチャットで `/スキル名` と入力します。
+Run skills in Claude Code chat by typing `/skill-name`.
 
 ---
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
-プロジェクトルート/
+project-root/
 ├── .claude/
-│   ├── settings.json          # フック設定（コード変更時の自動リマインド）
-│   └── skills/                # 各スキルの定義
+│   ├── settings.json          # Hook configuration (auto-reminders on code changes)
+│   └── skills/                # Skill definitions
 │       ├── init-project/
 │       ├── create-exec-plan/
 │       ├── start-feature/
@@ -101,58 +103,58 @@ Claude Code で以下を実行します：
 │       ├── run-tests/
 │       ├── update-context/
 │       └── gc/
-├── docs/                      # ← init-project が生成（初期は存在しない）
+├── docs/                      # ← generated by init-project (does not exist initially)
 │   ├── 00_project/            # overview.md, decisions.md, glossary.md
 │   ├── 01_requirements/       # constraints.md, user_stories/
 │   ├── 02_design/             # architecture.md, data_model.md, api_spec.md
 │   ├── 03_implementation/     # invariants.md, patterns.md, dependencies.md
 │   ├── 04_quality/            # test_strategy.md, review_checklist.md
 │   ├── 05_operations/         # environments.md, monitoring.md
-│   └── 06_ai_context/         # CONTEXT.md（ナビゲーションマップ）
-└── exec-plans/                # ← create-exec-plan が生成（初期は存在しない）
-    ├── active/                # 進行中の実行計画
-    └── completed/             # 完了した実行計画
+│   └── 06_ai_context/         # CONTEXT.md (navigation map)
+└── exec-plans/                # ← generated by create-exec-plan (does not exist initially)
+    ├── active/                # In-progress execution plans
+    └── completed/             # Completed execution plans
 ```
 
 ---
 
-## ハーネス（自動化）
+## Harness (Automation)
 
-`.claude/settings.json` に PostToolUse フックが設定されています。
+PostToolUse hooks are configured in `.claude/settings.json`.
 
-| トリガー | リマインド内容 |
-|---------|--------------|
-| `exec-plans/completed/` を編集 | `update-context` の実行を促す |
-| `exec-plans/active/` を編集 | CONTEXT.md の更新確認を促す |
-| テストファイルを編集（`*.Test.cs` / `*.test.ts` / `*.spec.ts` 等） | 変更が仕様（AC-ID）に基づいているか確認を促す |
-| コードファイルを編集 | `check-doc-freshness` の実行と、テスト失敗時の `run-tests` による仕様照合を促す |
+| Trigger | Reminder |
+|---------|---------|
+| Editing `exec-plans/completed/` | Prompts to run `update-context` |
+| Editing `exec-plans/active/` | Prompts to verify CONTEXT.md is updated |
+| Editing test files (`*.Test.cs` / `*.test.ts` / `*.spec.ts`, etc.) | Prompts to confirm the change is grounded in a spec (AC-ID) |
+| Editing code files | Prompts to run `check-doc-freshness`, and to use `run-tests` spec alignment on test failures |
 
-コードファイルの検出は言語非依存（`.md` `.json` `.yaml` 等のドキュメント・設定ファイル以外をコードとして扱います）。
+Code file detection is language-agnostic (anything other than `.md`, `.json`, `.yaml`, and other document/config files is treated as code).
 
 ---
 
-## テスト保証（仕様照合ゲート）
+## Test Assurance (Spec Alignment Gate)
 
-DocDD では、テストを「仕様の実行可能な表現」として位置づけます。
+In DocDD, tests are positioned as "executable expressions of the spec."
 
-### 仕様照合ゲート
+### Spec alignment gate
 
-テストが失敗したとき、すぐにテストを修正してはいけません。
-`run-tests` スキルが以下の判断ゲートを提示します：
+When a test fails, do not immediately fix the test.
+The `run-tests` skill presents the following decision gate:
 
 ```
-A) テストは仕様を正しく表現している
-   → 実装にバグがある。実装を修正する。
+A) The test correctly expresses the spec
+   → There is a bug in the implementation. Fix the implementation.
 
-B) 仕様が変更され、テストが古くなっている
-   → 仕様（AC-ID）に基づいてテストを修正する。
-   ⚠️ 実装の挙動に合わせてテストを修正することは禁止（INV-T01）
+B) The spec has changed and the test is outdated
+   → Fix the test based on the spec (AC-ID).
+   ⚠️ Fixing tests to match implementation behavior is prohibited (INV-T01)
 ```
 
-### AC-ID によるトレーサビリティ
+### Traceability via AC-IDs
 
-受け入れ条件（exec-plan の `AC-001`, `AC-002`, ...）をテストコードに記載し、
-仕様とテストの対応を追跡します。
+Include the acceptance criteria IDs (AC-001, AC-002, ... from the exec-plan) in test code
+to track the correspondence between specs and tests.
 
 ```csharp
 // C# / xUnit
@@ -162,27 +164,27 @@ public void Login_WithInvalidPassword_Returns401() { ... }
 
 ```typescript
 // TypeScript / Vitest
-describe('AC-001: 無効なパスワードでのログイン', () => {
-  it('401 を返す', () => { ... });
+describe('AC-001: Login with invalid password', () => {
+  it('returns 401', () => { ... });
 });
 ```
 
-`run-tests` スキルは、全 AC-ID にテストが対応しているかカバレッジを確認します。
+The `run-tests` skill verifies that all AC-IDs have corresponding tests.
 
-### フロー内での実行タイミング
+### When to run within the workflow
 
-| タイミング | 目的 |
-|-----------|------|
-| `start-feature` 開始時 | ベースライン確認（グリーン状態で実装を始める） |
-| 実装中（随時） | `/run-tests` で随時確認 |
-| `pre-pr` | PR前の最終確認（失敗・未カバー AC があれば保留） |
-| `complete-exec-plan` | 全 AC-ID テスト通過を完了の必須条件とする |
+| Timing | Purpose |
+|--------|---------|
+| `start-feature` start | Baseline check (start implementation from a green state) |
+| During implementation (anytime) | Verify anytime with `/run-tests` |
+| `pre-pr` | Final check before PR (put on hold if there are failures or uncovered ACs) |
+| `complete-exec-plan` | All AC-ID tests passing is a required condition for completion |
 
 ---
 
-## ドキュメントとコードの同期
+## Document–Code Synchronization
 
-各ドキュメントのフロントマターに `tracks:` フィールドを設定することで、対応するコードファイルを定義します。
+Set a `tracks:` field in each document's frontmatter to define the corresponding code files.
 
 ```yaml
 ---
@@ -193,16 +195,16 @@ tracks:
 ---
 ```
 
-`check-doc-freshness` スキルがこのフィールドを読み取り、コード変更時に対応ドキュメントの更新漏れを検出します。
+The `check-doc-freshness` skill reads this field and detects missed documentation updates when code changes.
 
 ---
 
-## 詳細仕様
+## Detailed Specification
 
-各スキルの `SKILL.md` を参照してください。ドキュメント構成・必須/任意の判断基準・statusライフサイクル・exec-planテンプレートは `init-project/SKILL.md` に集約されています。
+Refer to each skill's `SKILL.md`. Document structure, required/optional criteria, status lifecycle, and the exec-plan template are all consolidated in `init-project/SKILL.md`.
 
 ---
 
-## ライセンス
+## License
 
 [MIT](LICENSE)
