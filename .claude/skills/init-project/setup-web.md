@@ -162,6 +162,7 @@ Controller → Service → Repository → Model（Entity）
 | INV-BE-004 | 入力バリデーションは Controller 入口（FluentValidation または DataAnnotations）で行う |
 | INV-BE-005 | `async void` は禁止。すべて `async Task` または `async Task<T>` |
 | INV-BE-006 | DB エンティティを Controller のレスポンスとして直接返さない（必ず DTO に変換） |
+| INV-T01 | テストを実装の挙動に合わせて修正してはならない。テスト修正は必ず仕様（AC-ID）を根拠とすること |
 
 ### コーディング規約の要点
 
@@ -216,8 +217,9 @@ public async Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct = defau
 | `docs/03_implementation/directory_structure.md` | FE・BE ディレクトリ構成 | 1 |
 | `docs/03_implementation/coding_standards.md` | TypeScript / C# コーディング規約 | 1 |
 | `docs/03_implementation/dependencies.md` | npm パッケージ・NuGet パッケージ一覧 | 1 |
-| `docs/03_implementation/invariants.md` | INV-FE-001〜004 + INV-BE-001〜006 | 1 |
+| `docs/03_implementation/invariants.md` | INV-FE-001〜004 + INV-BE-001〜006 + INV-T01 | 1 |
 | `docs/03_implementation/patterns.md` | Feature ベース構成・Repository パターン・DTO 変換 | 1 |
+| `docs/04_quality/test_strategy.md` | テスト方針・test_command_fe/be・AC-ID タグ付け規約 | 1 |
 | `CONTEXT.md` 追記 | FE / BE 技術スタック・命名規則の大原則を更新 | 0→1 |
 
 ---
@@ -235,8 +237,8 @@ public async Task<IEnumerable<TaskDto>> GetAllAsync(CancellationToken ct = defau
    └── FE: api/ → hooks/ → components/ → pages/ の順に作成
         ↓
 4. テストを追加
-   ├── BE: xUnit（Service・Controller カバレッジ 80% 以上）
-   └── FE: Vitest + RTL（フック・コンポーネントの主要ロジック）
+   ├── BE: xUnit（Service・Controller カバレッジ 80% 以上）[Trait("AC", "AC-XXX")] で AC-ID を記載
+   └── FE: Vitest + RTL（フック・コンポーネントの主要ロジック）describe('AC-XXX: ...') で AC-ID を記載
         ↓
 5. docs/04_quality/review_checklist.md でセルフレビュー
         ↓

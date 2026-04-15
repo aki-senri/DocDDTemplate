@@ -72,8 +72,9 @@ Claude Code で以下を実行します：
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1） |
 | `create-exec-plan` | 実行計画（exec-plan）の新規作成 |
 | `start-feature` | 実装開始前の確認・ブランチ名決定 |
-| `pre-pr` | PR前の総合チェック（invariants / doc-freshness / review_checklist / exec-plan更新） |
+| `pre-pr` | PR前の総合チェック（invariants / doc-freshness / review_checklist / run-tests / exec-plan更新） |
 | `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
+| `run-tests` | テスト実行・仕様照合（テスト失敗時は仕様照合ゲートで対処方針を決定） |
 | `check-invariants` | `invariants.md` の不変条件を実装コードに対して検証 |
 | `check-doc-freshness` | 変更されたコードに対応するドキュメントの鮮度チェック |
 | `update-context` | CONTEXT.md を現在の状態に更新 |
@@ -97,6 +98,7 @@ Claude Code で以下を実行します：
 │       ├── complete-exec-plan/
 │       ├── check-invariants/
 │       ├── check-doc-freshness/
+│       ├── run-tests/
 │       ├── update-context/
 │       └── gc/
 ├── docs/                      # ← init-project が生成（初期は存在しない）
@@ -122,9 +124,59 @@ Claude Code で以下を実行します：
 |---------|--------------|
 | `exec-plans/completed/` を編集 | `update-context` の実行を促す |
 | `exec-plans/active/` を編集 | CONTEXT.md の更新確認を促す |
-| コードファイルを編集 | `check-doc-freshness` の実行を促す |
+| テストファイルを編集（`*.Test.cs` / `*.test.ts` / `*.spec.ts` 等） | 変更が仕様（AC-ID）に基づいているか確認を促す |
+| コードファイルを編集 | `check-doc-freshness` の実行と、テスト失敗時の `run-tests` による仕様照合を促す |
 
 コードファイルの検出は言語非依存（`.md` `.json` `.yaml` 等のドキュメント・設定ファイル以外をコードとして扱います）。
+
+---
+
+## テスト保証（仕様照合ゲート）
+
+DocDD では、テストを「仕様の実行可能な表現」として位置づけます。
+
+### 仕様照合ゲート
+
+テストが失敗したとき、すぐにテストを修正してはいけません。
+`run-tests` スキルが以下の判断ゲートを提示します：
+
+```
+A) テストは仕様を正しく表現している
+   → 実装にバグがある。実装を修正する。
+
+B) 仕様が変更され、テストが古くなっている
+   → 仕様（AC-ID）に基づいてテストを修正する。
+   ⚠️ 実装の挙動に合わせてテストを修正することは禁止（INV-T01）
+```
+
+### AC-ID によるトレーサビリティ
+
+受け入れ条件（exec-plan の `AC-001`, `AC-002`, ...）をテストコードに記載し、
+仕様とテストの対応を追跡します。
+
+```csharp
+// C# / xUnit
+[Trait("AC", "AC-001")]
+public void Login_WithInvalidPassword_Returns401() { ... }
+```
+
+```typescript
+// TypeScript / Vitest
+describe('AC-001: 無効なパスワードでのログイン', () => {
+  it('401 を返す', () => { ... });
+});
+```
+
+`run-tests` スキルは、全 AC-ID にテストが対応しているかカバレッジを確認します。
+
+### フロー内での実行タイミング
+
+| タイミング | 目的 |
+|-----------|------|
+| `start-feature` 開始時 | ベースライン確認（グリーン状態で実装を始める） |
+| 実装中（随時） | `/run-tests` で随時確認 |
+| `pre-pr` | PR前の最終確認（失敗・未カバー AC があれば保留） |
+| `complete-exec-plan` | 全 AC-ID テスト通過を完了の必須条件とする |
 
 ---
 

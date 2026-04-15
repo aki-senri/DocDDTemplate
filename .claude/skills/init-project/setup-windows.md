@@ -80,6 +80,7 @@ View → ViewModel → Service → Repository → Model
 | INV-006 | `private` フィールドは `_camelCase`、非同期メソッドは `Async` サフィックス | ビルド警告 |
 | INV-007 | 外部ネットワーク通信禁止 | 警告 |
 | INV-008 | 入力バリデーションは Service 層の入口で行う | レビュー指摘 |
+| INV-T01 | テストを実装の挙動に合わせて修正してはならない。テスト修正は必ず仕様（AC-ID）を根拠とすること | レビュー指摘 |
 
 ### コーディング規約の要点
 
@@ -118,8 +119,9 @@ private readonly ITaskService _taskService;
 | `docs/03_implementation/directory_structure.md` | ディレクトリ構成（Q1のアプリ名を反映） | 1 |
 | `docs/03_implementation/coding_standards.md` | C# / WPF コーディング規約 | 1 |
 | `docs/03_implementation/dependencies.md` | NuGetパッケージ一覧・バージョン管理方針 | 1 |
-| `docs/03_implementation/invariants.md` | INV-001〜008（Roslyn 強制ルール） | 1 |
+| `docs/03_implementation/invariants.md` | INV-001〜008 + INV-T01（Roslyn 強制ルール） | 1 |
 | `docs/03_implementation/patterns.md` | MVVM・Repository・DI の実装パターン | 1 |
+| `docs/04_quality/test_strategy.md` | テスト方針・test_command・AC-ID タグ付け規約 | 1 |
 | `CONTEXT.md` 追記 | 技術スタック・命名規則の大原則を更新 | 0→1 |
 
 ---
@@ -137,6 +139,7 @@ private readonly ITaskService _taskService;
    └── View → ViewModel → Service → Repository の順に作成
         ↓
 5. xUnit テストを追加（ViewModel・Service カバレッジ 80% 以上）
+   └── テストには AC-ID を [Trait("AC", "AC-XXX")] で記載する
         ↓
 6. docs/04_quality/review_checklist.md でセルフレビュー
         ↓

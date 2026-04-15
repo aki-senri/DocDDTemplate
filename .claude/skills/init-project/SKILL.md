@@ -206,6 +206,46 @@ tracks:          # （任意）対応するコードのglobパターン
 ---
 ```
 
+`docs/04_quality/test_strategy.md` には追加で以下のフィールドを設定する。
+
+```yaml
+---
+status: active
+test_command: dotnet test              # テスト実行コマンド（プラットフォームに応じて設定）
+test_command_fe: npm test              # FE/BE 分離の場合（任意）
+test_command_be: dotnet test           # FE/BE 分離の場合（任意）
+coverage_threshold: 80                 # カバレッジ下限（任意）
+---
+```
+
+### テスト保証規約
+
+プロジェクト初期化時に以下の規約を `docs/04_quality/test_strategy.md` および `docs/03_implementation/invariants.md` に記録する。
+
+**INV-T01（全プラットフォーム共通）:**
+
+| # | 条件 | 違反時 |
+|---|------|--------|
+| INV-T01 | テストを実装の挙動に合わせて修正してはならない。テスト修正は必ず仕様（AC-ID）を根拠とすること | レビュー指摘 |
+
+**AC-ID タグ付け規約:**
+
+受け入れ条件（exec-plan の `## 受け入れ条件`）は `AC-001`, `AC-002`, ... と採番する。
+テストコードにはその AC-ID を記載し、`run-tests` スキルがカバレッジを追跡できるようにする。
+
+```csharp
+// C# / xUnit
+[Trait("AC", "AC-001")]
+public void Login_WithInvalidPassword_Returns401() { ... }
+```
+
+```typescript
+// TypeScript / Vitest
+describe('AC-001: 無効なパスワードでのログイン', () => {
+  it('401 を返す', () => { ... });
+});
+```
+
 **`status:` 遷移ルール:**
 
 | 遷移 | トリガー |
