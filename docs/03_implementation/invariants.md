@@ -50,18 +50,22 @@ Assert.Equal(names.Distinct().Count(), store.Tags.Count);
 
 ## INV-003: ファイル一覧のスコープ
 
-**ファイルは開いたフォルダの直下のみ**
+**ファイルは開いたフォルダの配下のみ、.filetags は除外**
 
 > `MainViewModel.Files` が保持するファイルエントリは、  
-> 現在開いているフォルダの直下のファイルのみでなければならない。  
-> サブフォルダ、`.filetags` ファイル自身は含まない。
+> 現在開いているフォルダとその下位階層のファイルのみでなければならない。  
+> `.filetags` ファイル自身は含まない。
 
 検証方法:
 ```csharp
 foreach (var entry in mainVm.Files)
 {
-    Assert.Equal(currentFolderPath, Path.GetDirectoryName(entry.FullPath));
-    Assert.NotEqual(".filetags", entry.Name);
+    // 開いたフォルダの配下であること
+    Assert.True(entry.FullPath.StartsWith(currentFolderPath,
+        StringComparison.OrdinalIgnoreCase));
+    // .filetags は含まない
+    Assert.NotEqual(".filetags", entry.Name,
+        StringComparer.OrdinalIgnoreCase);
 }
 ```
 
@@ -89,17 +93,15 @@ await File.WriteAllTextAsync(targetPath, json); // ← NG
 
 ## INV-005: 移動操作のスコープ制約
 
-**移動先は現在のフォルダ内のサブフォルダのみ**
+**移動先は開いたフォルダ配下のフォルダのみ（ルート自身を含む）**
 
-> ファイル移動の移動先パスは、現在開いているフォルダのサブフォルダでなければならない。  
-> フォルダ外への移動は禁止。
+> ファイル移動の移動先パスは、現在開いているフォルダまたはその下位フォルダでなければならない。  
+> 開いたフォルダの外への移動は禁止。
 
 検証方法:
 ```csharp
-Assert.StartsWith(currentFolderPath, destinationPath,
-    StringComparison.OrdinalIgnoreCase);
-Assert.NotEqual(currentFolderPath, destinationPath,
-    StringComparer.OrdinalIgnoreCase);
+Assert.True(destinationPath.StartsWith(currentFolderPath,
+    StringComparison.OrdinalIgnoreCase));
 ```
 
 ---
@@ -121,13 +123,36 @@ Assert.Throws<UnsupportedVersionException>(
 
 ---
 
+## INV-007: 移動後のタグデータ引き継ぎ
+
+**ファイル移動時は .filetags のキーを更新してタグを引き継ぐ**
+
+> ファイルを移動した場合、`.filetags` 内のキー（相対パス）を  
+> 旧パスから新パスに更新し、タグ情報は失ってはならない。  
+> 移動後に旧キーのエントリが残ってはならない。
+
+検証方法:
+```csharp
+var oldKey = "drafts/report.pdf";
+var newKey = "archived/report.pdf";
+var originalTagIds = store.Files[oldKey].ToList();
+// 移動後
+store = service.UpdateFileKey(store, oldKey, newKey);
+Assert.False(store.Files.ContainsKey(oldKey));
+Assert.True(store.Files.ContainsKey(newKey));
+Assert.Equal(originalTagIds, store.Files[newKey]);
+```
+
+---
+
 ## テスト対応表
 
-| 不変条件 | テストクラス                             | AC-ID  |
-|---------|------------------------------------------|--------|
-| INV-001 | `TagStoreServiceTests.RemoveTag_*`       | AC-005 |
-| INV-002 | `TagStoreServiceTests.CreateTag_*`       | AC-006 |
-| INV-003 | `FileSystemServiceTests.GetFiles_*`      | AC-002 |
-| INV-004 | `JsonTagRepositoryTests.Write_*`         | AC-004 |
-| INV-005 | `FileSystemServiceTests.MoveFiles_*`     | AC-010 |
-| INV-006 | `JsonTagRepositoryTests.Read_*`          | —      |
+| 不変条件 | テストクラス                                 | AC-ID  |
+|---------|----------------------------------------------|--------|
+| INV-001 | `TagStoreServiceTests.RemoveTag_*`           | AC-005 |
+| INV-002 | `TagStoreServiceTests.CreateTag_*`           | AC-006 |
+| INV-003 | `FileSystemServiceTests.GetFilesAsync_*`     | AC-002 |
+| INV-004 | `JsonTagRepositoryTests.Write_*`             | AC-004 |
+| INV-005 | `FileSystemServiceTests.MoveFiles_*`         | AC-010 |
+| INV-006 | `JsonTagRepositoryTests.Read_*`              | —      |
+| INV-007 | `TagStoreServiceTests.UpdateFileKey_*`       | AC-009 |
