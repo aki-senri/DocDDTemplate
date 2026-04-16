@@ -1,0 +1,283 @@
+<Window x:Class="FileTagExplorer.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FileTagExplorer.ViewModels"
+        xmlns:conv="clr-namespace:FileTagExplorer.Converters"
+        Title="FileTagExplorer" Height="700" Width="1100"
+        MinHeight="500" MinWidth="700">
+
+    <Window.Resources>
+        <conv:FileSizeConverter x:Key="FileSizeConverter"/>
+        <conv:ColorStringToBrushConverter x:Key="ColorBrushConverter"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ── ツールバー ── -->
+        <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
+            <ToolBar>
+                <Button Command="{Binding OpenFolderCommand}" ToolTip="フォルダを選択して開く">
+                    📁 フォルダを開く
+                </Button>
+                <Separator/>
+                <TextBlock VerticalAlignment="Center" Foreground="Gray"
+                           Text="{Binding CurrentFolderPath, FallbackValue='（フォルダ未選択）'}"
+                           MaxWidth="600" TextTrimming="CharacterEllipsis"/>
+            </ToolBar>
+        </ToolBarTray>
+
+        <!-- ── ステータスバー ── -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock>
+                    <TextBlock.Text>
+                        <Binding Path="SelectedCount" StringFormat="{}{0} 件選択中"/>
+                    </TextBlock.Text>
+                </TextBlock>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <ProgressBar Width="120" Height="12" IsIndeterminate="True"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- ── メインエリア ── -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" MinWidth="150" MaxWidth="350"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ─ 左ペイン: タグフィルター ─ -->
+            <DockPanel Grid.Column="0" Background="#F8F8F8">
+                <Border DockPanel.Dock="Top" Background="#E0E0E0" Padding="8,6">
+                    <TextBlock FontWeight="Bold" Text="タグ"/>
+                </Border>
+
+                <StackPanel DockPanel.Dock="Bottom" Margin="4">
+                    <Button Command="{Binding AddTagCommand}" Width="Auto">
+                        ＋ 新しいタグ
+                    </Button>
+                    <Button Command="{Binding ClearFilterCommand}" Width="Auto" Margin="2,4,2,2">
+                        フィルター解除
+                    </Button>
+                </StackPanel>
+
+                <!-- タグ一覧 -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Tags}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:TagViewModel}">
+                                <Border Margin="4,2" CornerRadius="4"
+                                        BorderThickness="1" BorderBrush="#DDD"
+                                        Background="{Binding IsFilterActive,
+                                            Converter={StaticResource BoolToVisibility},
+                                            FallbackValue=Transparent}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- カラーバー -->
+                                        <Rectangle Grid.Column="0" CornerRadius="3,0,0,3"
+                                                   Fill="{Binding Color, Converter={StaticResource ColorBrushConverter}}"/>
+
+                                        <!-- タグ名（クリックでフィルター切替） -->
+                                        <Button Grid.Column="1" HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="6,4"
+                                                Command="{Binding DataContext.ToggleFilterCommand,
+                                                    RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}">
+                                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap"/>
+                                        </Button>
+
+                                        <!-- 削除ボタン -->
+                                        <Button Grid.Column="2" Content="✕" Padding="4,2"
+                                                Background="Transparent" BorderThickness="0"
+                                                Foreground="Gray"
+                                                ToolTip="タグを削除"
+                                                Command="{Binding DataContext.DeleteTagCommand,
+                                                    RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ─ スプリッター ─ -->
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                          Background="#DDD"/>
+
+            <!-- ─ 右ペイン: ファイル一覧 + 操作バー ─ -->
+            <DockPanel Grid.Column="2">
+
+                <!-- 操作バー（下部） -->
+                <Border DockPanel.Dock="Bottom" Background="#F0F0F0"
+                        BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="6,4">
+                    <WrapPanel>
+                        <CheckBox VerticalAlignment="Center" Margin="4,0,8,0"
+                                  Content="全選択"
+                                  Command="{Binding SelectAllVisibleCommand}"
+                                  CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}"/>
+
+                        <Separator/>
+
+                        <!-- タグで一括選択 -->
+                        <TextBlock Text="タグで選択:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                        <ComboBox Width="120" VerticalAlignment="Center"
+                                  ItemsSource="{Binding Tags}"
+                                  DisplayMemberPath="Name"
+                                  x:Name="SelectByTagCombo"/>
+                        <Button VerticalAlignment="Center"
+                                Command="{Binding SelectByTagCommand}"
+                                CommandParameter="{Binding SelectedItem, ElementName=SelectByTagCombo}">
+                            選択
+                        </Button>
+
+                        <Separator/>
+
+                        <!-- 移動先 -->
+                        <TextBlock Text="移動先:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                        <TextBlock VerticalAlignment="Center" MinWidth="100"
+                                   Text="{Binding MoveDestinationLabel}"
+                                   FontStyle="Italic" Foreground="Gray"/>
+                        <Button Command="{Binding SelectMoveDestinationCommand}">
+                            📂 選択
+                        </Button>
+                        <Button Command="{Binding MoveSelectedFilesCommand}"
+                                Background="#4CAF50" Foreground="White">
+                            移動を実行
+                        </Button>
+                    </WrapPanel>
+                </Border>
+
+                <!-- ファイル一覧 DataGrid -->
+                <DataGrid ItemsSource="{Binding FilteredFiles}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          SelectionMode="Single"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.CanContentScroll="True"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          x:Name="FileGrid">
+
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="タグを付与" ItemsSource="{Binding DataContext.Tags,
+                                Source={x:Reference FileGrid}}">
+                                <MenuItem.ItemContainerStyle>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Header" Value="{Binding Name}"/>
+                                        <Setter Property="Command"
+                                                Value="{Binding DataContext.AssignTagCommand,
+                                                    Source={x:Reference FileGrid}}"/>
+                                        <Setter Property="CommandParameter">
+                                            <Setter.Value>
+                                                <MultiBinding Converter="{StaticResource FileSizeConverter}">
+                                                    <!-- ファイルとタグのペア: コードビハインドで処理 -->
+                                                </MultiBinding>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </MenuItem.ItemContainerStyle>
+                            </MenuItem>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+
+                    <DataGrid.Columns>
+                        <!-- チェックボックス -->
+                        <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="40" Header=""/>
+
+                        <!-- ファイル名 -->
+                        <DataGridTextColumn Header="ファイル名" Binding="{Binding Name}"
+                                            Width="200" IsReadOnly="True"/>
+
+                        <!-- 場所（相対パス） -->
+                        <DataGridTextColumn Header="場所" Binding="{Binding Location}"
+                                            Width="180" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#666"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- サイズ -->
+                        <DataGridTextColumn Header="サイズ"
+                                            Binding="{Binding Size, Converter={StaticResource FileSizeConverter}}"
+                                            Width="80" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- 更新日時 -->
+                        <DataGridTextColumn Header="更新日時"
+                                            Binding="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                            Width="140" IsReadOnly="True"/>
+
+                        <!-- タグ（チップ表示） -->
+                        <DataGridTemplateColumn Header="タグ" Width="*" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ItemsControl ItemsSource="{Binding AssignedTags}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:TagViewModel}">
+                                                <Border CornerRadius="10" Margin="2,1"
+                                                        Padding="6,2"
+                                                        Background="{Binding Color,
+                                                            Converter={StaticResource ColorBrushConverter}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Foreground="White"
+                                                                   FontSize="11"
+                                                                   VerticalAlignment="Center"/>
+                                                        <Button Content="✕"
+                                                                FontSize="9"
+                                                                Padding="2,0"
+                                                                Margin="4,0,0,0"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Foreground="White"
+                                                                VerticalAlignment="Center"
+                                                                Tag="{Binding DataContext,
+                                                                    RelativeSource={RelativeSource AncestorType=DataGridRow}}"
+                                                                Click="TagChipRemove_Click"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

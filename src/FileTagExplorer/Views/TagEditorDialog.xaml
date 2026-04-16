@@ -1,0 +1,42 @@
+<Window x:Class="FileTagExplorer.Views.TagEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="タグを作成" Height="260" Width="320"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <StackPanel Margin="16">
+        <!-- タグ名 -->
+        <TextBlock Text="タグ名:" FontWeight="Bold" Margin="0,0,0,4"/>
+        <TextBox x:Name="TagNameBox" MaxLength="50" Margin="0,0,0,12"
+                 KeyDown="TagNameBox_KeyDown"/>
+
+        <!-- 色選択 -->
+        <TextBlock Text="色:" FontWeight="Bold" Margin="0,0,0,8"/>
+        <ItemsControl x:Name="ColorPanel">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <!-- プレビュー -->
+        <Border x:Name="PreviewBorder" CornerRadius="12" Padding="10,4"
+                Margin="0,12,0,0" HorizontalAlignment="Left">
+            <TextBlock x:Name="PreviewText" Foreground="White" FontSize="13"
+                       Text="プレビュー"/>
+        </Border>
+
+        <!-- ボタン -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button IsDefault="True" Click="OkButton_Click"
+                    Background="#2196F3" Foreground="White" Width="80">
+                作成
+            </Button>
+            <Button IsCancel="True" Width="80">
+                キャンセル
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</Window>
