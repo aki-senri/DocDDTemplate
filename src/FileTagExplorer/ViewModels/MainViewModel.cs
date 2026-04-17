@@ -1,3 +1,4 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileTagExplorer.Models;
@@ -14,7 +15,6 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IDialogService _dialogService;
 
     private TagStore _tagStore = new();
-    private string _rootFolderPath = "";
     private CancellationTokenSource? _loadCts;
 
     // --- 表示用コレクション ---
@@ -35,6 +35,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = "フォルダを開いてください";
+
+    [ObservableProperty]
+    private FileEntryViewModel? _selectedFile;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MoveDestinationLabel))]
@@ -199,9 +202,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ─── ファイルへのタグ付与/削除 ────────────────────────────────
     [RelayCommand]
-    private void AssignTag((FileEntryViewModel File, TagViewModel Tag) args)
+    private void AssignTag(TagViewModel tagVm)
     {
-        var (fileVm, tagVm) = args;
+        if (SelectedFile is not { } fileVm) return;
         if (fileVm.HasTag(tagVm.Id)) return;
 
         _tagService.AddTag(_tagStore, fileVm.RelativePath, tagVm.Id);
@@ -210,9 +213,9 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void UnassignTag((FileEntryViewModel File, TagViewModel Tag) args)
+    private void UnassignTag(TagViewModel tagVm)
     {
-        var (fileVm, tagVm) = args;
+        if (SelectedFile is not { } fileVm) return;
         _tagService.RemoveTag(_tagStore, fileVm.RelativePath, tagVm.Id);
         _tagService.Save(CurrentFolderPath, _tagStore);
         fileVm.AssignedTags.Remove(tagVm);

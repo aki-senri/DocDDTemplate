@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+
+# Claude Code
+.claude/settings.local.json
+.claude/worktrees/

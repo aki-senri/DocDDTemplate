@@ -86,8 +86,8 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- カラーバー -->
-                                        <Rectangle Grid.Column="0" CornerRadius="3,0,0,3"
-                                                   Fill="{Binding Color, Converter={StaticResource ColorBrushConverter}}"/>
+                                        <Border Grid.Column="0" CornerRadius="3,0,0,3"
+                                                Background="{Binding Color, Converter={StaticResource ColorBrushConverter}}"/>
 
                                         <!-- タグ名（クリックでフィルター切替） -->
                                         <Button Grid.Column="1" HorizontalAlignment="Stretch"
@@ -165,6 +165,7 @@
 
                 <!-- ファイル一覧 DataGrid -->
                 <DataGrid ItemsSource="{Binding FilteredFiles}"
+                          SelectedItem="{Binding SelectedFile}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
@@ -177,22 +178,16 @@
                           x:Name="FileGrid">
 
                     <DataGrid.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="タグを付与" ItemsSource="{Binding DataContext.Tags,
-                                Source={x:Reference FileGrid}}">
+                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext,
+                                         RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="タグを付与" ItemsSource="{Binding Tags}">
                                 <MenuItem.ItemContainerStyle>
                                     <Style TargetType="MenuItem">
                                         <Setter Property="Header" Value="{Binding Name}"/>
                                         <Setter Property="Command"
                                                 Value="{Binding DataContext.AssignTagCommand,
-                                                    Source={x:Reference FileGrid}}"/>
-                                        <Setter Property="CommandParameter">
-                                            <Setter.Value>
-                                                <MultiBinding Converter="{StaticResource FileSizeConverter}">
-                                                    <!-- ファイルとタグのペア: コードビハインドで処理 -->
-                                                </MultiBinding>
-                                            </Setter.Value>
-                                        </Setter>
+                                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <Setter Property="CommandParameter" Value="{Binding}"/>
                                     </Style>
                                 </MenuItem.ItemContainerStyle>
                             </MenuItem>
