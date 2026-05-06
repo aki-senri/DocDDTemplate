@@ -32,9 +32,11 @@ disable-model-invocation: true
 ## Pre-check: US number assignment
 
 Before the interview, check for existing files in `docs/01_requirements/user_stories/`:
-- Find the highest existing `US-NNN` number
+- Find files whose names match the pattern `US-\d{3}_*.md` (e.g., `US-001_open_folder.md`)
+- Ignore other files in that directory (e.g., `{platform}.md`, `common.md` created by `init-project`)
+- Find the highest existing `US-NNN` number among matched files
 - Assign the next number (e.g., if US-003 exists → assign US-004)
-- If no files exist, start from US-001
+- If no matching files exist, start from US-001
 
 Report to the user: `Next US number: US-XXX`
 
@@ -98,14 +100,15 @@ When generating the UI sketch section, follow the project diagram rules (CLAUDE.
 - If Mermaid cannot represent it (e.g., 2D panel layout, table grid), use **ASCII art and always follow it with a plain-text explanation** of what the diagram shows and how it behaves.
 
 Example of a valid AA + explanation block:
+
 ```
 ┌──────────┬──────────┐
 │ ファイル名 │ タグ     │
 └──────────┴──────────┘
+```
 
 上図はファイル一覧画面のレイアウト。左列にファイル名、右列に付与済みタグを表示する。
 行を選択するとタグ編集パネルが右側にスライドインする。
-```
 
 → Used for the `## UI スケッチ` section (omitted entirely if Q4 was skipped)
 

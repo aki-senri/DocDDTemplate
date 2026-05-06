@@ -92,11 +92,13 @@ flowchart TD
 
 ### 3-1. Structural Hook Issues (Most Critical)
 
+> **Note**: As of the current implementation, both `PostToolUse` and `UserPromptSubmit` hooks are configured in `.claude/settings.json` using Python (`python3`). G1 and G3 from the original analysis are resolved; the remaining hook concern is G2.
+
 | # | Issue | Impact | Severity |
 |---|-------|--------|----------|
-| G1 | **`PostToolUse` hook specifies `shell: "powershell"`, making it non-functional on Linux/Mac** | Post-code-change warnings are silenced entirely | 🔴 Critical |
+| G1 | ~~`PostToolUse` hook specifies `shell: "powershell"`, non-functional on Linux/Mac~~ **Resolved** — hooks now use `python3` commands | — | ✅ Resolved |
 | G2 | **Hook only displays a warning message and does not block** | Developer can ignore the warning and continue implementing | 🟡 Medium |
-| G3 | **`UserPromptSubmit` hook does not exist** | An "implement this" instruction never automatically triggers a spec check | 🟠 High |
+| G3 | ~~`UserPromptSubmit` hook does not exist~~ **Resolved** — `spec-gate.py` is already configured | — | ✅ Resolved |
 
 ### 3-2. Bypasses Before Implementation Starts
 
@@ -135,7 +137,8 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A[Implementation request] --> B["create-exec-plan (optional)"]
+  A[Implementation request] --> R["create-requirements (optional)"]
+  R --> B["create-exec-plan (optional)"]
   B --> C["start-feature (optional)"]
 
   C --> L[Implementation loop: optional checks]
@@ -159,13 +162,12 @@ All skills are manually invoked, and hooks do not block execution.
 
 | Improvement | Approach |
 |-------------|----------|
-| **Make hooks compatible with bash** | Change `shell: "powershell"` to `shell: "bash"` in `settings.json` and rewrite PowerShell syntax as shell script |
-| **Auto-react to implementation instructions** | Add a `UserPromptSubmit` hook that detects keywords like "implement / create / add / fix" and outputs a message confirming whether an exec-plan exists |
-| **Remind to run `pre-pr` before PR creation** | Add a `PostToolUse` hook that detects calls like `mcp__github__create_pull_request` and asks whether `pre-pr` has been executed |
+| **Extend `spec-gate.py` to also check for `create-requirements`** | Currently `spec-gate.py` (UserPromptSubmit) checks for an exec-plan but not a User Story. Add a check for `docs/01_requirements/user_stories/` so that implementing without a US also triggers a warning |
+| **Remind to run `pre-pr` before PR creation** | Add a `PostToolUse` hook that detects MCP calls like `mcp__github__create_pull_request` and warns if `pre-pr` has not been executed |
 
 ### Medium Priority
 
 | Improvement | Approach |
 |-------------|----------|
-| **Change hook warnings to blocking** | Return `exit 1` to block Write/Edit and force user confirmation (use `exit 2` for a softer block if full blocking is too aggressive) |
+| **Change hook warnings to blocking** | Return `exit 1` from `post-tool-notify.py` to block Write/Edit and force user confirmation (use `exit 2` for a softer block if full blocking is too aggressive) |
 | **`complete-exec-plan` reminder** | Prompt users to run `complete-exec-plan` via a post-merge hook or message |
