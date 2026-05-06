@@ -157,7 +157,7 @@ When generating any document that includes a diagram or figure:
 - **Use ASCII art** only when Mermaid cannot represent the layout (e.g., 2D UI panels, grid tables).
   - When using ASCII art, **always follow it immediately with a plain-text explanation** of what the diagram shows and how it behaves.
 
-This rule is enforced by CLAUDE.md and applies to all skills in this project.
+This rule is defined in CLAUDE.md and applies to all skills in this project (documented guideline; no automated hook enforcement).
 
 ---
 

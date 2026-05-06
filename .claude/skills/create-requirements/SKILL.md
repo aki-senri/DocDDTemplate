@@ -54,6 +54,12 @@ Ask questions **one at a time, in order**.
 
 → Used for the filename: `US-XXX_{Q1}.md`
 
+### Q1b. Feature title (human-readable)
+
+> "Give this feature a short human-readable title. (e.g., `ユーザーログイン`, `CSV エクスポート`)"
+
+→ Used as the document heading: `# US-XXX — {Q1b}`
+
 ---
 
 ### Q2. User Story (As a / I want / So that)
@@ -85,7 +91,9 @@ AC-002: <title>
 ```
 
 → Used for the `## 受け入れ条件` section
-→ These ACs are later reused verbatim in `/create-exec-plan`
+→ These ACs serve as **source material** for `/create-exec-plan`.
+  When creating an exec-plan, each AC heading is condensed into a single `- [ ] AC-XXX: <description>` line
+  (the exec-plan format expected by `spec-gate.py`); the detailed bullet points stay in the US file.
 
 ---
 
@@ -157,7 +165,7 @@ tracks:
   - src/**/<relevant path pattern>
 ---
 
-# US-XXX — {feature title from Q2}
+# US-XXX — {Q1b: human-readable feature title}
 
 ## ユーザーストーリー
 
