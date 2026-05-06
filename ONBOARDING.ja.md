@@ -12,7 +12,8 @@
 4. [ケース B: 既存プロジェクト（ドキュメントあり）](#4-ケース-b-既存プロジェクトドキュメントあり)
 5. [自動化の仕組み（フック）](#5-自動化の仕組みフック)
 6. [日常の開発フロー](#6-日常の開発フロー)
-7. [トラブルシューティング](#7-トラブルシューティング)
+7. [ドキュメント作成ルール](#7-ドキュメント作成ルール)
+8. [トラブルシューティング](#8-トラブルシューティング)
 
 ---
 
@@ -238,11 +239,12 @@ tracks:
 - `.claude/hooks/spec-gate.py` — 仕様ファーストゲート
 - `.claude/hooks/post-tool-notify.py` — コード変更後の通知
 - `.claude/settings.json` — フックの設定
-- `CLAUDE.md` — Claude への行動規範
+- `CLAUDE.md` — Claude への行動規範（図ルール・スキル一覧を含む）
 - `.claude/skills/create-exec-plan/` — 実行計画の作成
 - `.claude/skills/pre-pr/` — PR 前チェック
 
 **省略可能（あると便利）:**
+- `.claude/skills/create-requirements/` — User Story 定義（要件が曖昧な場合に有効）
 - `init-project/` — 新規プロジェクト向け（既存ドキュメントがあれば不要）
 - `check-doc-freshness/` — `tracks:` フィールドを整備するまで不要
 - `gc/` — 週次メンテナンス（初期は不要）
@@ -298,17 +300,27 @@ AC 番号が指定されている           → 実装を開始する
 ### 全体の流れ
 
 ```
-1. /create-exec-plan   → 実装計画・受け入れ基準（AC）を定義
-2. /start-feature      → ドキュメント確認・ブランチ作成
+0. /create-requirements → User Story・AC 条件を定義（任意・推奨）
+1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
+2. /start-feature       → ドキュメント確認・ブランチ作成
 3. （実装ループ）
    - コードを書く
    - /check-doc-freshness  ← ドキュメント乖離チェック
    - /check-invariants     ← 不変条件チェック
    - /run-tests            ← テスト実行・仕様照合ゲート
-4. /pre-pr             → PR 前の総合チェック
+4. /pre-pr              → PR 前の総合チェック
 5. PR 作成 → レビュー → マージ
-6. /complete-exec-plan → 計画を completed/ へ移動
+6. /complete-exec-plan  → 計画を completed/ へ移動
 ```
+
+### `/create-requirements` と `/create-exec-plan` の使い分け
+
+| スキル | 目的 | 生成物 |
+|-------|------|-------|
+| `/create-requirements` | **何を作るか**を定義する（User Story + AC 条件） | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
+| `/create-exec-plan` | **どう作るか**を計画する（タスク分解 + 進捗管理） | `exec-plans/active/YYYY-MM-{name}.md` |
+
+`/create-requirements` は任意ですが、チームで開発する場合や「何を作るか」が曖昧なときに先に実行しておくと、`/create-exec-plan` の AC 定義がより明確になります。`/create-requirements` が完了すると、「次のステップ: `/create-exec-plan` を実行してください。推奨 AC: AC-001, AC-002, ...」と案内されます。
 
 ### テスト失敗時の判断ゲート（重要）
 
@@ -342,7 +354,31 @@ describe('AC-001: 無効なパスワードでのログイン', () => {
 
 ---
 
-## 7. トラブルシューティング
+## 7. ドキュメント作成ルール
+
+CLAUDE.md に定義されている図・ダイアグラムの規則です。DocDD のすべてのスキルとドキュメントに適用されます。
+
+| 状況 | ルール |
+|------|--------|
+| フロー・シーケンス・クラス図など | **Mermaid を優先して使用する** |
+| Mermaid で表現できない図（UI スケッチ・2D レイアウト等） | AA（アスキーアート）を使用し、**直後に必ず図の説明文を添える** |
+
+**AA の記載例:**
+
+```
+┌──────────┬──────────┐
+│ ファイル名 │ タグ     │
+└──────────┴──────────┘
+```
+
+上図はファイル一覧画面のレイアウト。左列にファイル名、右列に付与済みタグを表示する。
+行を選択するとタグ編集パネルが右側にスライドインする。
+
+> **なぜこのルールが必要か**: AA のみだと図の意図が伝わらずドキュメントが形骸化します。説明文を必ず添えることで、コードを読まない人（AI を含む）でも意図を理解できます。
+
+---
+
+## 8. トラブルシューティング
 
 ### Q: 仕様ゲートが誤検知して、ドキュメント操作もブロックされる
 
@@ -410,7 +446,7 @@ mkdir -p exec-plans/active exec-plans/completed
 | `.claude/` と `CLAUDE.md` のコピー | リポジトリ管理者 | 導入時（1 回） |
 | `/init-project` の実行とドキュメント生成 | リポジトリ管理者 | 導入時（1 回） |
 | `python3` が使えることの確認 | 各開発者 | 初回セットアップ時 |
-| 日常の `/create-exec-plan` → `/pre-pr` フロー | 各開発者 | 機能実装のたびに |
+| 日常の `/create-requirements` → `/create-exec-plan` → `/pre-pr` フロー | 各開発者 | 機能実装のたびに |
 
 ---
 
@@ -422,4 +458,4 @@ mkdir -p exec-plans/active exec-plans/completed
 | 既存プロジェクト（ドキュメント少） | `.claude/` コピー → `CLAUDE.md` コピー → `CONTEXT.md` と `invariants.md` を手動作成 → スキルを使い始める |
 | 既存プロジェクト（独自構造が確立） | `.claude/` コピー → スキルのパスを独自構造に合わせて編集 → 最小限のスキルから始める |
 
-迷ったら **最小限セット**（`spec-gate.py` + `CLAUDE.md` + `create-exec-plan` + `pre-pr`）から始めて、必要に応じてスキルを追加していくのが安全です。
+迷ったら **最小限セット**（`spec-gate.py` + `CLAUDE.md` + `create-exec-plan` + `pre-pr`）から始めて、必要に応じてスキルを追加していくのが安全です。`create-requirements` は要件が曖昧になりがちなチーム開発で特に効果的です。
