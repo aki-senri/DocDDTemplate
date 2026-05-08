@@ -51,9 +51,14 @@ def _is_in_submodule(file_path: str) -> bool:
             return False
     else:
         rel = file_path
-    rel = rel.replace(os.sep, "/").lstrip("./")
+    rel = os.path.normpath(rel).replace(os.sep, "/")
+    # Path escapes the project root or is unrelated — not a submodule file.
+    if rel == ".." or rel.startswith("../") or os.path.isabs(rel):
+        return False
     for sub in submodules:
-        sub_norm = sub.replace(os.sep, "/").strip("/")
+        sub_norm = os.path.normpath(sub).replace(os.sep, "/").strip("/")
+        if not sub_norm or sub_norm == ".":
+            continue
         if rel == sub_norm or rel.startswith(sub_norm + "/"):
             return True
     return False
