@@ -87,7 +87,11 @@ def main() -> None:
         sys.exit(0)
 
     prompt = data.get("prompt", "")
-    cwd = data.get("cwd", os.getcwd())
+    cwd = (
+        os.environ.get("CLAUDE_PROJECT_DIR")
+        or data.get("cwd")
+        or os.getcwd()
+    )
 
     if not has_implementation_intent(prompt):
         sys.exit(0)

@@ -2,6 +2,7 @@
 """DocDD PostToolUse hook - notifies after Write/Edit on relevant files."""
 import sys
 import json
+import os
 import re
 
 try:
@@ -11,6 +12,57 @@ except Exception:
 
 file_path = data.get("tool_input", {}).get("file_path", "")
 if not file_path:
+    sys.exit(0)
+
+
+def _project_root() -> str:
+    return (
+        os.environ.get("CLAUDE_PROJECT_DIR")
+        or data.get("cwd")
+        or os.getcwd()
+    )
+
+
+def _submodule_paths(project_root: str) -> list[str]:
+    gitmodules = os.path.join(project_root, ".gitmodules")
+    if not os.path.isfile(gitmodules):
+        return []
+    paths: list[str] = []
+    try:
+        with open(gitmodules, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r"\s*path\s*=\s*(.+?)\s*$", line)
+                if m:
+                    paths.append(m.group(1).strip())
+    except Exception:
+        return []
+    return paths
+
+
+def _is_in_submodule(file_path: str) -> bool:
+    project_root = _project_root()
+    submodules = _submodule_paths(project_root)
+    if not submodules:
+        return False
+    if os.path.isabs(file_path):
+        try:
+            rel = os.path.relpath(file_path, project_root)
+        except ValueError:
+            return False
+    else:
+        rel = file_path
+    rel = rel.replace(os.sep, "/").lstrip("./")
+    for sub in submodules:
+        sub_norm = sub.replace(os.sep, "/").strip("/")
+        if rel == sub_norm or rel.startswith(sub_norm + "/"):
+            return True
+    return False
+
+
+# Skip notifications for files inside submodules.
+# Submodules are external code; the parent's exec-plans/docs do not apply,
+# and emitting DocDD guidance for them produces misleading messages.
+if _is_in_submodule(file_path):
     sys.exit(0)
 
 if re.search(r"exec-plans[/\\]completed", file_path):

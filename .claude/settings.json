@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/spec-gate.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/spec-gate.py\"",
             "timeout": 10,
             "statusMessage": "DocDD: 仕様ゲートを確認中..."
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/post-tool-notify.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-notify.py\"",
             "timeout": 10,
             "statusMessage": "DocDD: ドキュメント整合性を確認中..."
           }
