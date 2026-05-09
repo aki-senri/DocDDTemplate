@@ -29,8 +29,17 @@ completed:
 
 ### 2026-05-09
 - Plan created
+- AC-001〜AC-004 の初回実装完了・push
+
+### 2026-05-09（レビュー対応）
+- サブエージェントによる独立レビューを実施
+- レビュー指摘のうち以下3件を修正（定期スクリーニングで吸収不可な欠陥を優先）
+  1. spec-gate.py 第3パターン（`機能.{0,10}(追加|作成|実装)`）に否定先読みを追加
+  2. amend-spec Q5 を削除・Step 2 を常時実行に変更
+  3. Decision Log 書き先フォールバックを amend-spec SKILL.md と CLAUDE.md に追記
 
 ## Decision Log
 
 - 実装前の仕様変更はスキル不要（直接編集 + Decision Log 記録）と決定。コードがないため乖離リスクがゼロ。
 - 実装済みの仕様変更は `/amend-spec` スキルで対応。check-doc-freshness による乖離確認が必要なため。
+- レビュー指摘のうち constraints.md・US 削除・複数 AC 同時変更・hook による変更検知（D1/D2/D4/D5）は、定期スクリーニング（/gc）で吸収できると判断し対応しないことを決定。
