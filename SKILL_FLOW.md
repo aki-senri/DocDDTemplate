@@ -66,6 +66,17 @@ flowchart TD
 
     UC["/update-context\n· On phase transition\n· On priority task change\n· On tech stack change\n(also called automatically from complete-exec-plan)"]
     COMPLETE --> UC
+
+    subgraph SPEC_CHANGE["Spec Change (outside main loop)"]
+        SC_PRE["実装前の仕様変更\n· US / exec-plan を直接編集\n· Decision Log に変更理由を記録"]
+        SC_POST["/amend-spec\n· インタビューで変更内容・理由を確認\n· ドキュメントを編集\n· check-doc-freshness で乖離確認\n· Decision Log に記録\n· 影響ありなら create-exec-plan を提案"]
+    end
+
+    IMPL -.->|仕様変更が発生| SC_PRE
+    IMPL -.->|実装済み仕様の変更| SC_POST
+    SC_PRE -.->|編集後| IMPL
+    SC_POST -.->|乖離なし| IMPL
+    SC_POST -.->|コード修正必要| PLAN
 ```
 
 ---
@@ -85,10 +96,19 @@ flowchart TD
 | `gc` | `check-invariants` | Internal call (full scan) |
 | `gc` | `update-context` | Internal call |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
+| `amend-spec` | `check-doc-freshness` | Internal call (when code exists) |
+| `amend-spec` | `create-exec-plan` | Handoff (suggests when code impact found) |
 
 ---
 
 ## 3. Gap List
+
+### 3-0. Resolved Issues
+
+| # | Issue | Resolution |
+|---|-------|------------|
+| G4 | `spec-gate.py` が `実装前`・`実装済` などを誤検知していた | `実装` パターンに否定先読み `(?!前\|済\|方針\|仕様\|計画)` を追加して修正 |
+| G5 | 仕様変更フローが未定義だった | CLAUDE.md にフロー分岐を明記・`/amend-spec` スキルを追加 |
 
 ### 3-1. Structural Hook Issues (Most Critical)
 
