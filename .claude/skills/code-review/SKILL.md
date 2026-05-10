@@ -4,6 +4,9 @@ description: |
   Launches an independent agent (with no implementation context) to review changed code.
   The agent reviews the diff against acceptance criteria (if available) and general code quality,
   providing an objective perspective separate from the implementing agent.
+# disable-model-invocation is intentionally false: this skill's core function is to spawn
+# an independent subagent via the Agent tool, which requires model invocation.
+# All other skills set this to true because they only issue instructions to the current agent.
 disable-model-invocation: false
 ---
 
@@ -15,8 +18,27 @@ disable-model-invocation: false
 > decisions made during coding. This avoids confirmation bias from the implementing agent.
 >
 > **Prerequisites**:
+> - The working tree is clean (all changes are committed — run `git status` to verify)
 > - At least one commit exists on the current branch
 > - The branch has diverged from `main` (there are changes to review)
+
+---
+
+## Background: the `Agent` tool
+
+The `Agent` tool is a built-in Claude Code capability that spawns a **fresh subagent** in an
+isolated context. The subagent:
+
+- has **no memory** of the current session or implementation decisions
+- receives only what you explicitly pass in its prompt
+- cannot read the conversation history of the parent agent
+
+This is what makes the review "independent": the reviewer sees only the diff and the spec,
+not the rationale or constraints the implementing agent accumulated during coding.
+
+**How to invoke**: Claude Code exposes the `Agent` tool automatically when running skills.
+No extra configuration is required. When this skill instructs you to "use the `Agent` tool",
+construct the prompt described in Step 3 and pass it as the `prompt` parameter.
 
 ---
 
@@ -24,7 +46,7 @@ disable-model-invocation: false
 
 Spawns a **new, independent agent** via the `Agent` tool and passes it:
 
-1. The full diff of changes (`git diff main...HEAD`)
+1. The full diff of committed changes (`git diff main...HEAD`) plus any uncommitted changes
 2. The active exec-plan (AC definitions), if one exists
 3. A structured review prompt
 
@@ -39,17 +61,32 @@ The independent agent has no memory of the current session and reviews the code 
 Run the following commands to gather the review context.
 
 ```bash
-# Changed files list
+# Verify working tree is clean
+git status
+
+# Changed files list (committed)
 git diff --name-only main...HEAD
 
-# Full diff
+# Full diff (committed changes)
 git diff main...HEAD
 
-# Active exec-plan (if exists)
-ls exec-plans/active/
+# Staged but not yet committed (include if non-empty)
+git diff --cached
+
+# Unstaged changes (include if non-empty)
+git diff
+
+# Active exec-plan contents (if any exist)
+ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No active exec-plan"
 ```
 
-If `exec-plans/active/` is empty, proceed without AC context (review for general code quality only).
+**If the working tree is not clean** (uncommitted changes exist):
+- Remind the user to commit or stash all changes before running this skill, OR
+- Include `git diff --cached` and `git diff` output in the review context in addition to `git diff main...HEAD`
+
+**If `exec-plans/active/` is empty**, proceed without AC context (review for general code quality only).
+
+**If multiple exec-plans exist**, include all of them and let the reviewer determine which ACs apply to the diff.
 
 ### Step 2: Determine review scope
 
@@ -62,17 +99,23 @@ If `exec-plans/active/` is empty, proceed without AC context (review for general
 
 Use the `Agent` tool to spawn a **subagent with no session context**.
 
-Construct the prompt as follows:
+Construct the prompt as follows (substitute `{…}` placeholders with the actual collected content):
 
 ```
 You are a code reviewer with no prior context about this implementation.
 Review the following changes objectively.
 
 ## Changed files
-{output of git diff --name-only main...HEAD}
+{output of: git diff --name-only main...HEAD}
 
-## Full diff
-{output of git diff main...HEAD}
+## Full diff (committed)
+{output of: git diff main...HEAD}
+
+## Staged changes (uncommitted)
+{output of: git diff --cached, or "none"}
+
+## Unstaged changes
+{output of: git diff, or "none"}
 
 ## Acceptance criteria (from exec-plan)
 {contents of exec-plans/active/*.md, or "None — review for general quality only"}
@@ -168,8 +211,9 @@ Next step:
 
 ## Completion criteria
 
-- [ ] `git diff main...HEAD` was collected
-- [ ] Active exec-plan was loaded (or confirmed absent)
+- [ ] Working tree state was verified (`git status`)
+- [ ] `git diff main...HEAD` (and staged/unstaged diffs if applicable) were collected
+- [ ] Active exec-plan contents were loaded (or confirmed absent)
 - [ ] Independent agent was spawned via the `Agent` tool
 - [ ] Agent report was presented to the user
 - [ ] Next step was communicated based on the verdict
