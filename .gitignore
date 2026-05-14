@@ -1,0 +1,11 @@
+# Claude Code - ユーザー固有の設定（リポジトリに含めない）
+.claude/settings.local.json
+
+# Claude Code - 自動生成されるワークツリー
+.claude/worktrees/
+
+# Claude Code - ユーザー固有のメモリファイル
+.claude/memory/
+
+# exec-plan の仕様スキップ記録（一時ファイル）
+exec-plans/.spec-override
