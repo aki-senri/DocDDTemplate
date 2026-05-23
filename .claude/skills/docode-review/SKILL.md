@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: docode-review
 description: |
   Launches an independent agent (with no implementation context) to review changed code.
   The agent reviews the diff against acceptance criteria (if available) and general code quality,
@@ -189,7 +189,7 @@ After the independent agent returns its report, present it verbatim and guide ne
 |---------|--------------------|
 | ✅ Approved | Proceed to `/pre-pr` |
 | ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` |
-| ❌ Changes requested | Address critical/high findings, then re-run `/code-review` |
+| ❌ Changes requested | Address critical/high findings, then re-run `/docode-review` |
 
 ---
 
@@ -204,7 +204,7 @@ After the independent agent returns its report, present it verbatim and guide ne
 Next step:
   ✅ Approved       → Run /pre-pr
   ⚠️  With suggestions → Discuss findings above, then run /pre-pr
-  ❌ Changes needed  → Fix issues above, then re-run /code-review
+  ❌ Changes needed  → Fix issues above, then re-run /docode-review
 ```
 
 ---
