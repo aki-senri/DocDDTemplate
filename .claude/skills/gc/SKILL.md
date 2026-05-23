@@ -27,9 +27,10 @@ Runs the following steps in order.
 ```
 ① Document freshness scan (all documents)
 ② Architecture drift detection (all files)
-③ Document lifecycle cleanup
-④ CONTEXT.md update
-⑤ GC report generation
+③ Document invariant check (all documents)
+④ Document lifecycle cleanup
+⑤ CONTEXT.md update
+⑥ GC report generation
 ```
 
 ---
@@ -57,7 +58,19 @@ Run the `check-invariants` skill against all of `src/**`.
 - Fix any violations found
 - If there are many "warning"-level violations, consider revising the conditions in `invariants.md`
 
-### ③ Document lifecycle cleanup
+### ③ Document invariant check (check-doc-invariants full-scan mode)
+
+Run the `check-doc-invariants` skill against all documents in the repository.
+
+- Target: all `docs/**/*.md` and `exec-plans/**/*.md`
+- Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
+  DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
+  DOC-INV-005 (diagram rules)
+- Fix any violations found
+- For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
+  record the decision if leaving ASCII art intentionally
+
+### ④ Document lifecycle cleanup
 
 Review the status of each document according to the following `status:` transition rules.
 
@@ -76,14 +89,14 @@ Review the status of each document according to the following `status:` transiti
 | `deprecated` older than 30 days | Determined from `status: deprecated` date | Delete (or prompt for confirmation) |
 | All acceptance criteria in `exec-plans/active/` are complete | Review checklist | Suggest running `complete-exec-plan` |
 
-### ④ CONTEXT.md update
+### ⑤ CONTEXT.md update
 
 Run the `update-context` skill.
 
 - Verify and update the current phase for accuracy
 - Verify and update the priority tasks to reflect the latest `exec-plans/active/`
 
-### ⑤ GC report generation
+### ⑥ GC report generation
 
 ```markdown
 ## GC Report YYYY-MM-DD
@@ -100,12 +113,20 @@ Run the `update-context` skill.
 - Violations (fixed): {count}
 - Warnings: {count}
 
-### ③ Lifecycle cleanup
+### ③ Document invariants
+- Documents checked: {count}
+- DOC-INV-001 violations (reference direction): {count}
+- DOC-INV-002 violations (frontmatter): {count}
+- DOC-INV-003 violations (lifecycle): {count}
+- DOC-INV-004 violations (AC traceability): {count}
+- DOC-INV-005 warnings (diagram rules): {count}
+
+### ④ Lifecycle cleanup
 - draft → active: {count}
 - active → deprecated: {count}
 - Deleted: {count}
 
-### ④ CONTEXT.md
+### ⑤ CONTEXT.md
 - Changes: {description of changes}
 
 ### Overall assessment
@@ -120,6 +141,7 @@ Record the report in `exec-plans/completed/YYYY-MM-gc.md` (kept as a history of 
 
 - [ ] ① Document freshness scan complete
 - [ ] ② Architecture drift detection complete
-- [ ] ③ Document lifecycle cleanup complete
-- [ ] ④ CONTEXT.md updated
-- [ ] ⑤ GC report recorded in `exec-plans/completed/YYYY-MM-gc.md`
+- [ ] ③ Document invariant check complete
+- [ ] ④ Document lifecycle cleanup complete
+- [ ] ⑤ CONTEXT.md updated
+- [ ] ⑥ GC report recorded in `exec-plans/completed/YYYY-MM-gc.md`
