@@ -75,7 +75,7 @@
 | `/run-tests` | テスト実行と仕様照合 | 実装中・完了時 |
 | `/check-doc-freshness` | コードとドキュメントの乖離確認 | コード変更後 |
 | `/check-invariants` | INV 違反確認 | コード変更後 |
-| `/code-review` | 独立エージェントによるコードレビュー | 実装完了後・`/pre-pr` の前 |
+| `/docode-review` | 独立エージェントによるコードレビュー | 実装完了後・`/pre-pr` の前 |
 | `/pre-pr` | PR 前の総合チェック | PR 作成前（必須） |
 | `/complete-exec-plan` | exec-plan を完了状態に移動 | PR マージ後 |
 | `/gc` | 全体的なドリフト解消 | 週次 |
