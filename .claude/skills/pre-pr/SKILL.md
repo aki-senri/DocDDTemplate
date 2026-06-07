@@ -25,11 +25,12 @@ disable-model-invocation: true
 Runs the following steps in order. If all pass, PR creation is allowed.
 
 ```
-① check-invariants    → Verify invariants
-② check-doc-freshness → Verify documentation freshness
-③ review_checklist    → Code review checklist
-④ run-tests           → Run tests and verify against spec
-⑤ exec-plan update    → Record progress in log
+① check-invariants      → Verify code invariants
+② check-doc-freshness   → Verify documentation freshness
+③ check-doc-invariants  → Verify document structural invariants
+④ review_checklist      → Code review checklist
+⑤ run-tests             → Run tests and verify against spec
+⑥ exec-plan update      → Record progress in log
 ```
 
 ---
@@ -81,7 +82,19 @@ Verify that documents corresponding to changed code files are up to date.
 
 ---
 
-### ③ Review checklist
+### ③ Document invariant check (check-doc-invariants)
+
+Run the `check-doc-invariants` skill.
+
+1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
+2. Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
+   DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
+   DOC-INV-005 (diagram rules)
+3. If no violations: display "✅ doc-invariants: all passed"
+
+---
+
+### ④ Review checklist
 
 Load `docs/04_quality/review_checklist.md` and verify each item.
 
@@ -91,7 +104,7 @@ Load `docs/04_quality/review_checklist.md` and verify each item.
 
 ---
 
-### ④ Test execution & spec verification (run-tests)
+### ⑤ Test execution & spec verification (run-tests)
 
 Run the `run-tests` skill.
 
@@ -118,7 +131,7 @@ If test file changes are detected via `git diff --name-only main...HEAD`, verify
 
 ---
 
-### ⑤ exec-plan progress update
+### ⑥ exec-plan progress update
 
 Update the `exec-plans/active/*.md` corresponding to the implemented work.
 
@@ -133,11 +146,12 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ```
 === pre-pr check results ===
 
-① invariants      : ✅ all passed  / ❌ {count} violation(s)
-② doc-freshness   : ✅ all passed  / ⚠️ {count} update(s) needed
-③ review_checklist: ✅ all passed  / ❌ {count} item(s) not addressed
-④ run-tests       : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
-⑤ exec-plan       : ✅ Progress updated
+① invariants       : ✅ all passed  / ❌ {count} violation(s)
+② doc-freshness    : ✅ all passed  / ⚠️ {count} update(s) needed
+③ doc-invariants   : ✅ all passed  / ❌ {count} violation(s) / ⚠️ {count} warning(s)
+④ review_checklist : ✅ all passed  / ❌ {count} item(s) not addressed
+⑤ run-tests        : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
+⑥ exec-plan        : ✅ Progress updated
 
 ---
 {If there are issues, list specific fix instructions here}
@@ -150,7 +164,7 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 
 ## Completion criteria
 
-- [ ] All checks ① through ⑤ are complete
+- [ ] All checks ① through ⑥ are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation
 - [ ] If tests failed, they were resolved through the spec alignment gate
 - [ ] If test files were changed, the reason is recorded in the decision log

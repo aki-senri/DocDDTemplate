@@ -70,11 +70,13 @@
 | スキル | 目的 | タイミング |
 |--------|------|-----------|
 | `/create-requirements` | User Story・制約・AC を定義する | 実装前・create-exec-plan の前 |
+| `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements 後・create-exec-plan の前（任意） |
 | `/create-exec-plan` | AC（受け入れ基準）を定義する | 実装前（必須） |
 | `/start-feature` | 実装開始前の準備チェック | create-exec-plan 後 |
 | `/run-tests` | テスト実行と仕様照合 | 実装中・完了時 |
 | `/check-doc-freshness` | コードとドキュメントの乖離確認 | コード変更後 |
-| `/check-invariants` | INV 違反確認 | コード変更後 |
+| `/check-invariants` | コードの INV 違反確認 | コード変更後 |
+| `/check-doc-invariants` | ドキュメントの構造ルール違反確認 | ドキュメント変更後 |
 | `/docode-review` | 独立エージェントによるコードレビュー | 実装完了後・`/pre-pr` の前 |
 | `/pre-pr` | PR 前の総合チェック | PR 作成前（必須） |
 | `/complete-exec-plan` | exec-plan を完了状態に移動 | PR マージ後 |
