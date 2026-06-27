@@ -180,9 +180,10 @@ Do not proceed to Step 6 without an explicit "yes".
    # <current> = current target label from CONTEXT.md, else "baseline"
    git tag --list 'spec-target-*' | grep -q . || git tag spec-target-<current>
    ```
-   **Tags are immutable.** If `spec-target-<label>` (the incoming label) already exists — a
-   re-promotion or a reused label — **stop and ask the user for a disambiguated label**
-   (e.g. `<label>-r2`) rather than overwriting.
+   **Never overwrite an existing promotion tag.** Git *can* move a tag with `-f`, but the rule here
+   is that a `spec-target-*` tag is permanent. If `spec-target-<label>` (the incoming label) already
+   exists — a re-promotion or a reused label — **stop and ask the user for a disambiguated label**
+   (e.g. `<label>-r2`) rather than forcing it.
 2. **Merge with an explicit promotion commit** (with `--no-ff`, the merge's first parent stays the
    outgoing `main`):
    ```bash
@@ -201,6 +202,14 @@ Do not proceed to Step 6 without an explicit "yes".
    promotion no prior tag exists, so `<prev>` is empty — fall back to the merge commit's first
    parent `spec-target-<label>^1` (the pre-promotion `main`), or the baseline tag seeded in 6.1.
    In the common case `<prev>` and the seeded `<current>` (6.1) name the same outgoing target.
+5. **Publish to the shared remote.** Tags created in step 1/4 live only in the local clone until
+   pushed — a tag no one else has cannot restore the old version for the team, so "recoverable" only
+   holds once these are on the remote:
+   ```bash
+   git push origin main                         # the promotion merge
+   git push origin spec-target-<label>          # the new target snapshot tag
+   git push origin spec-target-<current>        # the seeded outgoing/baseline tag, if newly created in step 1
+   ```
 
 ### Step 7: Post-promotion bookkeeping
 
@@ -305,6 +314,7 @@ Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC
 New-AC plans suggested      : /create-exec-plan for AC-015, AC-016
 CONTEXT.md                  : current target updated to <label>
 Spec branch                 : retired (or kept)
+Next action                 : /start-feature on the reconcile plan; /create-exec-plan for NEW ACs
 ```
 
 ---
