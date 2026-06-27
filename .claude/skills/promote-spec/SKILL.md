@@ -183,8 +183,11 @@ Do not proceed to Step 6 without an explicit "yes".
    carries its *own* label, so the outgoing target normally **already has** its tag
    (`spec-target-<prev>`) from the promotion that made it the target — there is nothing new to tag
    here. The **only** exception is the very first promotion, where no `spec-target-*` tag exists yet;
-   only then, seed one for the current target *before* merging:
+   only then, seed one for the current target *before* merging. Fetch tags first — `git tag --list`
+   sees only local tags, so without a fetch a baseline could be seeded over a `spec-target-*` that
+   already exists on the remote (causing a later push rejection):
    ```bash
+   git fetch --tags origin                      # sync the local tag view with the shared remote first
    # first promotion only: <current> = current target label from CONTEXT.md, else "baseline"
    git tag --list 'spec-target-*' | grep -q . || git tag spec-target-<current>
    ```

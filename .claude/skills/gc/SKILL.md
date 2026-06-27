@@ -99,10 +99,15 @@ not definitive stale flags — the timestamp signal is heuristic (see caveats in
 1. For each `exec-plans/completed/*.md`, read its `completed:` date and the AC-IDs it delivered
    (`^- \[[ x]\] AC-NNN:` lines).
 2. For each delivered AC-ID, find its **defining US** by reverse lookup — the
-   `docs/01_requirements/user_stories/US-*.md` whose `ac_ids:` contains that AC-ID (guaranteed to
-   exist by DOC-INV-004). Anchor the staleness check on the **US** (which defines the AC); the AC's
-   code is reached via the US's — or its linked design doc's — `tracks:`. Do **not** assume a single
-   doc carries both `ac_ids:` and `tracks:`.
+   `docs/01_requirements/user_stories/US-*.md` whose `ac_ids:` contains that AC-ID. (DOC-INV-004
+   enforces this traceability for `active/` plans only — *not* `completed/` — so for a shipped AC the
+   US is usually present but not guaranteed.) Anchor the staleness check on the **US** (which defines
+   the AC); the AC's code is reached via the US's — or its linked design doc's — `tracks:`. Do **not**
+   assume a single doc carries both `ac_ids:` and `tracks:`.
+   - **If no defining US is found**, that absence is itself a drift signal — the AC was likely
+     removed or renamed by a later in-version correction (a REMOVED-AC case). Flag it as an
+     untracked-drift candidate and recommend reconcile/deprecation per CLAUDE.md
+     "現バージョン修正による stale の扱い", rather than assuming the lookup cannot fail.
 3. Decide whether **this AC's spec actually moved** after completion — not merely any edit to the file:
    ```bash
    git log --follow --format=%h -- <US path>   # commits touching the US, following renames

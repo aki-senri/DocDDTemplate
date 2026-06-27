@@ -69,7 +69,7 @@ flowchart TD
 
     subgraph SPEC_PROMO["Spec Version Promotion (sprint boundary)"]
         SPECBR["spec/* branch\n· Accumulate next-version spec (docs only)\n· In-version fixes commit to main directly"]
-        PROMO["/promote-spec\n· git diff main..spec/&lt;label&gt; (classify NEW/CHANGED/REMOVED ACs)\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target spec-target-&lt;label&gt; (prev target already tagged; seed baseline on 1st)\n· Create reconcile exec-plan for stale ACs"]
+        PROMO["/promote-spec\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs"]
         SPECBR --> PROMO
     end
 
