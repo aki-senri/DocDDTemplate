@@ -89,6 +89,42 @@ Review the status of each document according to the following `status:` transiti
 | `deprecated` older than 30 days | Determined from `status: deprecated` date | Delete (or prompt for confirmation) |
 | All acceptance criteria in `exec-plans/active/` are complete | Review checklist | Suggest running `complete-exec-plan` |
 
+**Spec-drift backstop (in-version stale):**
+
+Detects already-shipped ACs whose defining spec changed *after* completion but were never
+re-opened for reconciliation (the safety net for the procedure in CLAUDE.md
+"現バージョン修正による stale の扱い"). Results are **candidates requiring human confirmation**,
+not definitive stale flags — the timestamp signal is heuristic (see caveats in step 3).
+
+1. For each `exec-plans/completed/*.md`, read its `completed:` date and the AC-IDs it delivered
+   (`^- \[[ x]\] AC-NNN:` lines).
+2. For each delivered AC-ID, find its **defining US** by reverse lookup — the
+   `docs/01_requirements/user_stories/US-*.md` whose `ac_ids:` contains that AC-ID (guaranteed to
+   exist by DOC-INV-004). Anchor the staleness check on the **US** (which defines the AC); the AC's
+   code is reached via the US's — or its linked design doc's — `tracks:`. Do **not** assume a single
+   doc carries both `ac_ids:` and `tracks:`.
+3. Decide whether **this AC's spec actually moved** after completion — not merely any edit to the file:
+   ```bash
+   git log --follow --format=%h -- <US path>   # commits touching the US, following renames
+   git show <commit> -- <US path>              # confirm THIS AC's ### AC-NNN block changed
+   ```
+   This is a heuristic, so apply these caveats to avoid false flags:
+   - Use `--follow`, or a renamed/moved US loses its history and never flags (false negative).
+   - `completed:` is a `YYYY-MM-DD` date (no time): a same-day edit is ambiguous — treat as a candidate.
+   - A whole-file timestamp also moves on typo fixes or edits to a *different* AC in the same US, so
+     confirm the specific `### AC-NNN` block actually changed before flagging (false positive).
+4. Check whether the AC is already tracked or was intentionally deferred:
+   ```bash
+   grep -rlE "^- \[[ x]\] AC-NNN:" exec-plans/active/ 2>/dev/null   # already re-opened?
+   ```
+   - An **open reconcile/active plan** re-opens the AC-ID → tracked, no action.
+   - An **acknowledgement marker** for the AC (a Decision Log line `reconcile: deferred` or
+     `reconcile: n/a` in the relevant active plan) → a deliberate decision not to reconcile yet;
+     suppress, do not re-flag.
+   - Otherwise → flag as **untracked spec drift (candidate)**: recommend re-opening the AC in a
+     reconcile plan per the CLAUDE.md procedure. Do not auto-create — reconciliation scope is a
+     human/agent decision.
+
 ### ⑤ CONTEXT.md update
 
 Run the `update-context` skill.
@@ -125,6 +161,8 @@ Run the `update-context` skill.
 - draft → active: {count}
 - active → deprecated: {count}
 - Deleted: {count}
+- Untracked spec drift (in-version stale, candidates): {count}
+  - AC-007 (completed: 2026-05-login.md; defining US-003 changed 2026-06-10) — no open reconcile plan; confirm AC block changed
 
 ### ⑤ CONTEXT.md
 - Changes: {description of changes}
