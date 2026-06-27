@@ -9,3 +9,7 @@
 
 # exec-plan の仕様スキップ記録（一時ファイル）
 exec-plans/.spec-override
+
+# このリポジトリ自身の開発プラン（dogfooding 用・配布テンプレートには含めない）
+exec-plans/active/*.dev.md
+exec-plans/completed/*.dev.md
