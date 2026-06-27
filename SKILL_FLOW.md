@@ -67,6 +67,14 @@ flowchart TD
         GC --> GC_WAIT
     end
 
+    subgraph SPEC_PROMO["Spec Version Promotion (sprint boundary)"]
+        SPECBR["spec/* branch\n· Accumulate next-version spec (docs only)\n· In-version fixes commit to main directly"]
+        PROMO["/promote-spec\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs"]
+        SPECBR --> PROMO
+    end
+
+    PROMO -->|reconcile + new-AC plans| PLAN
+
     UC["/update-context\n· On phase transition\n· On priority task change\n· On tech stack change\n(also called automatically from complete-exec-plan)"]
     COMPLETE --> UC
 ```
@@ -90,6 +98,8 @@ flowchart TD
 | `gc` | `check-invariants` | Internal call (full scan) |
 | `gc` | `check-doc-invariants` | Internal call (full scan) |
 | `gc` | `update-context` | Internal call |
+| `promote-spec` | `create-exec-plan` | Handoff (suggests new-AC plans after promotion) |
+| `promote-spec` | `start-feature` | Handoff (reconcile exec-plan → begin reconciliation) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
 ---
@@ -159,6 +169,11 @@ flowchart TD
 
 **Mandatory gates (impossible to skip): currently zero.**
 All skills are manually invoked, and hooks do not block execution.
+
+> **Spec version promotion** (`/promote-spec`) is a separate, human-gated event that runs at sprint
+> boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the
+> outgoing version (`spec-target-*`), and feeds reconcile / new-AC plans back into the planning phase.
+> The merge is a deliberate human decision; the skill only assists analysis before and bookkeeping after.
 
 ---
 
