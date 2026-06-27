@@ -172,6 +172,13 @@ Do not proceed to Step 6 without an explicit "yes".
 
 ### Step 6: Execute promotion (only after explicit confirmation)
 
+> A `spec-target-*` tag marks a **promotion — a change to the shared development target** — and is
+> created here only. **Do NOT create one per developer, per feature, or per PR**: ordinary feature
+> work merges to `main` against the current target through the normal PR flow and is never tagged by
+> this skill. `<label>` is the shared version/promotion label, never a person's or a feature's name.
+> The authoritative record is the promotion merge commit (always on `main`); the tag is a naming
+> convenience, so old tags may be pruned later without losing recoverability.
+
 1. **Tag the outgoing target *before* merging** so the pre-promotion spec is always recoverable —
    including on the very first promotion (this is the recoverability guarantee in CLAUDE.md). Every
    target snapshot is tagged `spec-target-<label>` at the moment it becomes the target, so on the
