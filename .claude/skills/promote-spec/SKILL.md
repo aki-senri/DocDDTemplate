@@ -179,12 +179,13 @@ Do not proceed to Step 6 without an explicit "yes".
 > The authoritative record is the promotion merge commit (always on `main`); the tag is a naming
 > convenience, so old tags may be pruned later without losing recoverability.
 
-1. **Tag the outgoing target *before* merging** so the pre-promotion spec is always recoverable —
-   including on the very first promotion (this is the recoverability guarantee in CLAUDE.md). Every
-   target snapshot is tagged `spec-target-<label>` at the moment it becomes the target, so on the
-   first promotion seed a tag for the *current* target if none exists yet:
+1. **Ensure the outgoing target is tagged** so the pre-promotion spec stays recoverable. Each target
+   carries its *own* label, so the outgoing target normally **already has** its tag
+   (`spec-target-<prev>`) from the promotion that made it the target — there is nothing new to tag
+   here. The **only** exception is the very first promotion, where no `spec-target-*` tag exists yet;
+   only then, seed one for the current target *before* merging:
    ```bash
-   # <current> = current target label from CONTEXT.md, else "baseline"
+   # first promotion only: <current> = current target label from CONTEXT.md, else "baseline"
    git tag --list 'spec-target-*' | grep -q . || git tag spec-target-<current>
    ```
    **Never overwrite an existing promotion tag.** Git *can* move a tag with `-f`, but the rule here
