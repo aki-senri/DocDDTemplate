@@ -209,13 +209,13 @@ Do not proceed to Step 6 without an explicit "yes".
    promotion no prior tag exists, so `<prev>` is empty — fall back to the merge commit's first
    parent `spec-target-<label>^1` (the pre-promotion `main`), or the baseline tag seeded in 6.1.
    In the common case `<prev>` and the seeded `<current>` (6.1) name the same outgoing target.
-5. **Publish to the shared remote.** Tags created in step 1/4 live only in the local clone until
-   pushed — a tag no one else has cannot restore the old version for the team, so "recoverable" only
-   holds once these are on the remote:
+5. **Publish to the shared remote.** Tags created in 6.1 and 6.4 (the numbered items above in this
+   Step 6) live only in the local clone until pushed — a tag no one else has cannot restore the old
+   version for the team, so "recoverable" only holds once these are on the remote:
    ```bash
    git push origin main                         # the promotion merge
    git push origin spec-target-<label>          # the new target snapshot tag
-   git push origin spec-target-<current>        # the seeded outgoing/baseline tag, if newly created in step 1
+   git push origin spec-target-<current>        # the seeded outgoing/baseline tag, if newly created in 6.1
    ```
 
 ### Step 7: Post-promotion bookkeeping
