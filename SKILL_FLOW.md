@@ -84,9 +84,11 @@ flowchart TD
 
     PROMO -->|reconcile + new-AC plans| PLAN
 
-    UC["/update-context\n· On phase transition\n· On priority task change\n· On tech stack change\n(also called automatically from complete-exec-plan)"]
-    COMPLETE --> UC
+    UC["/update-context\n· On phase transition\n· On priority task change\n· On tech stack change\n(called automatically from gc)"]
+    GC --> UC
 ```
+
+> **Note**: `complete-exec-plan` updates `CONTEXT.md` **directly** in its own Step 4; it does not invoke the `update-context` skill. Only `gc` calls `update-context` internally.
 
 ---
 
@@ -105,7 +107,7 @@ flowchart TD
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
-| `complete-exec-plan` | `update-context` | Internal call |
+| `complete-exec-plan` | —— | Updates `CONTEXT.md` directly (does not call `update-context`) |
 | `gc` | `check-doc-freshness` | Internal call (full scan) |
 | `gc` | `check-invariants` | Internal call (full scan) |
 | `gc` | `check-doc-invariants` | Internal call (full scan) |

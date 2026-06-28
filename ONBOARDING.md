@@ -312,7 +312,7 @@ The table below lists the main skills used in the daily implementation flow. Bey
 | Used directly by the human (governance / decisions) | `create-requirements` / `create-exec-plan` / `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>Periodic: `promote-spec` / `gc` | The human invokes and decides |
 | Run internally by the AI (execution / verification) | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | The human does not call these directly (higher-level skills run them automatically) |
 
-> The human invokes the top row (**6 + 2 periodic**). `start-feature` is invoked once per feature, as preparation before starting the autonomous loop. The bottom-row verification skills are invoked internally by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan` / `gc` (`update-context` from `complete-exec-plan` / `gc`).
+> The human invokes the top row (**6 + 2 periodic**). `start-feature` is invoked once per feature, as preparation before starting the autonomous loop. The bottom-row verification skills are invoked internally by the top-row skills as needed (e.g. `run-tests` by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`; `check-*` by `run-exec-plan` / `pre-pr` / `gc`). `update-context` is invoked by `gc` (`complete-exec-plan` updates CONTEXT.md directly and does not call `update-context`).
 
 #### B. Human-perspective flow
 
