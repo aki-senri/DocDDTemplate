@@ -2,6 +2,8 @@
 
 ドキュメント駆動開発（DocDD）を既存または新規プロジェクトに導入するための手順書です。
 
+> For the English version, see [ONBOARDING.md](ONBOARDING.md).
+
 ---
 
 ## 目次
@@ -19,7 +21,7 @@
 
 ## 1. DocDD とは何か
 
-DocDD は「コードと常に同期した生きたドキュメント」を軸に置き、AI エージェント（Claude Code）が正しい文脈で開発フロー全体を自律的に進められるようにする開発手法です。
+DocDD は「コードと常に同期した生きたドキュメント」を軸に置き、AI エージェント（Claude Code）が正しい文脈で開発フロー全体を進められるようにする開発手法です（実装などの「実行」は AI が自走し、AC 凍結・仕様変更・PR マージなどの「決定」は人が担う）。
 
 ```
 ドキュメント  = 定義（何を作るか）
@@ -297,21 +299,65 @@ AC 番号が指定されている           → 実装を開始する
 
 ## 6. 日常の開発フロー
 
+### 6-0. 人が何をするか（責任分担）
+
+DocDD では **「決定」は人、「実行」は AI** に分ける。人の主な仕事は **ドキュメントの整備とレビュー**で、実装を進めるための指示は最小化される。
+
+#### A. 人が直接使うスキル / AI が内部で回すスキル
+
+下表は日常の実装フローで使う主要スキル。これ以外に `init-project`（導入時に一度）と `doc-review` / `docode-review`（任意の独立レビュー）があり、スキルは全部で 16 個。日常的に意識するのは下表だけでよい。
+
+| 層 | スキル | 人の関わり方 |
+|----|--------|------------|
+| 人が直接使う（統治・判断） | `create-requirements` / `create-exec-plan` / `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>周期: `promote-spec` / `gc` | 人が起動し、判断する |
+| AI が内部で回す（実行・検証） | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | 人は直接呼ばない（上位スキルが自動で回す） |
+
+> 人が起動するのは上段（**6 ＋ 周期 2**）。`start-feature` は機能ごとに一度、自走を始める前の準備として起動する。下段の検証スキルは、上段スキルがそれぞれ必要な範囲で内部呼び出しする（例: `run-tests` は `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`、`check-*` は `run-exec-plan` / `pre-pr` / `gc`）。`update-context` は `gc` から呼ばれる（`complete-exec-plan` は CONTEXT.md を直接更新し、`update-context` は呼ばない）。
+
+#### B. 人間視点のフロー
+
+```mermaid
+flowchart TD
+    A["① ドキュメント整備<br/>create-requirements / docs（何を作るか）"] --> B
+    B["② AC を凍結<br/>create-exec-plan（受け入れ基準を決める）"] --> C
+    C["③ 準備して自走起動<br/>start-feature → run-exec-plan"]
+    C --> D{AI が HALT?}
+    D -->|停止条件 a〜e| E["④ 人が判断<br/>仕様追記 / テスト期待値 / 不可逆操作 など"]
+    E --> C
+    D -->|全 AC 完了| F["⑤ レビュー & PR<br/>pre-pr → コードレビュー → PR 作成・マージ"]
+    F --> G["⑥ 後始末<br/>complete-exec-plan"]
+```
+
+上図のボックス ①②③④⑤⑥ はいずれも人が起動する操作（③ は機能ごとに一度 `start-feature` で準備してから `run-exec-plan` を起動する）。ただし ③ で起動した後の「実装→テスト→修正→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜e）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
+
+#### C. 責任分担表
+
+| フェーズ | 人の責任 | AI の責任 |
+|---------|---------|----------|
+| 要件・仕様 | User Story / AC を定義・凍結する | 対話で引き出し、ドラフトを書く |
+| 実装・検証 | （指示は AC 番号のみ） | 実装→テスト→修正→次 AC を自走、`run-tests` / `check-*` を内部実行 |
+| 仕様変更・テスト期待値 | 変更可否を判断する（外側ゲート） | 変更が必要だと検知したら停止・提示する |
+| レビュー・PR | コードをレビューし PR を承認・マージする | `pre-pr` で総合チェックを実行する |
+| 昇格・GC | `promote-spec` / `gc` の実行可否を判断する | 差分解析・後処理を支援する |
+
+> スキルの依存関係を含む全体の詳細フローは [`SKILL_FLOW.md`](SKILL_FLOW.md) を参照。
+
 ### 全体の流れ
 
 ```
 0. /create-requirements → User Story・AC 条件を定義（任意・推奨）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
 2. /start-feature       → ドキュメント確認・ブランチ作成
-3. （実装ループ）
-   - コードを書く
-   - /check-doc-freshness  ← ドキュメント乖離チェック
-   - /check-invariants     ← 不変条件チェック
-   - /run-tests            ← テスト実行・仕様照合ゲート
+3. /run-exec-plan       → AC を 1 つずつ自走実装（実装→テスト→修正→次 AC）
+                          内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
+                          停止条件（a〜e）に当たったときだけ人に確認
 4. /pre-pr              → PR 前の総合チェック
 5. PR 作成 → レビュー → マージ
 6. /complete-exec-plan  → 計画を completed/ へ移動
 ```
+
+> `/run-exec-plan` は opt-in。1 つずつ手動で進めたい場合は、Step 3 を「コードを書く →
+> `/check-doc-freshness` → `/check-invariants` → `/run-tests`」の手動ループに置き換えてもよい。
 
 ### `/create-requirements` と `/create-exec-plan` の使い分け
 
