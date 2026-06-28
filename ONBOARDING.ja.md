@@ -2,6 +2,8 @@
 
 ドキュメント駆動開発（DocDD）を既存または新規プロジェクトに導入するための手順書です。
 
+> For the English version, see [ONBOARDING.md](ONBOARDING.md).
+
 ---
 
 ## 目次
@@ -297,21 +299,63 @@ AC 番号が指定されている           → 実装を開始する
 
 ## 6. 日常の開発フロー
 
+### 6-0. 人が何をするか（責任分担）
+
+DocDD では **「決定」は人、「実行」は AI** に分ける。人の主な仕事は **ドキュメントの整備とレビュー**で、実装を進めるための指示は最小化される。スキルは 16 個あるが、人がすべてを覚える必要はない。
+
+#### A. 人が直接使うスキル / AI が内部で回すスキル
+
+| 層 | スキル | 人の関わり方 |
+|----|--------|------------|
+| 人が直接使う（統治・判断） | `create-requirements` / `create-exec-plan` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>周期: `promote-spec` / `gc` | 人が起動し、判断する |
+| AI が内部で回す（実行・検証） | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `start-feature` / `update-context` | 人は直接呼ばない（上位スキルが自動で回す） |
+
+> 人が意識するのは上段の **5 ＋ 周期 2** だけ。下段は `run-exec-plan` / `pre-pr` / `gc` などが内部で自動的に呼び出す。
+
+#### B. 人間視点のフロー
+
+```mermaid
+flowchart TD
+    A["① ドキュメント整備<br/>create-requirements / docs（何を作るか）"] --> B
+    B["② AC を凍結<br/>create-exec-plan（受け入れ基準を決める）"] --> C
+    C["③ 自走を起動<br/>run-exec-plan"]
+    C --> D{AI が HALT?}
+    D -->|停止条件 a〜e| E["④ 人が判断<br/>仕様追記 / テスト期待値 / 不可逆操作 など"]
+    E --> C
+    D -->|全 AC 完了| F["⑤ レビュー & PR<br/>pre-pr → コードレビュー → PR 作成・マージ"]
+    F --> G["⑥ 後始末<br/>complete-exec-plan"]
+```
+
+上図で人が手を動かすのは ①②④⑤⑥。③ と HALT までのループ（実装→テスト→修正→次 AC）は AI が自走する。人の実装指示は基本「AC 番号を渡す」だけで、あとは AI が停止条件（CLAUDE.md「自律実装ループ」の a〜e）で HALT したときだけ判断すればよい。
+
+#### C. 責任分担表
+
+| フェーズ | 人の責任 | AI の責任 |
+|---------|---------|----------|
+| 要件・仕様 | User Story / AC を定義・凍結する | 対話で引き出し、ドラフトを書く |
+| 実装・検証 | （指示は AC 番号のみ） | 実装→テスト→修正→次 AC を自走、`run-tests` / `check-*` を内部実行 |
+| 仕様変更・テスト期待値 | 変更可否を判断する（外側ゲート） | 変更が必要だと検知したら停止・提示する |
+| レビュー・PR | コードをレビューし PR を承認・マージする | `pre-pr` で総合チェックを実行する |
+| 昇格・GC | `promote-spec` / `gc` の実行可否を判断する | 差分解析・後処理を支援する |
+
+> スキルの依存関係を含む全体の詳細フローは [`SKILL_FLOW.md`](SKILL_FLOW.md) を参照。
+
 ### 全体の流れ
 
 ```
 0. /create-requirements → User Story・AC 条件を定義（任意・推奨）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
 2. /start-feature       → ドキュメント確認・ブランチ作成
-3. （実装ループ）
-   - コードを書く
-   - /check-doc-freshness  ← ドキュメント乖離チェック
-   - /check-invariants     ← 不変条件チェック
-   - /run-tests            ← テスト実行・仕様照合ゲート
+3. /run-exec-plan       → AC を 1 つずつ自走実装（実装→テスト→修正→次 AC）
+                          内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
+                          停止条件（a〜e）に当たったときだけ人に確認
 4. /pre-pr              → PR 前の総合チェック
 5. PR 作成 → レビュー → マージ
 6. /complete-exec-plan  → 計画を completed/ へ移動
 ```
+
+> `/run-exec-plan` は opt-in。1 つずつ手動で進めたい場合は、Step 3 を「コードを書く →
+> `/check-doc-freshness` → `/check-invariants` → `/run-tests`」の手動ループに置き換えてもよい。
 
 ### `/create-requirements` と `/create-exec-plan` の使い分け
 
