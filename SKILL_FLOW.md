@@ -41,7 +41,7 @@ flowchart TD
         CDF --> CODE
         CI --> CODE
         RT -->|green: next AC| DRIVER
-        RT --> CODE
+        RT -->|red: fix| CODE
     end
 
     IMPL --> PREPR
