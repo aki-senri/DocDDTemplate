@@ -26,19 +26,22 @@ flowchart TD
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
+        DRIVER["/run-exec-plan (opt-in)\nAutonomous driver: per AC\nimplement→verify→fix→next\nHalts only on stop conditions"]
         CODE["Code change\n(Write / Edit)"]
         HOOK["PostToolUse hook\n⚠ Warning message only\n(does not block)"]
         CDF["/check-doc-freshness\nUpdate docs corresponding to\nchanged files via tracks: field"]
         CI["/check-invariants\nVerify no INV-XXX violations"]
         RT["/run-tests\nRun tests + spec alignment gate\n(forbids adjusting tests to match impl)"]
 
+        DRIVER -->|drives inner loop| CODE
         CODE --> HOOK
-        HOOK -.->|invoke manually| CDF
-        HOOK -.->|invoke manually| CI
-        HOOK -.->|invoke manually| RT
+        HOOK -.->|manual, or auto via driver| CDF
+        HOOK -.->|manual, or auto via driver| CI
+        HOOK -.->|manual, or auto via driver| RT
         CDF --> CODE
         CI --> CODE
-        RT --> CODE
+        RT -->|green: next AC| DRIVER
+        RT -->|red: fix| CODE
     end
 
     IMPL --> PREPR
@@ -92,6 +95,9 @@ flowchart TD
 | `pre-pr` | `check-doc-invariants` | Internal call |
 | `pre-pr` | `run-tests` | Internal call |
 | `start-feature` | `run-tests` | Internal call |
+| `run-exec-plan` | `run-tests` | Internal call (per AC, inline) |
+| `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
+| `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
 | `complete-exec-plan` | `update-context` | Internal call |
 | `gc` | `check-doc-freshness` | Internal call (full scan) |
@@ -132,6 +138,13 @@ flowchart TD
 | B5 | Skip manual call to `check-doc-freshness` | Doc/impl drift accumulates silently | 🟡 Medium |
 | B6 | Skip manual call to `check-invariants` | INV violations go undetected until just before PR | 🟡 Medium |
 | B7 | Fix failing tests without going through the spec alignment gate | Test changes without spec justification occur (INV-T01 violation) | 🟠 High |
+
+> **Inner-loop automation (issue #11)**: The bypasses above stem partly from the implementation
+> loop being a *manual chain* (code → manually invoke CDF/CI/RT). `/run-exec-plan` provides an
+> **opt-in autonomous inner loop** that, within a frozen AC set, runs implement → run-tests →
+> check-invariants → advance without per-step confirmation, while still halting at the
+> **outer gates** (B7's spec alignment gate, irreversible actions, ambiguous AC). It automates
+> *execution*, not *governance* — see "自律実装ループ" in CLAUDE.md for the stop conditions.
 
 ### 3-4. Bypasses Before PR
 
