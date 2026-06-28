@@ -25,7 +25,8 @@ disable-model-invocation: true
 2. Conducts an interview to define the User Story
 3. Generates `docs/01_requirements/user_stories/US-XXX_{name}.md`
 4. Optionally updates `docs/01_requirements/constraints.md` with new constraints
-5. Suggests running `/create-exec-plan` using the ACs defined in the User Story
+5. Suggests running `/create-design` to draft the design spec from these requirements
+   (then `/create-exec-plan` after the design is approved)
 
 ---
 
@@ -225,7 +226,11 @@ File    : docs/01_requirements/user_stories/US-XXX_{name}.md
 ACs     : AC-001, AC-002, ... (list all defined)
 Constraints added: {count} (or "none")
 
-Next step: Run /create-exec-plan to turn these ACs into an implementation plan.
-  Suggested plan name : {Q1}
-  Suggested ACs to use: {AC list from Q3}
+Next step: Run /create-design to draft the design spec (docs/02_design/) from these requirements.
+  (Then, after the design is reviewed and approved, run /create-exec-plan.)
+  Suggested feature   : {Q1}
+  ACs to design for   : {AC list from Q3}
+
+  Note: For a small change that needs no design spec, you may skip /create-design and run
+  /create-exec-plan directly.
 ```

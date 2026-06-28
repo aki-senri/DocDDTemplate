@@ -20,10 +20,13 @@ flowchart TD
 
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
-        REQ -.->|optional| DR
-        DR["/doc-review\n· Independent agent reviews the doc\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        DR --> PLAN
-        REQ --> PLAN
+        REQ -.->|optional review| DR
+        DR["/doc-review\n· Independent agent reviews docs (requirements or design)\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        DESIGN["/create-design\n· Draft design spec from approved requirements\n· Generate docs/02_design/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
+        REQ --> DESIGN
+        DR -.-> DESIGN
+        DESIGN -->|after human approval| PLAN
+        REQ -.->|small change: skip design| PLAN
         PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Load CONTEXT.md\n③ Load invariants.md\n④ Load exec-plan (AC)\n⑤ Decide branch name\n⑥ Record start in progress log"]
@@ -96,8 +99,10 @@ flowchart TD
 
 | Caller | Callee | Type |
 |--------|--------|------|
-| `create-requirements` | `create-exec-plan` | Handoff (suggests next step) |
+| `create-requirements` | `create-design` | Handoff (suggests next step) |
 | `create-requirements` | `doc-review` | Optional handoff (user-triggered) |
+| `create-design` | `doc-review` | Handoff (suggests independent review of the design) |
+| `create-design` | `create-exec-plan` | Handoff (after human approval of the design) |
 | `pre-pr` | `check-invariants` | Internal call |
 | `pre-pr` | `check-doc-freshness` | Internal call |
 | `pre-pr` | `check-doc-invariants` | Internal call |
