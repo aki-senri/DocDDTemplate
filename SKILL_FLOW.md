@@ -1,7 +1,10 @@
 # DocDD Skill Operation Flow & Gap Analysis
 
-> **人間視点のフロー・責任分担**（人が直接使うスキル / AI が内部で回すスキルの二層化）は
-> [`ONBOARDING.ja.md` §6-0](ONBOARDING.ja.md#6-0-人が何をするか責任分担) を参照。本ドキュメントは全スキルの依存関係を含む詳細フローを扱う。
+> **Human-perspective flow & responsibility split** (the two-layer split of skills the human invokes
+> vs. skills the AI runs internally) is documented in
+> [`ONBOARDING.md` §6-0](ONBOARDING.md#6-0-what-the-human-does-responsibility-split)
+> (日本語: [`ONBOARDING.ja.md` §6-0](ONBOARDING.ja.md#6-0-人が何をするか責任分担)).
+> This document covers the detailed flow including all skill dependencies.
 
 ## 1. Overall Flow
 

@@ -21,7 +21,7 @@ A step-by-step guide for adopting Document-Driven Development (DocDD) in an exis
 
 ## 1. What is DocDD
 
-DocDD is a development methodology built around "living documentation that stays in sync with the code," enabling an AI agent (Claude Code) to drive the entire development flow autonomously with the right context.
+DocDD is a development methodology built around "living documentation that stays in sync with the code," letting an AI agent (Claude Code) drive the development flow with the right context — the AI runs the *execution* (implementation, etc.) autonomously, while the human keeps the *decisions* (freezing ACs, changing the spec, merging PRs).
 
 ```
 Documentation  = Definition (what to build)
@@ -301,16 +301,18 @@ An AC number is specified              → Start implementation
 
 ### 6-0. What the human does (responsibility split)
 
-In DocDD, **the human makes "decisions" and the AI does "execution."** The human's main job is **maintaining documentation and reviewing**, and the instructions needed to drive implementation are minimized. There are 16 skills, but the human does not need to memorize all of them.
+In DocDD, **the human makes "decisions" and the AI does "execution."** The human's main job is **maintaining documentation and reviewing**, and the instructions needed to drive implementation are minimized.
 
 #### A. Skills the human uses directly / skills the AI runs internally
 
+The table below lists the main skills used in the daily implementation flow. Beyond these there are `init-project` (once, at adoption) and `doc-review` / `docode-review` (optional independent reviews) — 16 skills in total. Day to day, you only need to be aware of the ones below.
+
 | Layer | Skills | How the human is involved |
 |-------|--------|---------------------------|
-| Used directly by the human (governance / decisions) | `create-requirements` / `create-exec-plan` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>Periodic: `promote-spec` / `gc` | The human invokes and decides |
-| Run internally by the AI (execution / verification) | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `start-feature` / `update-context` | The human does not call these directly (higher-level skills run them automatically) |
+| Used directly by the human (governance / decisions) | `create-requirements` / `create-exec-plan` / `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>Periodic: `promote-spec` / `gc` | The human invokes and decides |
+| Run internally by the AI (execution / verification) | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | The human does not call these directly (higher-level skills run them automatically) |
 
-> The human only needs to be aware of the top row's **5 + 2 periodic**. The bottom row is invoked automatically inside `run-exec-plan` / `pre-pr` / `gc`, etc.
+> The human invokes the top row (**6 + 2 periodic**). `start-feature` is invoked once per feature, as preparation before starting the autonomous loop. The bottom-row verification skills are invoked internally by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan` / `gc` (`update-context` from `complete-exec-plan` / `gc`).
 
 #### B. Human-perspective flow
 
@@ -318,7 +320,7 @@ In DocDD, **the human makes "decisions" and the AI does "execution."** The human
 flowchart TD
     A["① Maintain docs<br/>create-requirements / docs (what to build)"] --> B
     B["② Freeze the ACs<br/>create-exec-plan (decide acceptance criteria)"] --> C
-    C["③ Start the autonomous loop<br/>run-exec-plan"]
+    C["③ Prepare & start the loop<br/>start-feature → run-exec-plan"]
     C --> D{Does the AI HALT?}
     D -->|Stop conditions a–e| E["④ Human decides<br/>add spec / test expectations / irreversible ops, etc."]
     E --> C
@@ -326,7 +328,7 @@ flowchart TD
     F --> G["⑥ Wrap-up<br/>complete-exec-plan"]
 ```
 
-In the diagram above, the human acts at ①②④⑤⑥. Step ③ and the loop up to HALT (implement → test → fix → next AC) run autonomously by the AI. The human's implementation instruction is basically just "hand over an AC number"; after that, the human only needs to decide when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md).
+Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "implement → test → fix → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
 
 #### C. Responsibility table
 
