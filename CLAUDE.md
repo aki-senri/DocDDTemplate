@@ -159,8 +159,9 @@ AC が凍結された範囲内の **実行**（実装→テスト→修正→次
 
 | スキル | 目的 | タイミング |
 |--------|------|-----------|
-| `/create-requirements` | User Story・制約・AC を定義する | 実装前・create-exec-plan の前 |
-| `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements 後・create-exec-plan の前（任意） |
+| `/create-requirements` | User Story・制約・AC を定義する | 実装前・create-spec の前 |
+| `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements / create-spec 後・create-exec-plan の前（任意） |
+| `/create-spec` | 承認済み要件からアプリ仕様（docs/02_spec/：何をするか）を草案として起草する | create-requirements 後・create-exec-plan の前 |
 | `/create-exec-plan` | AC（受け入れ基準）を定義する | 実装前（必須） |
 | `/start-feature` | 実装開始前の準備チェック | create-exec-plan 後 |
 | `/run-exec-plan` | AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件のみで人間に委譲 | start-feature 後・自走させたいとき（opt-in） |

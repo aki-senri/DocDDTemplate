@@ -212,14 +212,14 @@ The agent only asks the following. The tech stack is already fixed and should no
 
 | File | Content | Phase |
 |------|---------|-------|
-| `docs/02_design/architecture.md` | Overall structure diagram, FE/BE layer diagrams | 1 |
-| `docs/02_design/api_spec.md` | API specification policy based on OpenAPI | 1 |
-| `docs/03_implementation/directory_structure.md` | FE and BE directory structure | 1 |
-| `docs/03_implementation/coding_standards.md` | TypeScript / C# coding conventions | 1 |
-| `docs/03_implementation/dependencies.md` | npm package and NuGet package list | 1 |
-| `docs/03_implementation/invariants.md` | INV-FE-001–004 + INV-BE-001–006 + INV-T01 | 1 |
-| `docs/03_implementation/patterns.md` | Feature-based structure, Repository pattern, DTO conversion | 1 |
-| `docs/04_quality/test_strategy.md` | Test policy, test_command_fe/be, AC-ID tagging convention | 1 |
+| `docs/03_design/architecture.md` | Overall structure diagram, FE/BE layer diagrams | 1 |
+| `docs/03_design/api_spec.md` | API specification policy based on OpenAPI | 1 |
+| `docs/04_implementation/directory_structure.md` | FE and BE directory structure | 1 |
+| `docs/04_implementation/coding_standards.md` | TypeScript / C# coding conventions | 1 |
+| `docs/04_implementation/dependencies.md` | npm package and NuGet package list | 1 |
+| `docs/04_implementation/invariants.md` | INV-FE-001–004 + INV-BE-001–006 + INV-T01 | 1 |
+| `docs/04_implementation/patterns.md` | Feature-based structure, Repository pattern, DTO conversion | 1 |
+| `docs/05_quality/test_strategy.md` | Test policy, test_command_fe/be, AC-ID tagging convention | 1 |
 | `CONTEXT.md` update | Update FE/BE tech stack and core naming convention sections | 0→1 |
 
 ---
@@ -229,7 +229,7 @@ The agent only asks the following. The tech stack is already fixed and should no
 ```
 1. Select work from exec-plans/active/
         ↓
-2. Confirm / define the target API interface in docs/02_design/api_spec.md
+2. Confirm / define the target API interface in docs/03_design/api_spec.md
    (Decide the FE contract before BE implementation)
         ↓
 3. Implement on feature/{issue-or-task-name} branch
@@ -240,7 +240,7 @@ The agent only asks the following. The tech stack is already fixed and should no
    ├── BE: xUnit (80%+ coverage for Service and Controller) — include AC-ID with [Trait("AC", "AC-XXX")]
    └── FE: Vitest + RTL (main logic of hooks and components) — include AC-ID with describe('AC-XXX: ...')
         ↓
-5. Self-review with docs/04_quality/review_checklist.md
+5. Self-review with docs/05_quality/review_checklist.md
         ↓
 6. Create PR → Review → Merge
    ├── CI-BE: dotnet build + dotnet test + Roslyn analyzers
@@ -254,5 +254,5 @@ The agent only asks the following. The tech stack is already fixed and should no
 ## Completion criteria
 
 - [ ] All files in the "Documents to generate" list above have been created
-- [ ] The tech stack and naming convention sections of `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The tech stack and naming convention sections of `docs/07_ai_context/CONTEXT.md` have been updated
 - [ ] The current phase in `CONTEXT.md` is set to "Phase 2 (requirements & design)"

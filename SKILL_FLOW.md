@@ -20,10 +20,13 @@ flowchart TD
 
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
-        REQ -.->|optional| DR
-        DR["/doc-review\n· Independent agent reviews the doc\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        DR --> PLAN
-        REQ --> PLAN
+        REQ -.->|optional review| DR
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
+        REQ --> SPEC
+        SPEC -.->|optional review| DR
+        SPEC -->|after human approval| PLAN
+        REQ -.->|small change: skip spec| PLAN
         PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Load CONTEXT.md\n③ Load invariants.md\n④ Load exec-plan (AC)\n⑤ Decide branch name\n⑥ Record start in progress log"]
@@ -96,8 +99,10 @@ flowchart TD
 
 | Caller | Callee | Type |
 |--------|--------|------|
-| `create-requirements` | `create-exec-plan` | Handoff (suggests next step) |
+| `create-requirements` | `create-spec` | Handoff (suggests next step) |
 | `create-requirements` | `doc-review` | Optional handoff (user-triggered) |
+| `create-spec` | `doc-review` | Handoff (suggests independent review of the spec) |
+| `create-spec` | `create-exec-plan` | Handoff (after human approval of the spec) |
 | `pre-pr` | `check-invariants` | Internal call |
 | `pre-pr` | `check-doc-freshness` | Internal call |
 | `pre-pr` | `check-doc-invariants` | Internal call |

@@ -99,7 +99,7 @@ Documents matched: {count}
 
 ✅ No issues: {count}
 ⚠️ Updates needed (addressed): {count}
-  - docs/02_design/data_model.md: Added Model.Xxx
+  - docs/03_design/data_model.md: Added Model.Xxx
   - ...
 ❌ Not addressed (manual review needed): {count}
   - docs/xxx/yyy.md: {reason}

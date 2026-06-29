@@ -41,11 +41,12 @@ Documents must not reference documents at a more concrete abstraction layer.
 |-------|------|---------------|
 | 1 – Requirements | `docs/01_requirements/` | External resources, `constraints.md` within layer 1 |
 | 1.5 – Exec-plans | `exec-plans/` | `docs/01_requirements/` (US files) only |
-| 2 – Design | `docs/02_design/` | Layer 1 and below |
-| 3 – Implementation | `docs/03_implementation/` | Layers 1–2 and below |
-| 4 – Quality | `docs/04_quality/` | All `docs/` layers |
+| 2 – Spec | `docs/02_spec/` | Layer 1 and below |
+| 3 – Design | `docs/03_design/` | Layers 1–2 and below |
+| 4 – Implementation | `docs/04_implementation/` | Layers 1–3 and below |
+| 5 – Quality | `docs/05_quality/` | All `docs/` layers |
 
-**Violation example**: A `docs/01_requirements/` file links to `docs/02_design/api_spec.md`.
+**Violation example**: A `docs/01_requirements/` file links to `docs/03_design/api_spec.md`.
 
 **Note**: Links going upward in abstraction (e.g., implementation doc referencing a requirement)
 are valid forward references — only downward references (requirements referencing implementation) are violations.
@@ -57,7 +58,7 @@ are valid forward references — only downward references (requirements referenc
 Every `docs/**/*.md` must have:
 - `status:` — one of `draft`, `active`, `deprecated`
 
-Documents in `docs/02_design/` and `docs/03_implementation/` that correspond to code must have:
+Documents in `docs/03_design/` and `docs/04_implementation/` that correspond to code must have:
 - `tracks:` — glob pattern(s) pointing to the tracked source files
 
 Every `docs/01_requirements/user_stories/US-*.md` must also have:
@@ -115,11 +116,12 @@ Assign layer numbers:
 |--------|-------|
 | `docs/01_requirements/` | 1 |
 | `exec-plans/` | 1.5 |
-| `docs/02_design/` | 2 |
-| `docs/03_implementation/` | 3 |
-| `docs/03_implementation/invariants.md` | 3 |
-| `docs/04_quality/` | 4 |
-| `docs/05_*/` and `docs/06_*/` | 5+ |
+| `docs/02_spec/` | 2 |
+| `docs/03_design/` | 3 |
+| `docs/04_implementation/` | 4 |
+| `docs/04_implementation/invariants.md` | 4 |
+| `docs/05_quality/` | 5 |
+| `docs/06_*/` and `docs/07_*/` | 6+ |
 
 For each link `[text](target)` in a document at layer N:
 - Resolve `target` relative to the repository root
@@ -132,7 +134,7 @@ Skip external URLs (starting with `http://` or `https://`).
 
 For each `docs/**/*.md`:
 1. Check `status:` exists and is `draft`, `active`, or `deprecated`
-2. For `docs/02_design/` and `docs/03_implementation/` files: check `tracks:` key exists
+2. For `docs/03_design/` and `docs/04_implementation/` files: check `tracks:` key exists
 3. For `docs/01_requirements/user_stories/US-*.md`: check `ac_ids:` exists and is a non-empty list
 
 ### Step 4: Check DOC-INV-003 (Lifecycle consistency)
@@ -170,15 +172,15 @@ Documents checked : {count}
 Exec-plans checked: {count}
 
 ❌ DOC-INV-001 violations (reference direction): {count}
-  - docs/01_requirements/user_stories/US-001_foo.md → docs/02_design/api_spec.md (line 12)
+  - docs/01_requirements/user_stories/US-001_foo.md → docs/03_design/api_spec.md (line 12)
     Fix: Remove or replace the forward reference with a plain description
 
 ❌ DOC-INV-002 violations (frontmatter): {count}
-  - docs/02_design/data_model.md: missing tracks:
+  - docs/03_design/data_model.md: missing tracks:
     Fix: Add tracks: field pointing to relevant source files
 
 ❌ DOC-INV-003 violations (lifecycle): {count}
-  - docs/02_design/api_spec.md (active) → docs/02_design/old_api.md (deprecated) at line 34
+  - docs/03_design/api_spec.md (active) → docs/03_design/old_api.md (deprecated) at line 34
     Fix: Update the link to the successor document, or remove the reference
 
 ❌ DOC-INV-004 violations (AC traceability): {count}
@@ -186,7 +188,7 @@ Exec-plans checked: {count}
     Fix: Add AC-003 to the corresponding US file's ac_ids: frontmatter
 
 ⚠️ DOC-INV-005 warnings (diagram rules): {count}
-  - docs/02_design/screen_layout.md: ASCII art at line 42 has no following description
+  - docs/03_design/screen_layout.md: ASCII art at line 42 has no following description
     Fix: Add a plain-text explanation paragraph immediately after the diagram
 
 ---

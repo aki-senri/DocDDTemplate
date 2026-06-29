@@ -56,8 +56,9 @@ Then determine the document type from its path:
 | Path pattern | Document type |
 |-------------|---------------|
 | `docs/01_requirements/user_stories/US-*.md` | User Story |
-| `docs/02_design/**/*.md` | Design document |
-| `docs/03_implementation/**/*.md` | Implementation document |
+| `docs/02_spec/**/*.md` | Application spec |
+| `docs/03_design/**/*.md` | Design document |
+| `docs/04_implementation/**/*.md` | Implementation document |
 | `exec-plans/**/*.md` | Exec-plan |
 | Other `docs/**/*.md` | General document |
 
@@ -94,7 +95,7 @@ You are a document reviewer with no prior context about this document's authorin
 Review the following document from a DocDD (Document-Driven Development) perspective.
 
 ## Document type
-{User Story / Design document / Exec-plan / Implementation document / General document}
+{User Story / Application spec / Design document / Exec-plan / Implementation document / General document}
 
 ## Document to review
 {full content of target document}
@@ -186,7 +187,7 @@ After the independent agent returns its report, present it verbatim and guide ne
 
 | Verdict | Recommended action |
 |---------|--------------------|
-| ✅ Approved | For US: proceed to `/create-exec-plan`. For exec-plan: proceed to `/start-feature` |
+| ✅ Approved | For US: proceed to `/create-spec`. For a spec: approve it, then `/create-exec-plan`. For exec-plan: proceed to `/start-feature` |
 | ⚠️ Approved with suggestions | Discuss items with user, then proceed |
 | ❌ Revision needed | Fix critical/high issues, then re-run `/doc-review` |
 

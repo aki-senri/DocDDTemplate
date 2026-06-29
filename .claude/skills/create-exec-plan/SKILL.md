@@ -21,7 +21,7 @@ disable-model-invocation: true
 
 1. Collect plan details via an interview
 2. Generate `exec-plans/active/YYYY-MM-{name}.md`
-3. Update the "Current Phase & Priority Tasks" section of `docs/06_ai_context/CONTEXT.md`
+3. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
 
 ---
 
@@ -84,7 +84,7 @@ completed:
 2. Confirm today's date in `YYYY-MM-DD` format
 3. Create the `exec-plans/active/` directory if it doesn't exist
 4. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
-5. Update the "Current Phase & Priority Tasks" section of `docs/06_ai_context/CONTEXT.md`
+5. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
    - Add a link to the newly created plan file in the priority tasks section
 
 ---
@@ -93,7 +93,7 @@ completed:
 
 - [ ] `exec-plans/active/YYYY-MM-{name}.md` has been created
 - [ ] The file contains `status: active`, `created: YYYY-MM-DD`, goal, acceptance criteria, and task breakdown
-- [ ] The priority tasks in `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 
 Final report output by the agent:
 
