@@ -49,8 +49,9 @@ and never proceeds to implementation planning on its own.
 ## What this skill does
 
 1. Locate and read the approved requirements in `docs/01_requirements/`
-2. If requirements are missing or too ambiguous to specify against, **halt** and direct the
-   user to `/create-requirements` (do not guess intent)
+2. If requirements are missing, not yet approved (`status: draft`), or too ambiguous to
+   specify against, **halt** and direct the user to approve/define them first (do not guess
+   intent)
 3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first)
 4. Trace each spec feature back to the US/AC it satisfies
 5. Suggest `/doc-review` for an independent check, then human approval, then `/create-exec-plan`
@@ -65,6 +66,18 @@ and never proceeds to implementation planning on its own.
   `docs/01_requirements/constraints.md`.
 - Identify the user stories, their `ac_ids:`, acceptance conditions, and constraints
   (TC/BC/PF/SC) that shape what the app must do.
+- **Confirm the requirements are approved before drafting from them.** Check the `status:`
+  frontmatter of the relevant US file(s). The spec must be built on *approved* requirements,
+  not on in-progress ones. If a US is still `status: draft` (i.e. not yet approved/frozen),
+  **halt** and report so the human can approve the requirements first:
+
+  ```
+  この仕様の起点となる要件（US-XXX）が status: draft のままです。
+  仕様は承認済み要件から起草します。先に要件をレビュー・承認（status: active 化／マージ）してください。
+  ```
+
+  Only proceed once the source requirements are approved (or the user explicitly confirms
+  drafting from a draft requirement).
 
 **If no requirements exist, or they are too vague to specify against**: **halt** and report:
 
@@ -126,8 +139,8 @@ detail (that is `docs/03_design/`, layer 3) or implementation detail — keep th
 
 ## Completion criteria
 
-- [ ] Requirements in `docs/01_requirements/` were read (or the skill halted and directed to
-      `/create-requirements`)
+- [ ] Requirements in `docs/01_requirements/` were read and confirmed approved (not
+      `status: draft`) — or the skill halted and directed to approve/define them first
 - [ ] An application spec was drafted under `docs/02_spec/` covering purpose, scope/non-goals,
       features, behavior, and (if applicable) screen/UX flows
 - [ ] The spec describes *what* the app does, with NO technical design (architecture/data

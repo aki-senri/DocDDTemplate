@@ -24,7 +24,7 @@ flowchart TD
         DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
-        DR -.-> SPEC
+        SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
         PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
