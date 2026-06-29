@@ -24,7 +24,7 @@ disable-model-invocation: true
 |------|------|--------------------------|
 | `docs/00_project/overview.md` | Project purpose, scope, and tech stack | Generated from Q1 & Q2 answers |
 | `docs/00_project/decisions.md` | Technology decision log (ADR format) | Generated from Q2 answers |
-| `docs/06_ai_context/CONTEXT.md` | Navigation map (including development rules) | Generated from all answers |
+| `docs/07_ai_context/CONTEXT.md` | Navigation map (including development rules) | Generated from all answers |
 
 ### Phase 1 (executed based on the platform selected in Q4)
 
@@ -127,7 +127,7 @@ Composed of the following required sections.
 ## Reference Documents
   docs/00_project/overview.md
   docs/00_project/decisions.md
-  docs/03_implementation/invariants.md (required reading before starting implementation)
+  docs/04_implementation/invariants.md (required reading before starting implementation)
 ```
 
 ---
@@ -179,23 +179,24 @@ A complete list of documents managed by the project. `Required` items are always
 | `docs/01_requirements/user_stories/common.md` | Optional | When multiple platforms exist |
 | `docs/01_requirements/user_stories/{platform}.md` | Required | Always |
 | `docs/01_requirements/constraints.md` | Required | Always |
-| `docs/02_design/architecture.md` | Required | Always |
-| `docs/02_design/data_model.md` | Optional | When the project has a DB or persistent storage |
-| `docs/02_design/api_spec.md` | Optional | When the project has a publicly exposed API |
-| `docs/02_design/ui_flows.md` | Optional | When the project has a UI |
-| `docs/03_implementation/coding_standards.md` | Required | Always |
-| `docs/03_implementation/directory_structure.md` | Required | Always |
-| `docs/03_implementation/patterns.md` | Required | Always |
-| `docs/03_implementation/dependencies.md` | Required | Always |
-| `docs/03_implementation/invariants.md` | Required | Always |
-| `docs/04_quality/test_strategy.md` | Required | Always |
-| `docs/04_quality/review_checklist.md` | Required | Always |
-| `docs/04_quality/security.md` | Optional | When the project handles external communication, authentication, or sensitive data |
-| `docs/04_quality/performance.md` | Optional | When performance requirements are explicitly stated |
-| `docs/05_operations/environments.md` | Optional | When dev/staging/prod environment separation is needed |
-| `docs/05_operations/deployment.md` | Required | Always |
-| `docs/05_operations/monitoring.md` | Required | Always |
-| `docs/06_ai_context/CONTEXT.md` | Required | Always |
+| `docs/02_spec/app_spec.md` | Required | Always (application spec — what the app does; drafted/expanded by `/create-spec`) |
+| `docs/03_design/architecture.md` | Required | Always |
+| `docs/03_design/data_model.md` | Optional | When the project has a DB or persistent storage |
+| `docs/03_design/api_spec.md` | Optional | When the project has a publicly exposed API |
+| `docs/03_design/ui_flows.md` | Optional | When the project has a UI |
+| `docs/04_implementation/coding_standards.md` | Required | Always |
+| `docs/04_implementation/directory_structure.md` | Required | Always |
+| `docs/04_implementation/patterns.md` | Required | Always |
+| `docs/04_implementation/dependencies.md` | Required | Always |
+| `docs/04_implementation/invariants.md` | Required | Always |
+| `docs/05_quality/test_strategy.md` | Required | Always |
+| `docs/05_quality/review_checklist.md` | Required | Always |
+| `docs/05_quality/security.md` | Optional | When the project handles external communication, authentication, or sensitive data |
+| `docs/05_quality/performance.md` | Optional | When performance requirements are explicitly stated |
+| `docs/06_operations/environments.md` | Optional | When dev/staging/prod environment separation is needed |
+| `docs/06_operations/deployment.md` | Required | Always |
+| `docs/06_operations/monitoring.md` | Required | Always |
+| `docs/07_ai_context/CONTEXT.md` | Required | Always |
 
 ### common / platform split criteria
 
@@ -217,7 +218,7 @@ tracks:          # (optional) glob pattern of corresponding code
 ---
 ```
 
-`docs/04_quality/test_strategy.md` should additionally have the following fields:
+`docs/05_quality/test_strategy.md` should additionally have the following fields:
 
 ```yaml
 ---
@@ -231,7 +232,7 @@ coverage_threshold: 80                 # coverage lower limit (optional)
 
 ### Test assurance policy
 
-At project initialization, record the following policy in `docs/04_quality/test_strategy.md` and `docs/03_implementation/invariants.md`.
+At project initialization, record the following policy in `docs/05_quality/test_strategy.md` and `docs/04_implementation/invariants.md`.
 
 **INV-T01 (common to all platforms):**
 
@@ -274,7 +275,7 @@ describe('AC-001: Login with invalid password', () => {
 
 - [ ] `docs/00_project/overview.md` has been created
 - [ ] `docs/00_project/decisions.md` has been created (at least one ADR)
-- [ ] `docs/06_ai_context/CONTEXT.md` has been created
+- [ ] `docs/07_ai_context/CONTEXT.md` has been created
 - [ ] `CONTEXT.md` has a "Development rules" section with all 4 items from Q3
 
 ### Phase 1 (meet the conditions for the selected platform)
@@ -290,7 +291,7 @@ Final report output by the agent:
 Files created:
   docs/00_project/overview.md
   docs/00_project/decisions.md
-  docs/06_ai_context/CONTEXT.md
+  docs/07_ai_context/CONTEXT.md
   (+ list of files generated in Phase 1)
 
 Things to do in the next phase (Phase 2: requirements & design):

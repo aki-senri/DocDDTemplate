@@ -15,8 +15,8 @@ disable-model-invocation: true
 >
 > **Prerequisites**:
 > - Implementation must be complete
-> - `docs/03_implementation/invariants.md` must exist
-> - `docs/04_quality/review_checklist.md` must exist
+> - `docs/04_implementation/invariants.md` must exist
+> - `docs/05_quality/review_checklist.md` must exist
 
 ---
 
@@ -39,14 +39,14 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 
 ### ① Invariant check (check-invariants)
 
-Load `docs/03_implementation/invariants.md` and verify the following for each INV.
+Load `docs/04_implementation/invariants.md` and verify the following for each INV.
 
 1. List changed files (`git diff --name-only HEAD` or from the known changes)
 2. Review each INV and extract conditions applicable to the changed files
 3. Report any violations and provide fix instructions
 4. If no violations: display "✅ invariants: all passed"
 
-**The check criteria follow `docs/03_implementation/invariants.md`.**
+**The check criteria follow `docs/04_implementation/invariants.md`.**
 Typical violation pattern examples (adapt according to the project's invariants.md contents):
 
 | Common INV types | Example check points |
@@ -74,11 +74,11 @@ Verify that documents corresponding to changed code files are up to date.
 
 | Code change | Documents to check |
 |------------|-------------------|
-| Model / Entity added or changed | `docs/02_design/data_model.md` |
-| API endpoint added or changed | `docs/02_design/api_spec.md` |
-| Directory structure changed | `docs/03_implementation/directory_structure.md` |
-| New pattern or convention introduced | `docs/03_implementation/patterns.md` |
-| External library added | `docs/03_implementation/dependencies.md` |
+| Model / Entity added or changed | `docs/03_design/data_model.md` |
+| API endpoint added or changed | `docs/03_design/api_spec.md` |
+| Directory structure changed | `docs/04_implementation/directory_structure.md` |
+| New pattern or convention introduced | `docs/04_implementation/patterns.md` |
+| External library added | `docs/04_implementation/dependencies.md` |
 
 ---
 
@@ -96,7 +96,7 @@ Run the `check-doc-invariants` skill.
 
 ### ④ Review checklist
 
-Load `docs/04_quality/review_checklist.md` and verify each item.
+Load `docs/05_quality/review_checklist.md` and verify each item.
 
 - ✅ Passed
 - ❌ Not addressed (requires fix)

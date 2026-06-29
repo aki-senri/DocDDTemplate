@@ -103,13 +103,13 @@ After the interview, the following are generated automatically.
 **Phase 0 (common):**
 - `docs/00_project/overview.md` — Project overview
 - `docs/00_project/decisions.md` — Tech-selection ADR
-- `docs/06_ai_context/CONTEXT.md` — Navigation map
+- `docs/07_ai_context/CONTEXT.md` — Navigation map
 
 **Phase 1 (per platform):**
 - `docs/01_requirements/` — Requirements / user stories
-- `docs/02_design/` — Architecture / data model
-- `docs/03_implementation/` — Invariants / patterns / dependencies
-- `docs/04_quality/` — Test strategy / review checklist
+- `docs/03_design/` — Architecture / data model
+- `docs/04_implementation/` — Invariants / patterns / dependencies
+- `docs/05_quality/` — Test strategy / review checklist
 
 #### Step 3: Start feature implementation
 
@@ -150,20 +150,22 @@ docs/
 │   └── decisions.md      ← Tech-selection rationale (convert to ADR format)
 ├── 01_requirements/
 │   └── user_stories/     ← Requirements / user stories
-├── 02_design/
+├── 02_spec/
+│   └── app_spec.md       ← Application spec (what the app does)
+├── 03_design/
 │   ├── architecture.md   ← Architecture diagrams
 │   └── data_model.md     ← ER diagrams / schema definitions
-├── 03_implementation/
+├── 04_implementation/
 │   ├── invariants.md     ← Invariants (most important: must create)
 │   └── patterns.md       ← Implementation patterns / conventions
-├── 04_quality/
+├── 05_quality/
 │   ├── test_strategy.md  ← Test strategy
 │   └── review_checklist.md
-└── 06_ai_context/
+└── 07_ai_context/
     └── CONTEXT.md        ← Navigation map (most important: must create)
 ```
 
-> **Minimum required files**: `docs/03_implementation/invariants.md` and `docs/06_ai_context/CONTEXT.md`. Without these two, `/start-feature` will not work.
+> **Minimum required files**: `docs/04_implementation/invariants.md` and `docs/07_ai_context/CONTEXT.md`. Without these two, `/start-feature` will not work.
 
 #### Step 3: Create CONTEXT.md manually
 
@@ -199,7 +201,7 @@ Next action → see exec-plans/active/
 
 ## Reference documents
 - docs/00_project/overview.md
-- docs/03_implementation/invariants.md
+- docs/04_implementation/invariants.md
 ```
 
 #### Step 4: Add front matter to each document
@@ -227,7 +229,7 @@ An approach that keeps your custom doc structure while changing the skills' path
 
 | File | What to change | Example |
 |------|----------------|---------|
-| `.claude/skills/*/SKILL.md` | Document-path references | `docs/06_ai_context/CONTEXT.md` → `my-docs/context.md` |
+| `.claude/skills/*/SKILL.md` | Document-path references | `docs/07_ai_context/CONTEXT.md` → `my-docs/context.md` |
 | `.claude/skills/start-feature/SKILL.md` | The list of docs loaded in Step 2 | Match the paths to your own doc structure |
 | `.claude/skills/check-doc-freshness/SKILL.md` | The search targets for the `tracks:` field | Add your custom directories |
 | `.claude/skills/init-project/SKILL.md` | The list of files generated in Phase 0/1 | Exclude unneeded docs |
@@ -446,7 +448,7 @@ rm exec-plans/.spec-override
 
 **Fix**:
 - For a new project, run `/init-project` first
-- For an existing project, manually create `docs/03_implementation/invariants.md`
+- For an existing project, manually create `docs/04_implementation/invariants.md`
 
 ```markdown
 ---

@@ -24,7 +24,7 @@ disable-model-invocation: true
 > **Prerequisites**:
 > - An active plan must exist in `exec-plans/active/` with at least one `AC-NNN:` defined
 > - `start-feature` should already have run (baseline green, branch chosen, docs loaded)
-> - `docs/04_quality/test_strategy.md` must have `test_command` set (used by `run-tests`)
+> - `docs/05_quality/test_strategy.md` must have `test_command` set (used by `run-tests`)
 
 ---
 
@@ -76,7 +76,7 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ### Step 2: Implement the AC
 
-- Implement following the order guidance in `docs/03_implementation/patterns.md`
+- Implement following the order guidance in `docs/04_implementation/patterns.md`
   (stable layer first), same as `start-feature` describes.
 - Keep the change scoped to this AC. If satisfying it requires expanding scope or violating
   an invariant you cannot resolve within scope, **halt** with stop-condition (e).

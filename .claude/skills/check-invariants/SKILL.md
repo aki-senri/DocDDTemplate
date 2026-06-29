@@ -1,7 +1,7 @@
 ---
 name: check-invariants
 description: |
-  Skill to verify the invariants defined in docs/03_implementation/invariants.md against implementation code.
+  Skill to verify the invariants defined in docs/04_implementation/invariants.md against implementation code.
   Can be called internally by the pre-pr skill, or used standalone during implementation.
 disable-model-invocation: true
 ---
@@ -15,7 +15,7 @@ disable-model-invocation: true
 >
 > **Purpose**: Detect violations of the invariants defined in `invariants.md` before CI, reducing the cost of fixing issues.
 >
-> **Prerequisites**: `docs/03_implementation/invariants.md` must exist (Phase 1 must be complete)
+> **Prerequisites**: `docs/04_implementation/invariants.md` must exist (Phase 1 must be complete)
 
 ---
 
@@ -31,7 +31,7 @@ disable-model-invocation: true
 
 ### Step 1: Load invariants.md
 
-Load `docs/03_implementation/invariants.md` and understand all INV conditions.
+Load `docs/04_implementation/invariants.md` and understand all INV conditions.
 
 Each INV is defined in the following format (contents vary by project architecture and language):
 
@@ -85,7 +85,7 @@ If violations are found, report them in the following format.
 ❌ INV-001 violation: {file path}
    Details: {what violates which rule}
    Fix: {specific fix instructions}
-   Reference: docs/03_implementation/patterns.md §{related section}
+   Reference: docs/04_implementation/patterns.md §{related section}
 ```
 
 ---

@@ -106,11 +106,12 @@ Claude Code で以下を実行します：
 ├── docs/                      # ← init-project が生成（初期は存在しない）
 │   ├── 00_project/            # overview.md, decisions.md, glossary.md
 │   ├── 01_requirements/       # constraints.md, user_stories/
-│   ├── 02_design/             # architecture.md, data_model.md, api_spec.md
-│   ├── 03_implementation/     # invariants.md, patterns.md, dependencies.md
-│   ├── 04_quality/            # test_strategy.md, review_checklist.md
-│   ├── 05_operations/         # environments.md, monitoring.md
-│   └── 06_ai_context/         # CONTEXT.md（ナビゲーションマップ）
+│   ├── 02_spec/               # app_spec.md（アプリが何をするか）
+│   ├── 03_design/             # architecture.md, data_model.md, api_spec.md
+│   ├── 04_implementation/     # invariants.md, patterns.md, dependencies.md
+│   ├── 05_quality/            # test_strategy.md, review_checklist.md
+│   ├── 06_operations/         # environments.md, monitoring.md
+│   └── 07_ai_context/         # CONTEXT.md（ナビゲーションマップ）
 └── exec-plans/                # ← create-exec-plan が生成（初期は存在しない）
     ├── active/                # 進行中の実行計画
     └── completed/             # 完了した実行計画

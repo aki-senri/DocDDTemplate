@@ -280,7 +280,7 @@ Do not proceed to Step 6 without an explicit "yes".
    version label, date, summary of NEW/CHANGED/REMOVED, stale ACs, how in-flight collisions were
    handled, and the routing rationale.
 
-3. **Update `docs/06_ai_context/CONTEXT.md`** — set the current target version/label and the new
+3. **Update `docs/07_ai_context/CONTEXT.md`** — set the current target version/label and the new
    priority tasks (the reconcile plan + any new-AC plans).
 
 4. **Retire the spec branch** (optional, recommended): it is preserved in history and by the tag.
@@ -339,4 +339,4 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`
-- [ ] Promotion recorded in the Decision Log and `docs/06_ai_context/CONTEXT.md` updated
+- [ ] Promotion recorded in the Decision Log and `docs/07_ai_context/CONTEXT.md` updated

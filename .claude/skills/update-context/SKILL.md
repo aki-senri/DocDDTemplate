@@ -1,7 +1,7 @@
 ---
 name: update-context
 description: |
-  Skill to update docs/06_ai_context/CONTEXT.md to reflect the current state.
+  Skill to update docs/07_ai_context/CONTEXT.md to reflect the current state.
   Use when a phase transition, priority task change, or tech stack change occurs.
   Automatically called from the complete-exec-plan skill after exec-plan changes.
 disable-model-invocation: true
@@ -19,7 +19,7 @@ disable-model-invocation: true
 > **Purpose**: Maintain CONTEXT.md as a "navigation map readable in one screen" at all times.
 > If content becomes too large, extract details to a separate document and replace with a pointer.
 >
-> **Prerequisites**: `docs/06_ai_context/CONTEXT.md` must exist
+> **Prerequisites**: `docs/07_ai_context/CONTEXT.md` must exist
 
 ---
 
@@ -49,7 +49,7 @@ Verify the following.
 | State | Phase |
 |-------|-------|
 | `docs/00_project/overview.md` does not exist | Phase 0 incomplete |
-| `docs/03_implementation/invariants.md` does not exist | Phase 1 incomplete |
+| `docs/04_implementation/invariants.md` does not exist | Phase 1 incomplete |
 | `docs/01_requirements/` is incomplete | Phase 2 in progress |
 | An implementation plan exists in `exec-plans/active/` | Phase 3 in progress |
 | Only periodic GC work | Phase 4 (continuous quality maintenance) |
@@ -95,8 +95,8 @@ If CONTEXT.md exceeds "one screen (approx. 50 lines)", extract details according
 | Sections prone to bloat | Extraction target |
 |------------------------|------------------|
 | Tech stack details | `docs/00_project/overview.md` |
-| Development rule details | `docs/03_implementation/coding_standards.md` |
-| Naming convention details | `docs/03_implementation/invariants.md` |
+| Development rule details | `docs/04_implementation/coding_standards.md` |
+| Naming convention details | `docs/04_implementation/invariants.md` |
 
 After extraction, leave a "See {file path} for details" pointer in CONTEXT.md.
 

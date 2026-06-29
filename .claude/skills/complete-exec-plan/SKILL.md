@@ -24,7 +24,7 @@ disable-model-invocation: true
 1. Confirm the target execution plan
 2. Final verification that all acceptance criteria are met
 3. Move the file from `active/` to `completed/`
-4. Update `docs/06_ai_context/CONTEXT.md`
+4. Update `docs/07_ai_context/CONTEXT.md`
 5. Guide the user to the next task
 
 ---
@@ -73,7 +73,7 @@ Update and move the target file in the following order.
 
 ### Step 4: Update CONTEXT.md
 
-Update the "Current Phase & Priority Tasks" section of `docs/06_ai_context/CONTEXT.md`.
+Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`.
 
 - Remove the completed plan from the priority tasks
 - Check remaining plans in `exec-plans/active/` and reflect the next priority tasks
@@ -98,7 +98,7 @@ Guide the user to the next action based on the following.
 - [ ] All AC-IDs have corresponding tests
 - [ ] The target file's frontmatter shows `status: completed` and `completed: YYYY-MM-DD`
 - [ ] The file has been moved to `exec-plans/completed/`
-- [ ] The priority tasks in `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 - [ ] The next action has been communicated
 
 Final report output by the agent:

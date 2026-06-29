@@ -15,7 +15,7 @@ disable-model-invocation: true
 > **Purpose**: Create structured requirements documents (User Stories + constraints) so that
 > both humans and AI agents share a common understanding of "what the system must do."
 >
-> **Prerequisites**: Phase 1 documents must exist (`docs/06_ai_context/CONTEXT.md`)
+> **Prerequisites**: Phase 1 documents must exist (`docs/07_ai_context/CONTEXT.md`)
 
 ---
 
@@ -25,7 +25,8 @@ disable-model-invocation: true
 2. Conducts an interview to define the User Story
 3. Generates `docs/01_requirements/user_stories/US-XXX_{name}.md`
 4. Optionally updates `docs/01_requirements/constraints.md` with new constraints
-5. Suggests running `/create-exec-plan` using the ACs defined in the User Story
+5. Suggests running `/create-spec` to draft the application spec from these requirements
+   (then `/create-exec-plan` after the spec is approved)
 
 ---
 
@@ -225,7 +226,11 @@ File    : docs/01_requirements/user_stories/US-XXX_{name}.md
 ACs     : AC-001, AC-002, ... (list all defined)
 Constraints added: {count} (or "none")
 
-Next step: Run /create-exec-plan to turn these ACs into an implementation plan.
-  Suggested plan name : {Q1}
-  Suggested ACs to use: {AC list from Q3}
+Next step: Run /create-spec to draft the application spec (docs/02_spec/) from these requirements.
+  (Then, after the spec is reviewed and approved, run /create-exec-plan.)
+  Suggested feature   : {Q1}
+  ACs to spec for     : {AC list from Q3}
+
+  Note: For a small change that needs no application spec, you may skip /create-spec and run
+  /create-exec-plan directly.
 ```

@@ -56,8 +56,8 @@ Then determine the document type from its path:
 | Path pattern | Document type |
 |-------------|---------------|
 | `docs/01_requirements/user_stories/US-*.md` | User Story |
-| `docs/02_design/**/*.md` | Design document |
-| `docs/03_implementation/**/*.md` | Implementation document |
+| `docs/03_design/**/*.md` | Design document |
+| `docs/04_implementation/**/*.md` | Implementation document |
 | `exec-plans/**/*.md` | Exec-plan |
 | Other `docs/**/*.md` | General document |
 

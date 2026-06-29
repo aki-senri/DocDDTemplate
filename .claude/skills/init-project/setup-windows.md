@@ -115,13 +115,13 @@ The agent only asks the following. The tech stack is already fixed and should no
 
 | File | Content | Phase |
 |------|---------|-------|
-| `docs/02_design/architecture.md` | Layer diagram, DI configuration, project structure | 1 |
-| `docs/03_implementation/directory_structure.md` | Directory structure (reflects Q1 app name) | 1 |
-| `docs/03_implementation/coding_standards.md` | C# / WPF coding conventions | 1 |
-| `docs/03_implementation/dependencies.md` | NuGet package list and version management policy | 1 |
-| `docs/03_implementation/invariants.md` | INV-001–008 + INV-T01 (Roslyn enforcement rules) | 1 |
-| `docs/03_implementation/patterns.md` | MVVM, Repository, and DI implementation patterns | 1 |
-| `docs/04_quality/test_strategy.md` | Test policy, test_command, AC-ID tagging convention | 1 |
+| `docs/03_design/architecture.md` | Layer diagram, DI configuration, project structure | 1 |
+| `docs/04_implementation/directory_structure.md` | Directory structure (reflects Q1 app name) | 1 |
+| `docs/04_implementation/coding_standards.md` | C# / WPF coding conventions | 1 |
+| `docs/04_implementation/dependencies.md` | NuGet package list and version management policy | 1 |
+| `docs/04_implementation/invariants.md` | INV-001–008 + INV-T01 (Roslyn enforcement rules) | 1 |
+| `docs/04_implementation/patterns.md` | MVVM, Repository, and DI implementation patterns | 1 |
+| `docs/05_quality/test_strategy.md` | Test policy, test_command, AC-ID tagging convention | 1 |
 | `CONTEXT.md` update | Update tech stack and core naming convention sections | 0→1 |
 
 ---
@@ -133,7 +133,7 @@ The agent only asks the following. The tech stack is already fixed and should no
         ↓
 2. Confirm acceptance criteria in docs/01_requirements/user_stories/windows.md
         ↓
-3. Confirm docs/03_implementation/invariants.md (required reading before implementation)
+3. Confirm docs/04_implementation/invariants.md (required reading before implementation)
         ↓
 4. Implement on feature/{issue-or-task-name} branch
    └── Create in order: View → ViewModel → Service → Repository
@@ -141,7 +141,7 @@ The agent only asks the following. The tech stack is already fixed and should no
 5. Add xUnit tests (80%+ coverage for ViewModel and Service layers)
    └── Include AC-ID in tests with [Trait("AC", "AC-XXX")]
         ↓
-6. Self-review with docs/04_quality/review_checklist.md
+6. Self-review with docs/05_quality/review_checklist.md
         ↓
 7. Create PR → Review → Merge
    └── CI (GitHub Actions): dotnet build + dotnet test + Roslyn analyzers
@@ -154,5 +154,5 @@ The agent only asks the following. The tech stack is already fixed and should no
 ## Completion criteria
 
 - [ ] All files in the "Documents to generate" list above have been created
-- [ ] The tech stack and naming convention sections of `docs/06_ai_context/CONTEXT.md` have been updated
+- [ ] The tech stack and naming convention sections of `docs/07_ai_context/CONTEXT.md` have been updated
 - [ ] The current phase in `CONTEXT.md` is set to "Phase 2 (requirements & design)"

@@ -15,7 +15,7 @@ disable-model-invocation: true
 >
 > **Prerequisites**:
 > - An active plan must exist in `exec-plans/active/`
-> - Phase 1 (knowledge base construction) must be complete (`docs/03_implementation/invariants.md` must exist)
+> - Phase 1 (knowledge base construction) must be complete (`docs/04_implementation/invariants.md` must exist)
 
 ---
 
@@ -54,8 +54,8 @@ Load the following documents and confirm the implementation prerequisites.
 
 | Document | Content to confirm |
 |----------|-------------------|
-| `docs/06_ai_context/CONTEXT.md` | Current phase, development rules, tech stack |
-| `docs/03_implementation/invariants.md` | Invariants to follow (INV-XXX) |
+| `docs/07_ai_context/CONTEXT.md` | Current phase, development rules, tech stack |
+| `docs/04_implementation/invariants.md` | Invariants to follow (INV-XXX) |
 | Selected `exec-plans/active/*.md` | Acceptance criteria and task breakdown |
 
 Also load the following depending on the platform:
@@ -63,8 +63,8 @@ Also load the following depending on the platform:
 | Condition | Additional documents to read |
 |-----------|----------------------------|
 | Requirements definition phase | `docs/01_requirements/user_stories/{platform}.md` |
-| Design needed | `docs/02_design/architecture.md` |
-| Web application | `docs/02_design/api_spec.md` |
+| Design needed | `docs/03_design/architecture.md` |
+| Web application | `docs/03_design/api_spec.md` |
 
 ### Step 3: Determine the branch name
 
@@ -87,7 +87,7 @@ Append the following to the selected `exec-plans/active/*.md`.
 ## Implementation order guide
 
 **Basic principle of implementation order**: Implement from the stable layer (the depended-upon side) first, then the unstable layer (the depending side) afterward.
-The specific order follows the definitions in `docs/03_implementation/patterns.md`.
+The specific order follows the definitions in `docs/04_implementation/patterns.md`.
 
 **Common pattern:**
 ```
@@ -111,7 +111,7 @@ Data structures (Model / Entity / Type)
 > FE: Type definitions → API client → Logic layer → UI components → Pages
 > ```
 
-See `docs/03_implementation/patterns.md` for detailed implementation order and project-specific patterns.
+See `docs/04_implementation/patterns.md` for detailed implementation order and project-specific patterns.
 
 ---
 

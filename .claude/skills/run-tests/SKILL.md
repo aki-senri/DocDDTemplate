@@ -20,7 +20,7 @@ disable-model-invocation: true
 > Treat test failures as a "spec compliance verification gate" rather than an opportunity to modify tests.
 >
 > **Prerequisites**:
-> - `docs/04_quality/test_strategy.md` must exist and have the `test_command` field set
+> - `docs/05_quality/test_strategy.md` must exist and have the `test_command` field set
 
 ---
 
@@ -37,7 +37,7 @@ disable-model-invocation: true
 
 ### Step 1: Read the test command
 
-Load the frontmatter of `docs/04_quality/test_strategy.md`.
+Load the frontmatter of `docs/05_quality/test_strategy.md`.
 
 ```yaml
 ---
