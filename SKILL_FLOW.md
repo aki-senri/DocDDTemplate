@@ -54,6 +54,8 @@ flowchart TD
     end
 
     IMPL --> PREPR
+    IMPL -.->|optional independent code review| DCR
+    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
         PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check\n⑥ Update exec-plan progress checkboxes"]
@@ -119,12 +121,15 @@ flowchart TD
 | `gc` | `update-context` | Internal call |
 | `promote-spec` | `create-exec-plan` | Handoff (suggests new-AC plans after promotion) |
 | `promote-spec` | `start-feature` | Handoff (reconcile exec-plan → begin reconciliation) |
+| —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr` — spawns a subagent via the Agent tool (no internal caller) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
-> **Invocation mode of "Internal call":** `run-tests` is model-invocable
-> (`disable-model-invocation: false`), so callers invoke it via the Skill tool. All other callees
-> above keep `disable-model-invocation: true`; callers execute them by following their `SKILL.md`
-> steps inline (the Skill tool is not exposed for them). See CLAUDE.md "検証スキルの呼び出しポリシー".
+> **Invocation mode:** Among the callees above, `run-tests` is model-invocable
+> (`disable-model-invocation: false`), so its callers invoke it via the Skill tool; the other
+> *internal-call* callees keep `disable-model-invocation: true` and are executed inline by following
+> their `SKILL.md` steps (the Skill tool is not exposed for them). `docode-review` is also
+> model-invocable (`false`) — it spawns an independent subagent via the Agent tool — but unlike
+> `run-tests` it has no internal caller: the human invokes it directly. See CLAUDE.md "検証スキルの呼び出しポリシー".
 
 ---
 
@@ -185,13 +190,15 @@ flowchart TD
 ```mermaid
 flowchart TD
   A[Implementation request] --> R["create-requirements (optional)"]
-  R --> B["create-exec-plan (optional)"]
+  R --> S["create-spec (optional)"]
+  S --> B["create-exec-plan (optional)"]
   B --> C["start-feature (optional)"]
 
   C --> L[Implementation loop: optional checks]
   L --> L
 
-  L --> P["pre-pr (optional)"]
+  L --> DCR["docode-review (optional)"]
+  DCR --> P["pre-pr (optional)"]
   P --> M[Create PR → Merge]
   M --> Q["complete-exec-plan (optional)"]
   Q --> G["gc (optional, weekly)"]
