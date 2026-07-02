@@ -5,7 +5,13 @@ description: |
   When tests fail, includes a decision gate to determine whether the test correctly expresses the spec before deciding on action.
   Prohibits modifying tests to match implementation behavior.
   Can be called internally by pre-pr, start-feature, and complete-exec-plan, or run standalone.
-disable-model-invocation: true
+# disable-model-invocation is intentionally false: running tests is a read-only, non-destructive
+# verification action, and the autonomous driver (run-exec-plan) must invoke it reliably as a
+# subroutine after each AC. Making it model-invocable lets the driver call it via the Skill tool
+# (single source of truth, no inlined-step drift) and lets the model run tests when appropriate.
+# The write-side verification skills (check-invariants / check-doc-freshness) stay true, because
+# ambient auto-invocation of skills that modify code/docs would undermine the human governance gates.
+disable-model-invocation: false
 ---
 
 # Skill: Test Execution & Spec Verification

@@ -83,9 +83,14 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ### Step 3: Verify
 
-Run the verification skills (these are callable automatically by this driver):
+Run the verification skills. Note the two invocation modes (they differ by
+`disable-model-invocation`):
+- `run-tests` is model-invocable (`false`) — invoke it directly via the Skill tool.
+- `check-invariants` / `check-doc-freshness` are non-invocable (`true`) — execute them by reading
+  their `SKILL.md` and following the steps inline. Do not try to call them via the Skill tool; it
+  is not exposed for them.
 
-1. `run-tests`
+1. `run-tests` (invoke via the Skill tool)
    - **All green** -> continue to Step 3b.
    - **Red because the implementation has a bug** (spec alignment gate option A): this is the
      normal inner-loop case. Fix the implementation and re-run. Count this attempt against
@@ -94,12 +99,12 @@ Run the verification skills (these are callable automatically by this driver):
      change is an outer-gate action — **halt** with stop-condition (c). Never edit a test's
      expectation to match implementation behavior (INV-T01).
    - **Still red after `MAX_REPAIR_ATTEMPTS`** -> **halt** with stop-condition (b).
-2. `check-invariants`
+2. `check-invariants` (follow inline)
    - Violation resolvable within the current AC's scope -> fix and re-run Step 3. This counts
      against `MAX_REPAIR_ATTEMPTS` (same budget as test repair); if exhausted, **halt** with
      stop-condition (b).
    - Violation requiring scope expansion -> **halt** with stop-condition (e).
-3. `check-doc-freshness` (advisory) — update any docs whose `tracks:` matches changed files.
+3. `check-doc-freshness` (follow inline, advisory) — update any docs whose `tracks:` matches changed files.
 
 **Step 3b — on green:**
 - Change the AC's `- [ ]` to `- [x]` in the plan.
