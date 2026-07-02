@@ -29,7 +29,7 @@ settings.json = Triggers     (when to run automatically)
 |-------|-------------|-------------|
 | Phase 0 | Project initialization | CONTEXT.md, overview.md, decisions.md |
 | Phase 1 | Knowledge base construction | invariants.md, patterns.md, architecture.md |
-| Phase 2 | Requirements & design | user_stories, api_spec.md, data_model.md |
+| Phase 2 | Requirements, spec & design | user_stories, app_spec.md, api_spec.md, data_model.md |
 | Phase 3 | Implementation | Code + keeping documentation in sync |
 | Phase 4 | Quality & operations | review_checklist.md, test_strategy.md |
 
@@ -58,31 +58,72 @@ This collects project overview, tech stack, development rules, and platform via 
 ### 3. Start implementing features
 
 ```
-/create-exec-plan   ← create an execution plan
-/start-feature      ← pre-implementation review and branch creation
-(implement)
-/pre-pr             ← comprehensive pre-PR check
-/complete-exec-plan ← move plan to completed
+/create-requirements ← define User Stories / AC conditions (optional, recommended)
+/create-spec         ← draft the application spec (optional; skip for small changes)
+/create-exec-plan    ← create an execution plan (define AC-001~)
+/start-feature       ← pre-implementation review and branch creation
+/run-exec-plan       ← autonomously implement ACs one by one (opt-in)
+   (or implement manually: write code → /check-doc-freshness → /check-invariants → /run-tests)
+/pre-pr              ← comprehensive pre-PR check
+/complete-exec-plan  ← move plan to completed
 ```
+
+> Only `create-exec-plan` onward is required for a minimal loop; `create-requirements` / `create-spec`
+> are recommended when "what to build" is vague or shared across a team.
+
+---
+
+## Who does what (human vs AI)
+
+DocDD splits responsibilities: **the human makes decisions, the AI does execution.**
+
+- **The human invokes** the governance/decision skills (define requirements, freeze ACs, start the loop, review, merge).
+- **The AI runs** the verification/support skills internally — the human normally does not call these directly; higher-level skills run them automatically.
+
+For the detailed responsibility split, the human-perspective flow, and who calls which skill, see
+[`ONBOARDING.md` §6-0](ONBOARDING.md#6-0-what-the-human-does-responsibility-split)
+(日本語: [`ONBOARDING.ja.md` §6-0](ONBOARDING.ja.md#6-0-人が何をするか責任分担)).
+The full flow with all skill dependencies is in [`SKILL_FLOW.md`](SKILL_FLOW.md).
 
 ---
 
 ## Skills
 
+Run skills in Claude Code chat by typing `/skill-name`.
+
+### Invoked directly by the human (governance / decisions)
+
 | Skill | Purpose |
 |-------|---------|
-| `init-project` | Project initialization (Phase 0 → Phase 1) |
-| `create-exec-plan` | Create a new execution plan (exec-plan) |
-| `start-feature` | Pre-implementation review and branch name decision |
-| `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / review_checklist / run-tests / exec-plan update) |
+| `init-project` | Project initialization (Phase 0 → Phase 1). Run once at adoption |
+| `create-requirements` | Define User Stories, acceptance conditions, and constraints (`docs/01_requirements/`) |
+| `create-spec` | Draft the application spec — *what* the app does — from approved requirements (`docs/02_spec/`, `status: draft`; needs human approval) |
+| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) |
+| `start-feature` | Pre-implementation review and branch name decision (once per feature) |
+| `run-exec-plan` | Autonomously implement ACs one by one (implement → test → fix → next); halts only on stop conditions (opt-in) |
+| `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update) |
 | `complete-exec-plan` | Move execution plan from `active/` to `completed/` |
+| `promote-spec` | Promote a next-version spec (`spec/<label>` branch) into the current target (sprint boundary) |
+| `gc` | Periodic garbage collection (documentation and architecture health check; weekly) |
+
+### Run internally by the AI (verification / support)
+
+| Skill | Purpose |
+|-------|---------|
 | `run-tests` | Run tests and verify against spec (spec alignment gate determines action on failure) |
 | `check-invariants` | Verify invariants in `invariants.md` against implementation code |
 | `check-doc-freshness` | Check freshness of documents corresponding to changed code |
+| `check-doc-invariants` | Check documents for structural-rule (doc-INV) violations |
 | `update-context` | Update CONTEXT.md to reflect current state |
-| `gc` | Periodic garbage collection (documentation and architecture health check) |
 
-Run skills in Claude Code chat by typing `/skill-name`.
+### Optional independent review (human-invoked when desired, no authoring context)
+
+| Skill | Purpose |
+|-------|---------|
+| `doc-review` | Independent agent reviews a requirements or spec document (AC testability, completeness, references) |
+| `docode-review` | Independent agent reviews changed code against the ACs and general quality |
+
+> `run-tests` is model-invocable (callers invoke it via the Skill tool); the other internal skills are executed by higher-level skills following their `SKILL.md` steps inline. See CLAUDE.md "検証スキルの呼び出しポリシー".
 
 ---
 
@@ -94,13 +135,20 @@ project-root/
 │   ├── settings.json          # Hook configuration (auto-reminders on code changes)
 │   └── skills/                # Skill definitions
 │       ├── init-project/
+│       ├── create-requirements/
+│       ├── create-spec/
 │       ├── create-exec-plan/
 │       ├── start-feature/
+│       ├── run-exec-plan/
 │       ├── pre-pr/
 │       ├── complete-exec-plan/
+│       ├── promote-spec/
+│       ├── run-tests/
 │       ├── check-invariants/
 │       ├── check-doc-freshness/
-│       ├── run-tests/
+│       ├── check-doc-invariants/
+│       ├── doc-review/
+│       ├── docode-review/
 │       ├── update-context/
 │       └── gc/
 ├── docs/                      # ← generated by init-project (does not exist initially)
