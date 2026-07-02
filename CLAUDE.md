@@ -68,10 +68,14 @@ AC が凍結された範囲内の **実行**（実装→テスト→修正→次
 
 ### 検証スキルの呼び出しポリシー
 
-`/run-exec-plan` は検証スキル（`run-tests` / `check-invariants` / `check-doc-freshness`）を
-**pre-pr と同じく「手順をインライン実行する」方式**で自動的に回す。これらは
-`disable-model-invocation: true` のままにする（フラグは変えない）——モデルが文脈次第で勝手に
-起動するのを防ぎつつ、driver や pre-pr が手順を辿る形での実行は可能、という現行の仕組みをそのまま使う。
+`/run-exec-plan` は検証スキルを AC ごとに自動で回す。ただし呼び出し方式はスキルの副作用の有無で分ける。
+
+| スキル | `disable-model-invocation` | 呼び出し方式 | 理由 |
+|--------|:--:|--------------|------|
+| `run-tests` | **false** | Skill ツールで起動（単一ソース） | テスト実行は read-only・非破壊。driver が AC ごとに確実に呼ぶ必要があり、モデル起動可にして Skill ツールで呼ぶ方がインライン複製のドリフトを避けられる |
+| `check-invariants` / `check-doc-freshness` | **true** | 手順をインライン実行（Skill ツールは使わない） | コード/ドキュメントを書き換える副作用があるため、文脈任せの自動起動（ambient invocation）は統治ゲートを崩す。driver や pre-pr が手順を辿る形でのみ実行する |
+
+`true` のスキルは「モデルが文脈次第で勝手に起動するのを防ぎつつ、driver や pre-pr が手順を辿る形での実行は可能」という仕組みをそのまま使う。
 人間判断スキル（`create-requirements` の対話、`promote-spec`、PR 作成）はゲートを維持する。
 
 ### 再開状態のファイル化規約

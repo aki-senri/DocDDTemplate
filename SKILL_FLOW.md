@@ -108,7 +108,7 @@ flowchart TD
 | `pre-pr` | `check-doc-invariants` | Internal call |
 | `pre-pr` | `run-tests` | Internal call |
 | `start-feature` | `run-tests` | Internal call |
-| `run-exec-plan` | `run-tests` | Internal call (per AC, inline) |
+| `run-exec-plan` | `run-tests` | Internal call (per AC, via Skill tool — `run-tests` is model-invocable) |
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
@@ -120,6 +120,11 @@ flowchart TD
 | `promote-spec` | `create-exec-plan` | Handoff (suggests new-AC plans after promotion) |
 | `promote-spec` | `start-feature` | Handoff (reconcile exec-plan → begin reconciliation) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
+
+> **Invocation mode of "Internal call":** `run-tests` is model-invocable
+> (`disable-model-invocation: false`), so callers invoke it via the Skill tool. All other callees
+> above keep `disable-model-invocation: true`; callers execute them by following their `SKILL.md`
+> steps inline (the Skill tool is not exposed for them). See CLAUDE.md "検証スキルの呼び出しポリシー".
 
 ---
 
