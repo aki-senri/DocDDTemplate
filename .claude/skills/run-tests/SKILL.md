@@ -87,17 +87,25 @@ E2E acceptance criteria coverage:
 - If any AC-IDs are uncovered, issue a warning and prompt to create tests
 - If called from `pre-pr` or `complete-exec-plan`, put processing on hold if there are uncovered AC-IDs
 
-**E2E acceptance criteria are checked separately, and their absence is not a warning but a hold.**
-A per-AC coverage check cannot see the failure mode E2E ACs exist for: every functional AC green
-while the through-flow does not work. So for each `[E2E]` AC verify **both** that a test exists
-**and** that it is among the tests that just passed — an E2E AC with no test, or with a test that
-did not actually run, is treated as uncovered.
+E2E acceptance criteria are checked separately, because a per-AC coverage check cannot see the
+failure mode they exist for: every functional AC green while the through-flow does not work. So
+for each `[E2E]` AC verify **both** that a test exists **and** that it is among the tests that
+just passed — an E2E AC with no test, or with a test that did not actually run, is uncovered.
 
-- If a plan in `exec-plans/active/` has **no** `[E2E]` AC at all, report it: the plan predates the
-  E2E requirement or was created without one. Do not invent the criterion here — direct the user
-  to add it (see `create-exec-plan`).
-- When called from `pre-pr` or `complete-exec-plan`, an uncovered `[E2E]` AC puts processing on
-  hold in the same way an uncovered functional AC does.
+**Two different situations, two different outcomes.** Keep them apart:
+
+| Situation | Outcome |
+|-----------|---------|
+| The plan **has** a `[E2E]` AC, but its test is missing, or did not run, or failed | ❌ **hold** — same weight as a failing test |
+| The plan has **no** `[E2E]` AC at all | ⚠️ **report only, do not hold** |
+
+The second case is a warning rather than a hold because it has legitimate causes: the plan predates
+the E2E requirement, or it is documentation-only (see `create-exec-plan`). Report it as
+`⚠️ このプランに [E2E] AC がありません` and direct the user to `create-exec-plan` — **do not invent
+the criterion here.** Deciding what to build is an outer gate.
+
+When called from `pre-pr` or `complete-exec-plan`, an uncovered `[E2E]` AC puts processing on hold
+in the same way an uncovered functional AC does; a missing `[E2E]` AC does not.
 
 ### Step 4: If failures — spec alignment gate
 

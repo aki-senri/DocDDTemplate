@@ -18,6 +18,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - [x] AC-002: `create-spec` の Screen/UX flows を `## E2E シナリオ` 節として必須化（`(if applicable)` を外す）し、`E2E-001 → AC-001, AC-003` 形式の横断 traceability を記録させ、Completion criteria にも追加する
 - [x] AC-003: `create-exec-plan` に E2E-AC を最低1本立てる規約（記法 `- [ ] AC-NNN: [E2E] ...`）を追加し、「全機能 AC が `- [x]` でも E2E-AC が緑でなければ完了ではない」を完了条件に明記する
 - [x] AC-004: `run-tests` Step 3 と `pre-pr` ⑤ の AC カバレッジ確認に「E2E-AC に対応するテストが存在し緑か」を追加し、E2E-AC 未カバー時は `pre-pr` / `complete-exec-plan` を保留させる
+- [x] AC-006: `doc-review` / `check-doc-invariants` / `docode-review` にゴール像・E2E の観点を追加する。`check-doc-invariants` に DOC-INV-006（`## ゴール像` / `## E2E シナリオ` の必須節の存在と `E2E-NNN → AC-xxx` の traceability）を新設し、`doc-review` のレビュー観点にゴール像と E2E シナリオの品質を、`docode-review` の照合対象に `[E2E]` AC を加える
 - [x] AC-005: [E2E] `/create-requirements` → `/create-spec` → `/create-exec-plan` → `/pre-pr` を1本ウォークスルーし、ゴール像と E2E シナリオが最後まで痩せずに届くことを確認したうえで、`SKILL_FLOW.md`（§1 フロー図・§3 ギャップ表・§4 必須/任意ゲート表）と `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
 
 ## Task Breakdown
@@ -26,6 +27,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - [x] AC-002 — `.claude/skills/create-spec/SKILL.md` の Step 2 セクション表（L106 付近）と Completion criteria（L144 付近）を改修
 - [x] AC-003 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー Q3（L36 付近）、テンプレート（L64 付近）、Completion criteria（L94 付近）を改修
 - [x] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修（＋ `complete-exec-plan` Step 2）
+- [x] AC-006 — `check-doc-invariants`（DOC-INV-006 新設・Step 7・報告書式）、`doc-review`（§2b）、`docode-review`（1b）、参照側の `pre-pr` / `gc`
 - [x] AC-005 — 5スキルを通しでウォークスルー → `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従
 - [x] `/check-doc-invariants` を実行
 - [ ] `/doc-review` を実行（独立エージェントによる検査）— 起動直後にユーザーが中断。未実施
@@ -42,6 +44,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - AC-005 完了（機能 AC・E2E AC ともすべて `- [x]`）
 - `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は DOC-INV-004 が 5 件（既知）、
   ⑤ は `test_strategy.md` 不在で実行不可、⑤-E2E は自動テスト不在で ❌。PR 作成は保留
+- 自己矛盾レビューで 8 件検出。全件対処。AC-006 を追加し、AC-005（E2E）を再オープンして再検証
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
@@ -168,6 +171,110 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   自動で通してよいものではない（統治ゲートを自分で緩めない）。
   なお、この矛盾はテンプレート本体に固有のもので、テンプレートを適用した実プロジェクトでは
   `test_strategy.md` と実テストが存在するため発生しない。
+
+- **自己レビューで矛盾8件を検出し、うち7件を修正した（AC-006 の新設を含む）。**
+  テンプレート自身をレビューするスキルが無いため、変更した全ファイルを読み直して自己矛盾を洗った。
+
+  1. **E2E-AC 必須が `create-exec-plan` 自身の適用範囲と矛盾**（🔴）。同スキルは用途を
+     「feature implementation, documentation, refactoring, phase transition」と定義し、CLAUDE.md は
+     reconcile プランを定めているのに、E2E-AC を無条件必須にしていた。
+     → **要件・機能の実装を行うプランに必須**へ変更。**リファクタリングは除外しない**（ユーザー判断）。
+     除外すると「本来あるべき振る舞いを確認せずに実装を完了させる」問題に直結するため、
+     リファクタでは E2E-AC を「既存の通しフローが変更後も同じ前提・完了条件で成立する」という
+     振る舞い保存の言明として書く。免除は documentation-only（機能を実装するファイルを1つも変更しない、
+     `git diff --name-only` で判定可能）に限り、Decision Log に `E2E: n/a (documentation-only)` を残す。
+  2. **「E2E-AC が1本も無い」の扱いが3スキルで不一致**（🔴。report のみ／⚠️／記録すれば続行）。
+     → 「E2E-AC あるが未カバー＝❌ 停止」「E2E-AC 不在＝⚠️ 報告のみ・続行可」に統一し、
+     `run-tests` / `pre-pr` / `complete-exec-plan` に同じ2行表を置いた。
+  3. `run-tests` の "absence" が二義的（テストの不在／AC の不在）だった → 上記の表で解消。
+  4. **`run-exec-plan` に hold の分岐が無かった**（🟠）。Step 3 は「全緑／実装バグで赤／期待値変更で赤」の
+     3分類しかなく、新設した「E2E 未カバーで hold」が未定義だった → 停止条件 (a) で halt を追加。
+     **これに伴い AC-005 の記述を訂正する**: 「driver が E2E AC を実テスト無しにチェックすることは
+     できない」と書いたが、その根拠は run-tests の hold であり、driver 側に受け口が無い以上
+     保証されていなかった。今回 (a) の分岐を追加したことで、初めて成立する。
+  5. **CLAUDE.md が未更新**（🟠）。AC-005 の追従対象に SKILL_FLOW / README×2 / ONBOARDING×2 は
+     入れたが CLAUDE.md を入れ忘れていた → スキル一覧の3行を更新。
+  6. AC-005 を `- [x]` にしたことが自分の規定に抵触していた → 1 の documentation-only 免除
+     （ウォークスルーによる検証を明文で許可）により解消。
+  7. **レビュー系3スキルがゴール像・E2E を1箇所も参照していなかった**（🟠。出現回数 0）。
+     「必須」と言いながら検査する側が新層を知らない状態 → **AC-006 として新設**し実装。
+  8. `SKILL_FLOW.md` が G-F を "✅ Resolved" と断定していた（未マージ・issue open）
+     → "🔄 Addressed, pending merge of #27" に修正。
+
+- **AC-006 done.** `check-doc-invariants` に DOC-INV-006（US の `## ゴール像` 必須3節、spec の
+  `## E2E シナリオ` と `E2E-NNN → AC-xxx` の網羅、active プランの `[E2E]` AC 有無と
+  documentation-only 免除）を新設し、Step 7・報告書式・Completion criteria・description を追従。
+  参照側の `pre-pr` ③ と `gc` の DOC-INV 列挙にも 006 を追加。`doc-review` に §2b
+  「Goal image and E2E coverage」（US / spec / exec-plan それぞれの観点）と報告書式の節を追加。
+  `docode-review` に 1b「`[E2E]` AC compliance」を追加し、「実装した本人が最も自己検証しにくい観点」
+  として重み付けを明記、報告書式にも節を追加。
+
+- **AC-005 を再オープンして再実行した。** AC-006 がスキル層を変える以上、先に通した
+  ウォークスルーは stale になるため。AC-006 を AC-005 の前に置き（`[E2E]` は最後という規約を維持）、
+  検証項目を 9 → **14 項目**に拡張して再実行し全 PASS。追加した5項目は上記 1・2・4・5・7・8 の
+  修正が実際に入っているかの確認。
+
+- **自己矛盾レビュー（8 件）とその決定**。テンプレート自身をレビューするスキルが無いため、
+  変更した全ファイルを読み直して内部矛盾を洗い出した。検出 8 件はすべて対処済み。
+
+  1. **E2E-AC の適用条件を「実装を伴うプラン」に限定した（リファクタリングは除外しない）**。
+     当初「すべてのプランが E2E-AC を持つ」と無条件に規定したが、`create-exec-plan` 自身が
+     用途に documentation / refactoring / phase transition を挙げており、また CLAUDE.md の
+     reconcile プランにも同じ要求が及ぶため矛盾していた。
+     決定: 要件・機能の実装を行うプランは必須。**リファクタリングは免除しない** — 「振る舞いが
+     保たれる」ことこそがリファクタリングの主張であり、E2E-AC が無ければ本来あるべき振る舞いを
+     確認しないまま完了できてしまう。この場合の E2E-AC は保存の言明（「E2E-001 が変更後も同じ
+     前提・同じ完了条件で成立する」）として書く。免除は documentation-only（機能を実装する
+     ファイルを一切変更しない。`git diff --name-only` で判定可能）のみとし、`E2E: n/a
+     (documentation-only)` を Decision Log に記録させる。
+
+  2. **「E2E-AC が1本も無い」場合の扱いを3スキルで統一**。`run-tests`（報告のみ）/
+     `pre-pr`（⚠️ だが直前に「ブロック」と記載）/ `complete-exec-plan`（記録すれば続行可）で
+     三者三様だった。決定: 「E2E-AC はあるがテスト未カバー/赤」＝ ❌ 停止、「E2E-AC が無い」＝
+     ⚠️ 報告のみ・続行可、の2分割で統一し、3スキルに同じ表を置いた。後者を警告に留めるのは、
+     E2E 必須化以前のプランと documentation-only プランという正当な理由があるため。
+
+  3. `run-tests` の "their absence is not a warning but a hold" は absence が二義的
+     （テストの不在／AC の不在）だったため、上記の表に置き換えて解消。
+
+  4. **`run-exec-plan` Step 3 に hold の分岐を追加**。driver は run-tests の結果を
+     「全緑／実装バグで赤／期待値変更で赤」の3つにしか分類しておらず、新設した「E2E 未カバーで
+     hold」が未定義だった。決定: 停止条件 (a) で halt（E2E テストを書くこと自体が「通しの
+     振る舞いは何か」の決定であり outer gate）。停止条件表の (a) にも追記。
+     **訂正**: AC-005 の記録で「driver が E2E AC を実テスト無しにチェックすることはできない」と
+     書いたが、その根拠は driver 側の分岐であり当時それは存在しなかった。本項の追加により
+     初めて成立する。
+
+  5. CLAUDE.md のスキル一覧が未追従だった（AC-005 の追従対象に入れ忘れ）。追記。
+
+  6. 本プランの AC-005 を `- [x]` にしながら pre-pr ⑤-E2E が ❌ という矛盾は、1 の
+     documentation-only 免除により解消。本プランの変更は `.md` のみで documentation-only に
+     該当し、E2E-AC をウォークスルーで検証することが規定上認められる形になった。
+
+  7. レビュー系3スキルがゴール像・E2E を1箇所も参照していなかった（必須と言いながら検査する
+     ものが無い状態）。**AC-006 として起票し実装**。
+
+  8. `SKILL_FLOW.md` が G-F を "✅ Resolved" と断定していたが未マージ・issue open のため
+     "🔄 Addressed, pending merge of #27" に修正。
+
+- **AC-006 の追加と AC-005 の再オープン**。7 はスキル層そのものを変えるため、既に完了していた
+  AC-005（E2E ウォークスルー）は stale になる。CLAUDE.md の「完了済み AC が stale になったら
+  再オープンする」原則に従い、AC-006 を AC-005 の**前**に挿入（`[E2E]` AC を最後に置く規約の
+  維持）、AC-005 のチェックを外して再実行した。番号は連番を維持し既存の Decision Log 参照を
+  壊していない。
+
+- **AC-006 done.** `check-doc-invariants` に DOC-INV-006（US の `## ゴール像` 3 節、spec の
+  `## E2E シナリオ` と `E2E-NNN → AC-xxx` の被覆、active プランの `[E2E]` AC 存在。
+  documentation-only は `E2E: n/a` の記録で免除）を新設し、Step 7 と報告書式、参照側の
+  `pre-pr` ③ / `gc` を追従。`doc-review` に §2b（ゴール像と E2E シナリオの品質観点。
+  「完成時にできること が機能名の言い換えになっていないか」等）を追加。`docode-review` に 1b
+  （`[E2E]` AC の照合。diff を通してフローを辿り、壊れる最初のステップを名指しする。
+  実装エージェントが自分では最もやりにくい検査であることを明記）を追加。
+
+- **AC-005 再検証 done（[E2E]）.** 検査項目を 9 → 14 に拡張して再実行し全て PASS。
+  追加した5項目は 5:リファクタリング非免除 / 6:documentation-only 免除 / 7:E2E-AC 不在の
+  3スキル一致 / 8:未カバー時の3スキル一致 / 9:driver の hold 分岐 / 10:CLAUDE.md 追従 /
+  11:DOC-INV-006 の3箇所参照 / 12:doc-review / 13:docode-review / 14:SKILL_FLOW の但し書き。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を

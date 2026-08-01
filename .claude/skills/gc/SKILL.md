@@ -65,7 +65,7 @@ Run the `check-doc-invariants` skill against all documents in the repository.
 - Target: all `docs/**/*.md` and `exec-plans/**/*.md`
 - Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
   DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
-  DOC-INV-005 (diagram rules)
+  DOC-INV-005 (diagram rules), DOC-INV-006 (goal image / E2E traceability)
 - Fix any violations found
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
   record the decision if leaving ASCII art intentionally

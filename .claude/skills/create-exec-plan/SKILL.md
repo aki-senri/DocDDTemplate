@@ -3,8 +3,10 @@ name: create-exec-plan
 description: |
   Creates a new execution plan in exec-plans/active/.
   Used when starting a substantial piece of work (feature implementation, documentation, refactoring, etc.) in Phase 2 (requirements/design) or later.
-  Every plan carries at least one [E2E] acceptance criterion alongside the functional ones, so a
-  plan cannot be completed by turning fragments green without the through-flow working.
+  Any plan that implements requirements or functionality — refactoring included — carries at least
+  one [E2E] acceptance criterion alongside the functional ones, so a plan cannot be completed by
+  turning fragments green without the through-flow working. Documentation-only plans record
+  "E2E: n/a" instead.
 disable-model-invocation: true
 ---
 
@@ -37,16 +39,41 @@ The agent asks the following questions **one at a time, in order**.
 | Q1 | What is the name of this plan? (alphanumeric and hyphens, e.g. `user-auth`, `refactor-service-layer`) | Filename |
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
-| Q3b | Which end-to-end scenario must work when every criterion above is met? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
+| Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
 
 ---
 
-## E2E acceptance criteria (required)
+## E2E acceptance criteria
 
-Every plan must carry **at least one E2E acceptance criterion** in addition to its functional
-ones. Functional ACs are fragments: each can be green while the thing as a whole is unusable.
-The E2E AC is the criterion that the fragments add up.
+A plan that implements requirements or required functionality must carry **at least one E2E
+acceptance criterion** in addition to its functional ones. Functional ACs are fragments: each can
+be green while the thing as a whole is unusable. The E2E AC is the criterion that the fragments
+add up.
+
+### When it is required
+
+| Plan implements… | E2E AC | The E2E AC says |
+|------------------|:------:|-----------------|
+| New / changed functionality from requirements | **Required** | the new through-flow works end to end |
+| **Refactoring** of code that realizes functionality | **Required** | the *existing* through-flow still works unchanged |
+| A reconcile plan re-opening AC-IDs (see CLAUDE.md) | **Required** | the through-flow covering the re-opened ACs holds |
+| Nothing functional — documentation, doc restructuring | Not required | — |
+
+**Refactoring is not an exception.** It is the case that most needs the criterion: the whole claim
+of a refactor is "behavior is preserved", and without an E2E AC the plan can be completed having
+verified only that the fragments still compile. Write the E2E AC as a preservation statement —
+"E2E-001 が変更後も同じ前提・同じ完了条件で成立する" — and hold it to the same passing-test bar.
+
+**Documentation-only** means the plan changes no file that implements functionality — checkable
+against `git diff --name-only`. It is not a judgment call about how "code-like" the work felt. For
+such a plan, record `E2E: n/a (documentation-only)` in the plan's `## Decision Log` so a later
+reader knows the criterion was considered and ruled out, not forgotten.
+
+If a documentation-only plan defines an E2E AC anyway (e.g. a through-walkthrough of a process),
+it may be verified by a **reproducible walkthrough recorded in the Decision Log** instead of an
+automated test. This exemption applies only when the plan is documentation-only — a plan that
+touches functional code always needs a passing test.
 
 **Notation** — an E2E AC is an ordinary numbered AC whose description starts with the `[E2E]`
 marker:
@@ -69,8 +96,9 @@ grepping for the marker.
 ```
 
 If the work is small enough that `/create-spec` was skipped, derive the E2E AC from the goal
-image (`## ゴール像` の主要ユーザージャーニー) of the source US instead. If neither exists, ask
-the user for the through-flow directly — **do not create a plan with functional ACs only.**
+image (`## ゴール像` の主要ユーザージャーニー) of the source US instead. For a refactoring plan,
+take the E2E scenario the affected code already participates in. If none of these exist, ask the
+user for the through-flow directly — **do not create a functional plan with fragment ACs only.**
 
 **Effect on completion**: a plan is not complete while any E2E AC is unchecked, even if every
 functional AC is `- [x]`. This is stated in the generated plan itself (see the template) so a
@@ -137,9 +165,11 @@ completed:
 
 - [ ] `exec-plans/active/YYYY-MM-{name}.md` has been created
 - [ ] The file contains `status: active`, `created: YYYY-MM-DD`, goal, acceptance criteria, and task breakdown
-- [ ] **At least one acceptance criterion is an E2E criterion** written as `- [ ] AC-NNN: [E2E] ...`,
+- [ ] For any plan implementing requirements or functionality (**refactoring included**):
+      **at least one acceptance criterion is an E2E criterion** written as `- [ ] AC-NNN: [E2E] ...`,
       placed after the functional ACs, and traced to the spec's `E2E-NNN` (or to the US goal image
-      when no spec exists)
+      when no spec exists). For a documentation-only plan: `E2E: n/a (documentation-only)` is
+      recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 

@@ -128,6 +128,18 @@ Perform a thorough review covering:
    - Does the implementation satisfy each AC?
    - Are there any ACs not covered by the changes?
 
+1b. **`[E2E]` AC compliance — judge the whole, not only the fragments**
+   - The plan's `[E2E]` acceptance criteria (`- [x] AC-NNN: [E2E] ...`) state the through-flow that
+     must work. Per-AC compliance above can be ✅ across the board while the through-flow is broken:
+     each fragment satisfies its own criterion and nothing connects them.
+   - For each `[E2E]` AC, trace the flow through the diff: can a user actually get from its 前提 to
+     its 完了条件 with this code? Name the first step that breaks if not.
+   - Is there a test that exercises the whole flow, or only per-AC unit tests?
+   - For a refactoring plan, the `[E2E]` AC asserts *preservation* — does the diff change observable
+     behavior anywhere along that flow?
+   - This is the check the authoring agent is least able to do for itself, since it verified each AC
+     as it built it. Weight it accordingly.
+
 2. **Correctness**
    - Logic errors, edge cases not handled, off-by-one errors
    - Incorrect assumptions about inputs or state
@@ -155,6 +167,10 @@ Branch diff: main...HEAD
 
 ### AC Compliance
 {For each AC: ✅ Satisfied / ❌ Not satisfied / N/A}
+
+### [E2E] AC Compliance
+{For each [E2E] AC: ✅ through-flow holds / ❌ breaks at {step} / N/A (no [E2E] AC in plan)}
+{Whole-flow test exists? ✅ / ❌ per-AC tests only}
 
 ### Findings
 

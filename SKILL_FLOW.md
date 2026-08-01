@@ -187,12 +187,12 @@ flowchart TD
 
 B1–B11 above are about **skipping gates**. There is a second axis: passing every gate while the
 goal itself is too thin to steer autonomous implementation toward. That axis is tracked in issue
-#28 (G-A … G-F) rather than here, but its first item is resolved in the flow above and is recorded
-for context:
+#28 (G-A … G-F) rather than here, but its first item is addressed in the flow above and is recorded
+for context (the issue closes on merge, not on this table):
 
 | # | Issue | Status |
 |---|-------|--------|
-| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
+| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | 🔄 Addressed, pending merge of #27 — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
 | G-C / G-A / G-B / G-D / G-E | AC testability gate, red-first acceptance tests, goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
 
 ---

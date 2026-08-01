@@ -54,9 +54,16 @@ Run the `run-tests` skill and verify the following:
   ACs are all `- [x]` is still not complete while the through-flow is unverified
 - If any condition is not met, put the completion on hold and prompt for action
 
-If the plan contains no `[E2E]` AC at all, report it and direct the user to `create-exec-plan`
-rather than completing the plan without one. (A plan created before the E2E requirement may
-legitimately lack one — in that case record the reason in the decision log before proceeding.)
+Two situations, two outcomes (same split as `run-tests` and `pre-pr`):
+
+| Situation | Outcome |
+|-----------|---------|
+| The plan **has** a `[E2E]` AC, but its test is missing / did not run / failed | ❌ **hold the completion** |
+| The plan has **no** `[E2E]` AC at all | ⚠️ **report only, completion may proceed** |
+
+The second case has legitimate causes (the plan predates the E2E requirement, or it is
+documentation-only — see `create-exec-plan`). Report it, record the reason in the decision log,
+and proceed. Do not write the criterion here.
 
 ### Step 3: Update and move the file
 
