@@ -27,9 +27,9 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - [x] AC-003 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー Q3（L36 付近）、テンプレート（L64 付近）、Completion criteria（L94 付近）を改修
 - [x] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修（＋ `complete-exec-plan` Step 2）
 - [x] AC-005 — 5スキルを通しでウォークスルー → `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従
-- [ ] `/check-doc-invariants` を実行
-- [ ] `/doc-review` を実行（独立エージェントによる検査）
-- [ ] `/pre-pr` を実行して PR 作成（PR 作成は人間ゲート）
+- [x] `/check-doc-invariants` を実行
+- [ ] `/doc-review` を実行（独立エージェントによる検査）— 起動直後にユーザーが中断。未実施
+- [x] `/pre-pr` を実行（PR 作成自体は人間ゲートのため未実施）
 
 ## Progress Log
 
@@ -40,6 +40,8 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - AC-003 完了
 - AC-004 完了
 - AC-005 完了（機能 AC・E2E AC ともすべて `- [x]`）
+- `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は DOC-INV-004 が 5 件（既知）、
+  ⑤ は `test_strategy.md` 不在で実行不可、⑤-E2E は自動テスト不在で ❌。PR 作成は保留
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
@@ -156,6 +158,16 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   E2E AC を機能 AC の後ろに置く規約により最後に処理され、かつ Step 3 で呼ぶ `run-tests` が
   E2E 未カバーを保留するため、driver が E2E AC を実テスト無しにチェックすることはできない。
   よって Ph1 の範囲で `run-exec-plan` の改修は不要（driver へのゴール伝達自体は #23/#25 の担当）。
+
+- **`/pre-pr` 結果: ⑤-E2E が ❌ で、規定どおりなら PR 作成はブロックされる。**
+  AC-004 で「`[E2E]` AC はテストが存在し緑であること。未カバーは PR をブロック」と定めた当の
+  ゲートに、本ブランチ自身が抵触している。理由は AC-005 の記録どおり、テンプレート本体に
+  テストスイート（`docs/05_quality/test_strategy.md` および実テスト）が存在しないため。
+  自動テストの代わりに 9 項目のウォークスルー検査を実施し PASS しているが、これは規定が要求する
+  「テストが存在し緑」ではない。**この例外を認めて PR に進むかは人間の判断**であり、pre-pr が
+  自動で通してよいものではない（統治ゲートを自分で緩めない）。
+  なお、この矛盾はテンプレート本体に固有のもので、テンプレートを適用した実プロジェクトでは
+  `test_strategy.md` と実テストが存在するため発生しない。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
