@@ -19,15 +19,15 @@ flowchart TD
     INIT --> REQ
 
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
-        REQ["/create-requirements\n· Interview on User Story\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
+        REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
         DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
+        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Load CONTEXT.md\n③ Load invariants.md\n④ Load exec-plan (AC)\n⑤ Decide branch name\n⑥ Record start in progress log"]
     end
@@ -58,7 +58,7 @@ flowchart TD
     DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check\n⑥ Update exec-plan progress checkboxes"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check\n⑤-E2E [E2E] AC covered and green\n   (uncovered → blocks PR)\n⑥ Update exec-plan progress checkboxes"]
     end
 
     PREPR --> PR
@@ -66,7 +66,7 @@ flowchart TD
     PR --> COMPLETE
 
     subgraph COMPLETE_PHASE["Completion (after PR merge)"]
-        COMPLETE["/complete-exec-plan\n① Confirm all AC checkboxes\n② run-tests (final check)\n③ AC coverage check\n④ Move active/ → completed/\n⑤ Update CONTEXT.md priority tasks"]
+        COMPLETE["/complete-exec-plan\n① Confirm all AC checkboxes\n② run-tests (final check)\n③ AC coverage check\n③-E2E [E2E] AC passing (else hold)\n④ Move active/ → completed/\n⑤ Update CONTEXT.md priority tasks"]
     end
 
     COMPLETE --> NEXT
@@ -183,6 +183,18 @@ flowchart TD
 | B10 | Do not run `complete-exec-plan` after PR merge | Zombie plans remain in `exec-plans/active/`; CONTEXT.md goes stale | 🟡 Medium |
 | B11 | Skip weekly `gc` runs | Drift accumulates, increasing future correction cost | 🟡 Medium |
 
+### 3-6. Goal Quality (a different axis from bypasses)
+
+B1–B11 above are about **skipping gates**. There is a second axis: passing every gate while the
+goal itself is too thin to steer autonomous implementation toward. That axis is tracked in issue
+#28 (G-A … G-F) rather than here, but its first item is resolved in the flow above and is recorded
+for context:
+
+| # | Issue | Status |
+|---|-------|--------|
+| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
+| G-C / G-A / G-B / G-D / G-E | AC testability gate, red-first acceptance tests, goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
+
 ---
 
 ## 4. Mandatory Gates vs. Optional Gates in the Flow
@@ -207,6 +219,11 @@ flowchart TD
 
 **Mandatory gates (impossible to skip): currently zero.**
 All skills are manually invoked, and hooks do not block execution.
+
+> **Blocking *within* a skill is a different thing.** Once `pre-pr` or `complete-exec-plan` is
+> actually run, an uncovered or failing `[E2E]` AC blocks PR creation / completion — it cannot be
+> waved through the way an advisory warning can. That does not make the skill itself unskippable;
+> it means the E2E check is not optional for anyone who runs the gate.
 
 > **Spec version promotion** (`/promote-spec`) is a separate, human-gated event that runs at sprint
 > boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the
