@@ -36,6 +36,8 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 ### 2026-08-02
 - Plan created
 - AC-001 完了
+- Implementation started. Branch: feat/goal-image-e2e-issue27
+  （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
 ## Decision Log
 
@@ -72,6 +74,19 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   変更ファイルは `.claude/skills/**` で `check-doc-invariants` のスコープ（`docs/**` と `exec-plans/**`）外。
   スコープ内の本プランは DOC-INV-001（Markdown リンク 0 件）/ -002（`status: active`）/ -003 / -005（AA ブロック 0 件）を充足。
   他スキル・ドキュメントから旧 `## UI スケッチ` 節への構造的依存が無いことを grep で確認済み。
+
+- **`start-feature` の Step 0 / Step 2 は実行不可（このリポジトリ固有）**。
+  AC-001 コミット後に `/start-feature` を事後実行したが、次の理由で2ステップを充足できない。
+  - Step 0（ベースラインテスト）: `docs/05_quality/test_strategy.md` が無く `test_command` を
+    読めないため `run-tests` が起動できない。上記「本プランでは `/run-exec-plan` を使わない」と同根。
+  - Step 2（必須ドキュメント読み込み）: `docs/07_ai_context/CONTEXT.md` /
+    `docs/04_implementation/invariants.md` / `patterns.md` がいずれも存在しない。
+    同スキルの Prerequisites（`invariants.md` の存在）自体が満たされない。
+  したがって「ベースライン緑」を前提にした差分帰属（失敗が自分の変更由来か既存かの切り分け）は
+  このリポジトリでは働かない。代替として各 AC のコミットを分け、変更範囲を diff で追えるようにする。
+  ブランチ名は標準パターン `feature/{plan-name}` ではなく `feat/goal-image-e2e-issue27` を使用。
+  参照すべき CONTEXT.md のブランチ戦略が存在せず、既存リポジトリに `feat/` `feature/` 双方の
+  前例があるため、AC-001 コミット済みのブランチを改名せずそのまま継続する。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
