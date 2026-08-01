@@ -17,7 +17,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - [x] AC-001: `create-requirements` の Q4 を optional「UI スケッチ」から必須「ゴール／完成イメージ」に変更し、①主要ユーザージャーニー（Mermaid）②完成時に利用者が何をできるようになるか（1〜3文）③非ゴール の3点を必須項目とし、US テンプレートに `## ゴール像` 節を追加する
 - [x] AC-002: `create-spec` の Screen/UX flows を `## E2E シナリオ` 節として必須化（`(if applicable)` を外す）し、`E2E-001 → AC-001, AC-003` 形式の横断 traceability を記録させ、Completion criteria にも追加する
 - [x] AC-003: `create-exec-plan` に E2E-AC を最低1本立てる規約（記法 `- [ ] AC-NNN: [E2E] ...`）を追加し、「全機能 AC が `- [x]` でも E2E-AC が緑でなければ完了ではない」を完了条件に明記する
-- [ ] AC-004: `run-tests` Step 3 と `pre-pr` ⑤ の AC カバレッジ確認に「E2E-AC に対応するテストが存在し緑か」を追加し、E2E-AC 未カバー時は `pre-pr` / `complete-exec-plan` を保留させる
+- [x] AC-004: `run-tests` Step 3 と `pre-pr` ⑤ の AC カバレッジ確認に「E2E-AC に対応するテストが存在し緑か」を追加し、E2E-AC 未カバー時は `pre-pr` / `complete-exec-plan` を保留させる
 - [ ] AC-005: [E2E] `/create-requirements` → `/create-spec` → `/create-exec-plan` → `/pre-pr` を1本ウォークスルーし、ゴール像と E2E シナリオが最後まで痩せずに届くことを確認したうえで、`SKILL_FLOW.md`（§1 フロー図・§3 ギャップ表・§4 必須/任意ゲート表）と `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
 
 ## Task Breakdown
@@ -25,7 +25,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - [x] AC-001 — `.claude/skills/create-requirements/SKILL.md` の Q4（L101 付近）と US テンプレート（L189 付近）、Completion criteria を改修
 - [x] AC-002 — `.claude/skills/create-spec/SKILL.md` の Step 2 セクション表（L106 付近）と Completion criteria（L144 付近）を改修
 - [x] AC-003 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー Q3（L36 付近）、テンプレート（L64 付近）、Completion criteria（L94 付近）を改修
-- [ ] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修
+- [x] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修（＋ `complete-exec-plan` Step 2）
 - [ ] AC-005 — 5スキルを通しでウォークスルー → `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従
 - [ ] `/check-doc-invariants` を実行
 - [ ] `/doc-review` を実行（独立エージェントによる検査）
@@ -38,6 +38,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - AC-001 完了
 - AC-002 完了
 - AC-003 完了
+- AC-004 完了
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
@@ -116,6 +117,23 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   主要ファイル: `.claude/skills/create-exec-plan/SKILL.md`。
   検証: スキル内の AC 例文5行に spec-gate の `AC-(\d{3}):` を適用し、全て認識され、
   `[E2E]` の3行がマーカーで判別できることを確認。変更ファイルは `check-doc-invariants` のスコープ外。
+
+- **AC-004 done.** `run-tests` Step 3 を「機能 AC と `[E2E]` AC を分けて報告」に変更し、
+  E2E は「テストが存在する」だけでなく「今回パスしたテストに含まれる」ことまで確認する規定に。
+  プランに `[E2E]` AC が1本も無い場合は報告のみ行い、ここで AC を作文しない（統治ゲートの維持）。
+  `pre-pr` ⑤ に E2E カバレッジ検査を追加し、未カバー／失敗は PR 作成をブロック。結果報告に
+  `⑤-E2E` 行を追加。両スキルの Completion criteria も追従。
+  主要ファイル: `.claude/skills/run-tests/SKILL.md`, `.claude/skills/pre-pr/SKILL.md`。
+
+  併せて `.claude/skills/complete-exec-plan/SKILL.md` Step 2 にも E2E 検査を追加した
+  （AC-004 の文言が「`pre-pr` / `complete-exec-plan` を保留させる」と両方を対象にしているため。
+  Task Breakdown には run-tests / pre-pr しか書いていなかったので、ここに追記して差分を明示する）。
+
+  検証: `run-tests` が行う分類（`- [ ] AC-NNN: [E2E] ...` を接頭辞で判定）を本プランに適用し、
+  機能 AC-001〜004 と E2E AC-005 に正しく分かれること、E2E 未チェックが検出されることを確認。
+  なお最初に書いた検証スクリプトは節の分割を `split('##')` で行ったため AC 本文中の
+  `## ゴール像` で切れて誤検出した。行頭見出し（`^## `）で分割して再実行し、上記の結果を得た。
+  スキル側は AC 行の走査をエージェントに委ねており、この誤りはスクリプト固有のもの。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
