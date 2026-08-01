@@ -14,7 +14,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 
 ## Acceptance Criteria
 
-- [ ] AC-001: `create-requirements` の Q4 を optional「UI スケッチ」から必須「ゴール／完成イメージ」に変更し、①主要ユーザージャーニー（Mermaid）②完成時に利用者が何をできるようになるか（1〜3文）③非ゴール の3点を必須項目とし、US テンプレートに `## ゴール像` 節を追加する
+- [x] AC-001: `create-requirements` の Q4 を optional「UI スケッチ」から必須「ゴール／完成イメージ」に変更し、①主要ユーザージャーニー（Mermaid）②完成時に利用者が何をできるようになるか（1〜3文）③非ゴール の3点を必須項目とし、US テンプレートに `## ゴール像` 節を追加する
 - [ ] AC-002: `create-spec` の Screen/UX flows を `## E2E シナリオ` 節として必須化（`(if applicable)` を外す）し、`E2E-001 → AC-001, AC-003` 形式の横断 traceability を記録させ、Completion criteria にも追加する
 - [ ] AC-003: `create-exec-plan` に E2E-AC を最低1本立てる規約（記法 `- [ ] AC-NNN: [E2E] ...`）を追加し、「全機能 AC が `- [x]` でも E2E-AC が緑でなければ完了ではない」を完了条件に明記する
 - [ ] AC-004: `run-tests` Step 3 と `pre-pr` ⑤ の AC カバレッジ確認に「E2E-AC に対応するテストが存在し緑か」を追加し、E2E-AC 未カバー時は `pre-pr` / `complete-exec-plan` を保留させる
@@ -22,7 +22,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 
 ## Task Breakdown
 
-- [ ] AC-001 — `.claude/skills/create-requirements/SKILL.md` の Q4（L101 付近）と US テンプレート（L189 付近）、Completion criteria を改修
+- [x] AC-001 — `.claude/skills/create-requirements/SKILL.md` の Q4（L101 付近）と US テンプレート（L189 付近）、Completion criteria を改修
 - [ ] AC-002 — `.claude/skills/create-spec/SKILL.md` の Step 2 セクション表（L106 付近）と Completion criteria（L144 付近）を改修
 - [ ] AC-003 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー Q3（L36 付近）、テンプレート（L64 付近）、Completion criteria（L94 付近）を改修
 - [ ] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修
@@ -35,6 +35,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 
 ### 2026-08-02
 - Plan created
+- AC-001 完了
 
 ## Decision Log
 
@@ -58,6 +59,25 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   次バージョン向けの新機能・スコープ拡張ではない。CLAUDE.md「変更のルーティング」の判断基準
   「今作っている物が間違っているのか、次に作りたい物なのか」に照らして前者と判断した。
   実装ブランチは `feat/goal-image-e2e-issue27`。
+
+- **AC-001 done.** `create-requirements` の Q4 を optional「UI スケッチ」から必須「ゴール像」へ変更。
+  Q4a（完成時にできること 1〜3文）/ Q4b（主要ユーザージャーニー、Mermaid）/ Q4c（非ゴール）を必須、
+  Q4d（UI スケッチ）を optional として存置。3点が答えられない場合は勝手に埋めず停止する規定を追加
+  （`/create-spec` が要件欠落時に停止するのと同じ原則）。US テンプレートは `## ゴール像` 節を
+  ユーザーストーリーと受け入れ条件の間に新設し、旧 `## UI スケッチ` 節はその配下の
+  `### UI スケッチ` に移動。frontmatter description / 冒頭 Purpose / What this skill does /
+  Steps / Completion criteria / 最終レポートも追従。主要ファイル:
+  `.claude/skills/create-requirements/SKILL.md`。
+  検証: このリポジトリにテストは無いため（下記の検証戦略のとおり）DOC-INV チェックのインライン実行で確認。
+  変更ファイルは `.claude/skills/**` で `check-doc-invariants` のスコープ（`docs/**` と `exec-plans/**`）外。
+  スコープ内の本プランは DOC-INV-001（Markdown リンク 0 件）/ -002（`status: active`）/ -003 / -005（AA ブロック 0 件）を充足。
+  他スキル・ドキュメントから旧 `## UI スケッチ` 節への構造的依存が無いことを grep で確認済み。
+
+- **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
+  同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
+  求めるが、テンプレート本体には `docs/01_requirements/` が存在しない（`init-project` が生成する側のため）。
+  本プランの AC-001〜005 に US の裏付けは付けられない。要件の追跡は GitHub issue #27 / #28 で代替する。
+  `/pre-pr` 実行時にも同じ違反が出る見込みであり、これは既知・意図的な逸脱として扱う。
 
 - **`docs/07_ai_context/CONTEXT.md` の更新はスキップ**。
   `create-exec-plan` の Step 5 は CONTEXT.md の優先タスク更新を求めるが、このリポジトリには
