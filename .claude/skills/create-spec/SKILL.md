@@ -3,8 +3,8 @@ name: create-spec
 description: |
   Drafts an independent application spec document under docs/02_spec/ from approved requirements
   (docs/01_requirements/). The spec describes WHAT the app does — purpose, features, behavior,
-  functional screen/UX flows, scope and non-goals — NOT how it is built (no architecture, data
-  model, or API internals; that is technical design). Output is always a draft for human review
+  required end-to-end scenarios (E2E-NNN, traced across the ACs they need), scope and non-goals
+  — NOT how it is built (no architecture, data model, or API internals; that is technical design). Output is always a draft for human review
   (/doc-review) and approval — it never decides requirements and never auto-approves. After
   approval, hands off to /create-exec-plan.
 disable-model-invocation: true
@@ -52,8 +52,10 @@ and never proceeds to implementation planning on its own.
 2. If requirements are missing, not yet approved (`status: draft`), or too ambiguous to
    specify against, **halt** and direct the user to approve/define them first (do not guess
    intent)
-3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first)
-4. Trace each spec feature back to the US/AC it satisfies
+3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first), including
+   a required `## E2E シナリオ` section derived from the US goal image
+4. Trace each spec feature back to the US/AC it satisfies, and each E2E scenario across the set
+   of ACs it needs (`E2E-001 → AC-001, AC-003`)
 5. Suggest `/doc-review` for an independent check, then human approval, then `/create-exec-plan`
 
 ---
@@ -66,6 +68,21 @@ and never proceeds to implementation planning on its own.
   `docs/01_requirements/constraints.md`.
 - Identify the user stories, their `ac_ids:`, acceptance conditions, and constraints
   (TC/BC/PF/SC) that shape what the app must do.
+- **Read the `## ゴール像` section of each source US file.** Its 完成時にできること,
+  主要ユーザージャーニー, and 非ゴール are the input for this spec's `## E2E シナリオ` section
+  (required) and for Scope & non-goals. If a US file has no `## ゴール像` section — e.g. it was
+  written before that section became required — **halt** and report:
+
+  ```
+  US-XXX に ## ゴール像 節がありません。
+  E2E シナリオはゴール像の主要ユーザージャーニーから起こすため、これが無いと
+  「通しで何ができるようになるか」を仕様側で作文することになります。
+  先に /create-requirements の Q4（完成時にできること / 主要ユーザージャーニー / 非ゴール）を
+  US-XXX に追記してください。
+  ```
+
+  Proceed only once the goal image exists (or the user explicitly confirms drafting without it,
+  in which case record that choice in the report).
 - **Confirm the requirements are approved before drafting from them.** Check the `status:`
   frontmatter of the relevant US file(s). The spec must be built on *approved* requirements,
   not on in-progress ones. If a US is still `status: draft` (i.e. not yet approved/frozen),
@@ -103,13 +120,57 @@ Capture the **what**, in this order (scope and structure first, granular detail 
 | Scope & non-goals | What is in scope; explicitly what is NOT (prevents scope creep) |
 | Features | The feature set, each as a short capability statement |
 | Behavior | How the app behaves for the key flows (rules, states, edge behavior) |
-| Screen / UX flows | Functional-level flows (Mermaid preferred per CLAUDE.md diagram rules; if ASCII art, always follow with a plain-text explanation) |
+| E2E シナリオ (**required**) | The end-to-end usage scenarios — see below. Never omitted |
 
 Do **not** include technical design: no architecture, layering, data models, or API
 internals. Those belong to design (`docs/03_design/`), a separate later step if needed.
 
 For each feature, note the **US/AC it satisfies** (e.g., "satisfies AC-002") so the
 downstream exec-plan can trace AC → spec → code (keeps AC traceability intact).
+
+#### The `## E2E シナリオ` section (required)
+
+Features are fragments; a spec made only of fragments can satisfy every AC and still not work
+when used end to end. This section is what keeps the *whole* in the spec, and it is the source
+the exec-plan's `[E2E]` acceptance criterion is written against. **It is never `(if applicable)`
+and never omitted.**
+
+Derive the scenarios from the `## ゴール像` section of the source US file — specifically its
+主要ユーザージャーニー. One scenario per distinct end-to-end path (a normal path at minimum;
+add key alternate/failure paths where the goal image calls for them).
+
+Write each scenario as:
+
+```markdown
+### E2E-001: {scenario name}
+
+{Mermaid flowchart or sequence diagram of the through-flow, per CLAUDE.md diagram rules}
+
+{One-line plain-text summary of what the user accomplishes in this scenario.}
+
+- 前提: {starting state}
+- 完了条件: {observable end state — what is true when the scenario has succeeded}
+- 満たす AC: AC-001, AC-003, AC-005
+```
+
+**Cross-cutting traceability.** `満たす AC` is the point of this section: feature-level
+traceability runs *downward* (feature → satisfies AC-002), which cannot express "these several
+ACs together must add up to one working flow." The `E2E-NNN → AC-xxx, AC-yyy` mapping runs
+*across* the ACs and is what lets `run-tests` and `pre-pr` check E2E coverage rather than only
+per-AC coverage.
+
+Also record the mapping as a table so it can be read at a glance:
+
+```markdown
+| E2E | シナリオ | 満たす AC |
+|-----|---------|----------|
+| E2E-001 | {name} | AC-001, AC-003, AC-005 |
+| E2E-002 | {name} | AC-002, AC-004 |
+```
+
+Every AC defined in the source requirements should appear in at least one E2E scenario. If an AC
+belongs to no scenario, say so explicitly in the report — it usually means either the goal image
+is missing a path, or the AC is not actually needed for the finished thing.
 
 Each drafted file gets frontmatter:
 
@@ -141,8 +202,14 @@ detail (that is `docs/03_design/`, layer 3) or implementation detail — keep th
 
 - [ ] Requirements in `docs/01_requirements/` were read and confirmed approved (not
       `status: draft`) — or the skill halted and directed to approve/define them first
+- [ ] The `## ゴール像` section of each source US was read (or the skill halted because it was
+      missing)
 - [ ] An application spec was drafted under `docs/02_spec/` covering purpose, scope/non-goals,
-      features, behavior, and (if applicable) screen/UX flows
+      features, behavior, and E2E シナリオ
+- [ ] The `## E2E シナリオ` section exists with at least one `E2E-NNN` scenario, each carrying a
+      Mermaid diagram, 前提, 完了条件, and 満たす AC
+- [ ] The `E2E-NNN → AC-xxx` cross-cutting traceability table is present, and any AC belonging to
+      no scenario was reported
 - [ ] The spec describes *what* the app does, with NO technical design (architecture/data
       model/API internals)
 - [ ] Every drafted file has `status: draft` frontmatter
@@ -158,9 +225,12 @@ Final report output by the agent:
 From requirements : docs/01_requirements/user_stories/US-XXX_{name}.md
 Drafted spec      : docs/02_spec/app_spec.md
 AC coverage       : AC-001 → {feature} | AC-002 → {feature} | ...
+E2E シナリオ      : E2E-001 {name} → AC-001, AC-003 | E2E-002 {name} → AC-002, AC-004
+AC not in any E2E : {AC list, or "none"}
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec
   2. Approve : edit as needed, then approve/freeze (merge — see spec-version management)
   3. Plan    : run /create-exec-plan to turn the approved spec + ACs into a plan
+               (the E2E シナリオ above become the plan's [E2E] acceptance criterion)
 ```

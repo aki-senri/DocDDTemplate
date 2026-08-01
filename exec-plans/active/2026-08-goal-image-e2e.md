@@ -15,7 +15,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 ## Acceptance Criteria
 
 - [x] AC-001: `create-requirements` の Q4 を optional「UI スケッチ」から必須「ゴール／完成イメージ」に変更し、①主要ユーザージャーニー（Mermaid）②完成時に利用者が何をできるようになるか（1〜3文）③非ゴール の3点を必須項目とし、US テンプレートに `## ゴール像` 節を追加する
-- [ ] AC-002: `create-spec` の Screen/UX flows を `## E2E シナリオ` 節として必須化（`(if applicable)` を外す）し、`E2E-001 → AC-001, AC-003` 形式の横断 traceability を記録させ、Completion criteria にも追加する
+- [x] AC-002: `create-spec` の Screen/UX flows を `## E2E シナリオ` 節として必須化（`(if applicable)` を外す）し、`E2E-001 → AC-001, AC-003` 形式の横断 traceability を記録させ、Completion criteria にも追加する
 - [ ] AC-003: `create-exec-plan` に E2E-AC を最低1本立てる規約（記法 `- [ ] AC-NNN: [E2E] ...`）を追加し、「全機能 AC が `- [x]` でも E2E-AC が緑でなければ完了ではない」を完了条件に明記する
 - [ ] AC-004: `run-tests` Step 3 と `pre-pr` ⑤ の AC カバレッジ確認に「E2E-AC に対応するテストが存在し緑か」を追加し、E2E-AC 未カバー時は `pre-pr` / `complete-exec-plan` を保留させる
 - [ ] AC-005: [E2E] `/create-requirements` → `/create-spec` → `/create-exec-plan` → `/pre-pr` を1本ウォークスルーし、ゴール像と E2E シナリオが最後まで痩せずに届くことを確認したうえで、`SKILL_FLOW.md`（§1 フロー図・§3 ギャップ表・§4 必須/任意ゲート表）と `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
@@ -23,7 +23,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 ## Task Breakdown
 
 - [x] AC-001 — `.claude/skills/create-requirements/SKILL.md` の Q4（L101 付近）と US テンプレート（L189 付近）、Completion criteria を改修
-- [ ] AC-002 — `.claude/skills/create-spec/SKILL.md` の Step 2 セクション表（L106 付近）と Completion criteria（L144 付近）を改修
+- [x] AC-002 — `.claude/skills/create-spec/SKILL.md` の Step 2 セクション表（L106 付近）と Completion criteria（L144 付近）を改修
 - [ ] AC-003 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー Q3（L36 付近）、テンプレート（L64 付近）、Completion criteria（L94 付近）を改修
 - [ ] AC-004 — `.claude/skills/run-tests/SKILL.md` Step 3（L69 付近）と `.claude/skills/pre-pr/SKILL.md` ⑤（L33 付近）を改修
 - [ ] AC-005 — 5スキルを通しでウォークスルー → `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従
@@ -36,6 +36,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 ### 2026-08-02
 - Plan created
 - AC-001 完了
+- AC-002 完了
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
@@ -87,6 +88,21 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   ブランチ名は標準パターン `feature/{plan-name}` ではなく `feat/goal-image-e2e-issue27` を使用。
   参照すべき CONTEXT.md のブランチ戦略が存在せず、既存リポジトリに `feat/` `feature/` 双方の
   前例があるため、AC-001 コミット済みのブランチを改名せずそのまま継続する。
+
+- **AC-002 done.** `create-spec` の Screen/UX flows 行を `## E2E シナリオ`（required）に置き換え、
+  Step 2 に同節の書式を定義（`### E2E-NNN: {name}` ＋ Mermaid ＋ 前提 / 完了条件 / 満たす AC）。
+  `E2E-NNN → AC-xxx, AC-yyy` の横断 traceability 表を必須化し、「どの E2E にも属さない AC は
+  報告する」規定を追加。Step 1 に US の `## ゴール像` を読む手順と、同節が無い US（必須化前に
+  書かれたもの）での停止規定を追加（AC-001 の出力を入力として受け取る接続点）。
+  frontmatter description / What this skill does / Completion criteria / 最終レポートも追従。
+  主要ファイル: `.claude/skills/create-spec/SKILL.md`。
+  検証: 変更ファイルは `check-doc-invariants` のスコープ外。`(if applicable)` の残存が無いことを
+  grep で確認（唯一の一致は「never `(if applicable)`」という否定文）。
+
+  設計判断: 機能単位の traceability（feature → satisfies AC-002）は**下向き**で、「これら複数の
+  AC が合わさって1つの通しフローになる」ことを表現できない。`E2E-NNN → AC-xxx` を**横断方向**に
+  持たせることで、後段（AC-004）の `run-tests` / `pre-pr` が AC 単位のカバレッジではなく
+  E2E レベルの充足を検査できるようになる。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
