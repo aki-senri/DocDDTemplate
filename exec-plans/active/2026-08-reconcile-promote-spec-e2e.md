@@ -35,6 +35,7 @@ completed:
 ### 2026-08-02
 - Plan created
 - AC-003 完了
+- PR #31 作成（3プラン合同）。マージ後に `/complete-exec-plan` を実行する
 
 ## Decision Log
 

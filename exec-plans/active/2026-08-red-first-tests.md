@@ -89,6 +89,7 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
   実行不可。E2E カバレッジは「プランに `[E2E]` AC が無い」＝ ⚠️ 報告のみ、red-first 証跡は
   documentation-only のため ➖ n/a。⑥ 更新済み。PR 作成は人間ゲートのため保留
 - 矛盾チェック第2巡（ループ1周の照合）で6件、第3巡（全フロー1周の照合）で2件を検出・修正
+- PR #31 作成（3プラン合同）。マージ後に `/complete-exec-plan` を実行する
 - `/check-doc-invariants` を再実行（`2026-08-reconcile-promote-spec-e2e.md` 追加後）。DOC-INV-004 が 11 件
   （既知）、006 は両プランとも ℹ️（`[E2E]` AC 無し＋`E2E: n/a` 記録あり）、001 は両プランとも
   Markdown リンク無しで PASS

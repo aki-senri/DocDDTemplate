@@ -63,6 +63,7 @@ completed:
 - Plan created
 - AC-001〜007 完了
 - AC-008 完了（6周の照合、検出4件を修正して全周 PASS）
+- PR #31 作成（3プラン合同）。マージ後に `/complete-exec-plan` を実行する
 - `/check-doc-invariants` 実行。DOC-INV-004 が既知の違反のみ、006 は 3 プランとも ℹ️、001 は Markdown リンク無しで PASS
 - `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は既知違反のみ、⑤ は `test_strategy.md` 不在で実行不可（red-first 証跡は documentation-only で ➖）、⑤b は本プランの AC-008 に6周の記録あり ✅、⑥ 更新済み。PR 作成は人間ゲートのため保留
 
