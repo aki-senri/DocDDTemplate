@@ -353,6 +353,7 @@ flowchart TD
                           （任意・小さな変更ならスキップ。create-exec-plan の前に人間承認が必要）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
                           機能 AC に加えて最低1本の [E2E] AC を置く
+                          （documentation-only プランは置かず E2E: n/a を記録）
                           AC readiness 検査（R1〜R5）＝テストで判定できない AC はここで書き直す
 2. /start-feature       → ドキュメント確認・AC readiness の再検査・ブランチ作成
 3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）

@@ -353,6 +353,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           (optional; skip for small changes. Needs human approval before create-exec-plan)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
                           At least one [E2E] AC in addition to the functional ones
+                          (documentation-only plans carry none — record E2E: n/a)
                           AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here
 2. /start-feature       → Confirm docs, re-check AC readiness, and create a branch
 3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written

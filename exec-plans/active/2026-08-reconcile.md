@@ -113,3 +113,6 @@ completed:
   PLAN ノードに documentation-only の分岐を追記。
   なお §3-6 の G-F 行と §4 の但し書きは「`[E2E]` AC があるときのゲート挙動」を述べており、
   無条件の要求ではないため変更不要。
+  同じ見落としが `ONBOARDING.md` / `ONBOARDING.ja.md` の「全体の流れ」ブロックにも1行ずつあったため
+  併せて修正（指摘は SKILL_FLOW のみ）。以後の確認は「サマリ表」ではなくリポジトリ全体の
+  `at least one [E2E]` / `最低1本` 検索で行う。
