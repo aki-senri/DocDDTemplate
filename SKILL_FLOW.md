@@ -61,8 +61,8 @@ flowchart TD
     end
 
     IMPL --> PREPR
-    IMPL -.->|optional, manual path\n(no run-exec-plan)| DCR
-    DRIVER ==>|mandatory once every AC is - [x]\n(Step 4a)| DCR
+    IMPL -.->|"optional, manual path\n(no run-exec-plan)"| DCR
+    DRIVER ==>|"mandatory once every AC is - [x]\n(Step 4a)"| DCR
     DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
