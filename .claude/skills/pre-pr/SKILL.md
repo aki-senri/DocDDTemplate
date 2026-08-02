@@ -318,7 +318,7 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
                      / ✅ 依存の逆流のみの記録あり（改称のため 1〜6周 適用外と明記）
                      / ⚠️ プロセス変更だが記録なし / ⚠️ 依存の逆流に列挙なし (does not block)
                      / ➖ n/a (状態遷移を伴わず、変更箇所を指す記述も他に無い)
-                     / ➖ n/a (プラン無しの変更 — 記録は commit message / PR body)
+                     / ➖ n/a (プラン無しの変更 — 記録は commit message)
 ⑤c AC sources      : ✅ {n}/{n} AC に起点行あり  / ⚠️ ## Sources なし (does not block)
   └ 再アンカー     : ✅ {n}/{n} AC に記録あり  / ⚠️ AC-NNN 記録なし (does not block)
                      / ➖ n/a (起点なし)
