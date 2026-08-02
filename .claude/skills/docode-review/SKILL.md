@@ -3,7 +3,9 @@ name: docode-review
 description: |
   Launches an independent agent (with no implementation context) to review changed code.
   The agent reviews the diff against acceptance criteria (if available) and general code quality,
-  providing an objective perspective separate from the implementing agent.
+  providing an objective perspective separate from the implementing agent. It also judges whether
+  each test expresses its AC rather than mirroring the implementation — the one check the agent
+  that wrote both sides cannot perform on itself.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
 # All other skills set this to true because they only issue instructions to the current agent.
@@ -92,8 +94,8 @@ ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No acti
 
 | Condition | Review focus |
 |-----------|-------------|
-| exec-plan with AC-001~ exists | AC compliance + code quality |
-| No exec-plan | Code quality only (correctness, readability, security, maintainability) |
+| exec-plan with AC-001~ exists | AC compliance + tests-vs-ACs independence + code quality |
+| No exec-plan | Code quality only (correctness, readability, security, maintainability) — the tests-vs-ACs check needs AC text to judge against |
 
 ### Step 3: Launch independent agent
 
@@ -140,6 +142,37 @@ Perform a thorough review covering:
    - This is the check the authoring agent is least able to do for itself, since it verified each AC
      as it built it. Weight it accordingly.
 
+1c. **Do the tests express the ACs, or the implementation?**
+   - For each AC, read its test **against the AC text**, not against the code: are the test's
+     given / when / then the ones the AC states? A test that restates what the implementation
+     happens to do is green by construction and proves nothing.
+   - Signs a test mirrors the implementation: it asserts internal calls, intermediate state, or a
+     literal copied from the implementation; its expected value is whatever the code produces
+     (an error message string, a rounding result, a default) rather than something the AC names;
+     it was clearly written by reading the code (same helper structure, same edge cases, no case
+     the AC mentions but the code omits).
+   - Cross-check the plan's `## Decision Log`: each AC should have an `AC-NNN red-first:` entry
+     recorded **before** its `AC-NNN done.` entry (the red observation that froze the expectation;
+     the convention is in `.claude/skills/run-tests/red-first.md` if you want the details).
+     A missing or out-of-order entry is not proof of a bad test — report it as a 🟡 finding and
+     judge the test on its content.
+   - Is there any AC the tests do not actually constrain — i.e. would they still pass if that AC's
+     behavior were removed?
+   - This, like 1b, is a check the implementing agent cannot perform on itself: it wrote both sides.
+
+1d. **Process changes: does the process still run one lap?**
+   - Applies when the diff changes a **documented process** — a loop, a resumable run, a stop
+     condition, a gate, an exemption, or a rule other rules consume (skill definitions, CLAUDE.md,
+     hooks). Skip for ordinary feature diffs.
+   - Do not stop at "every call site describes the rule the same way". Walk the process and name the
+     state after each step, at least: the **second iteration** (the state the first pass leaves is
+     the next pass's input), a **resume** from the files alone mid-process, and the **exemption**
+     path (does every downstream gate know about it?).
+   - Report: a state that cannot be entered or left, two rules answering the same state differently,
+     a gate that fires on the state meaning success, or an entry condition the process's own output
+     violates.
+   - The convention and its laps are in `.claude/skills/create-exec-plan/process-walkthrough.md`.
+
 2. **Correctness**
    - Logic errors, edge cases not handled, off-by-one errors
    - Incorrect assumptions about inputs or state
@@ -171,6 +204,16 @@ Branch diff: main...HEAD
 ### [E2E] AC Compliance
 {For each [E2E] AC: ✅ through-flow holds / ❌ breaks at {step} / N/A (no [E2E] AC in plan)}
 {Whole-flow test exists? ✅ / ❌ per-AC tests only}
+
+### Process walkthrough (only if the diff changes a documented process — omit otherwise)
+{Second iteration: ✅ / ❌ <state where it breaks>}
+{Resume from files alone: ✅ / ❌ <entry check that rejects the left-behind state>}
+{Exemption path: ✅ / ❌ <downstream gate unaware of the exemption>}
+
+### Tests vs. ACs (independence)
+{For each AC: ✅ the test asserts what the AC states / ⚠️ partially / ❌ the test mirrors the
+implementation — with the line that gives it away}
+{red-first evidence in the Decision Log: ✅ present and ordered / ⚠️ missing for AC-NNN / N/A}
 
 ### Findings
 

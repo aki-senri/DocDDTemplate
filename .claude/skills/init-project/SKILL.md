@@ -234,11 +234,17 @@ coverage_threshold: 80                 # coverage lower limit (optional)
 
 At project initialization, record the following policy in `docs/05_quality/test_strategy.md` and `docs/04_implementation/invariants.md`.
 
-**INV-T01 (common to all platforms):**
+**INV-T01 / INV-T02 (common to all platforms):**
 
 | # | Condition | On violation |
 |---|-----------|-------------|
 | INV-T01 | Tests must not be modified to match implementation behavior. Test modifications must always be grounded in a spec (AC-ID) | Review comment |
+| INV-T02 | A test's expectation is authored from its AC **before** the implementation that satisfies it, and observed failing (red-first). The red observation is recorded in the plan's decision log and freezes the expectation | Review comment |
+
+INV-T01 forbids bending a test to the code; INV-T02 is the same rule on the time axis — a test
+written after its implementation never has to be bent, because it was a copy of it from the start.
+The procedure, and what counts as a valid red, are in
+[`../run-tests/red-first.md`](../run-tests/red-first.md).
 
 **AC-ID tagging convention:**
 

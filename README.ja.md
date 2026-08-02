@@ -62,8 +62,9 @@ Claude Code で以下を実行します：
 /create-spec         ← アプリ仕様と E2E シナリオを起草（任意・小さな変更ならスキップ）
 /create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義し AC readiness を検査）
 /start-feature       ← 実装前の確認・AC readiness の再検査・ブランチ作成
-/run-exec-plan       ← AC を1つずつ自走実装（opt-in）
-   （手動で進める場合: コードを書く → /check-doc-freshness → /check-invariants → /run-tests）
+/run-exec-plan       ← AC を1つずつ、テストを先に赤で置いてから自走実装（opt-in）
+   （手動で進める場合: その AC のテストを書いて赤を確認 → コードを書く
+     → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
 /complete-exec-plan  ← 計画を完了に移動
 ```
@@ -98,9 +99,9 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
 | `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/`、`status: draft`。人間承認が必要） |
-| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査 |
+| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、DocDD のプロセスを変えるプランには「1周辿る」検証 AC を置く |
 | `start-feature` | 実装開始前の確認・**AC readiness の再検査**・ブランチ名決定（機能ごとに一度） |
-| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
+| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**テストを先に赤で置く**→実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
 | `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新） |
 | `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
 | `promote-spec` | 次バージョン仕様（`spec/<label>` ブランチ）を現ターゲットへ昇格（スプリント境界） |
@@ -110,7 +111,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 
 | スキル | 用途 |
 |-------|------|
-| `run-tests` | テスト実行・仕様照合（テスト失敗時は仕様照合ゲートで対処方針を決定） |
+| `run-tests` | テスト実行・仕様照合（テスト失敗時は仕様照合ゲートで対処方針を決定。red-first 実行では妥当な赤／無効な赤を判別） |
 | `check-invariants` | `invariants.md` の不変条件を実装コードに対して検証 |
 | `check-doc-freshness` | 変更されたコードに対応するドキュメントの鮮度チェック |
 | `check-doc-invariants` | ドキュメントの構造ルール（doc-INV）違反をチェック |
@@ -186,9 +187,20 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 
 DocDD では、テストを「仕様の実行可能な表現」として位置づけます。
 
+### red-first（INV-T02）
+
+仕様の表現である以上、テストは**仕様から**書かれなければなりません。AC ごとに、実装が存在しない
+状態で AC 本文からテストを起草し、実行して「正しい理由で赤になる」ことを確認します。その観測を
+exec-plan の Decision Log に記録した時点で期待値が凍結されます。実装と同時に書かれたテストは
+コードの挙動を写したものになり、AC を満たしていても満たしていなくても緑になります。
+
+`/run-exec-plan` は AC ごとにこれを行い、`[E2E]` のテストはどの AC の実装よりも先に赤で配置します。
+手順・妥当な赤と無効な赤の区別・適用外は
+[`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) を参照してください。
+
 ### 仕様照合ゲート
 
-テストが失敗したとき、すぐにテストを修正してはいけません。
+実装が存在する状態でテストが失敗したとき、すぐにテストを修正してはいけません。
 `run-tests` スキルが以下の判断ゲートを提示します：
 
 ```

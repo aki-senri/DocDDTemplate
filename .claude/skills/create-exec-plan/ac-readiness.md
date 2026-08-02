@@ -30,6 +30,12 @@ not against a general impression of quality.
 |---|-------|--------------|------------|
 | **R1** | 単一の観測可能な結果 | Does the AC name **one** outcome an observer can see? | It bundles several independent outcomes ("…し、かつ…も"), or names an activity rather than a result ("〜を検討する", "〜を改善する", "〜に対応する") |
 | **R2** | given-when-then に落とせる | Can 前提 / 操作 / 期待結果 each be identified from the AC text? | Any of the three is absent — most often the expected result ("適切にハンドリングする", "正しく動作する"). If a test cannot be written from the text alone, R2 fails |
+
+> **R2 is checked again, empirically, before implementation.** Red-first
+> ([`../run-tests/red-first.md`](../run-tests/red-first.md), INV-T02) has someone actually write the
+> test from the AC text and observe it fail. An AC that passed readiness here but cannot be
+> transcribed there is a readiness escape, and the response is the same as a NOT READY verdict:
+> rewrite it with a human, or halt.
 | **R3** | 成功指標が具体 | Is the pass/fail signal concrete — a threshold, a value, a named output shape? | The decision rests on a subjective word: 速い / 使いやすい / 十分に / きれいに / 適切に |
 | **R4** | E2E ステップへのアンカー | Can you name which `E2E-NNN` — and which step of it — this AC makes work? | No through-flow step depends on it. That means either the E2E scenario is missing a path, or the AC is not needed for the finished thing. (Source order: the spec's `## E2E シナリオ` → the US `## ゴール像` の主要ユーザージャーニー → this plan's own `[E2E]` AC) |
 | **R5** | what であって how でない | Does it state the result to be achieved rather than the mechanism? | It prescribes the implementation (class names, library choice, function split). A how-AC goes green when the mechanism exists, whether or not the result does — and it makes any equally valid alternative look like a violation |

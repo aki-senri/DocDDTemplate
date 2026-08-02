@@ -37,7 +37,10 @@ Before starting implementation, verify that all tests currently pass.
 
 - Run the `run-tests` skill (AC coverage check can be skipped)
 - **All pass → proceed to the next step**
-- **If there are failures → do not start implementation on this branch**
+- **Expected reds are not failures here.** If the plan is being resumed and a test was frozen red by
+  a red-first observation whose AC is still unchecked (`run-tests` Step 2c), it is the target being
+  steered toward, not a broken baseline. Everything else must pass
+- **If there are other failures → do not start implementation on this branch**
   - Determine the course of action through the spec alignment gate and fix the issues first
   - Starting implementation from a green test state makes it clear whether failures are caused by your changes or were pre-existing
 
@@ -109,6 +112,20 @@ Append the following to the selected `exec-plans/active/*.md`.
 
 ## Implementation order guide
 
+**Before any of the layer ordering below: write the test first.** For each AC, transcribe its
+given / when / then into a test, run it, and confirm it fails for the right reason **before**
+writing the implementation — the red-first rule (`INV-T02`), defined in
+[`../run-tests/red-first.md`](../run-tests/red-first.md). The layer order in this section decides
+what to build first *once the failing test is in place*; it does not come before it.
+
+If the plan has a `[E2E]` AC, its test goes in first, red, before the functional ACs are
+implemented — same reason the autonomous driver does it in Step 0c: it is the one test in the run
+that no implementation could have shaped.
+
+If a test cannot be written from the AC text without deciding an expected result the AC does not
+state, that is a readiness defect (`R2` / `R3`), not a test-writing problem — rewrite the AC with
+the user, as in Step 1b.
+
 **Basic principle of implementation order**: Implement from the stable layer (the depended-upon side) first, then the unstable layer (the depending side) afterward.
 The specific order follows the definitions in `docs/04_implementation/patterns.md`.
 
@@ -140,13 +157,15 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 
 ## Completion criteria
 
-- [ ] Confirmed that baseline tests all pass (Step 0)
+- [ ] Confirmed that baseline tests all pass, expected reds aside (Step 0)
 - [ ] Execution plan selected and confirmed
 - [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
       and their decision recorded in the Progress Log (Step 1b)
 - [ ] Loaded `CONTEXT.md`, `invariants.md`, and the selected execution plan
 - [ ] Branch name finalized
 - [ ] "Implementation started" recorded in the execution plan's progress log
+- [ ] The red-first order is understood for the first task: its test is written from the AC and
+      observed failing before the implementation (see the implementation order guide)
 
 Final report output by the agent:
 
@@ -160,4 +179,5 @@ Branch    : feature/{name}
 Confirmed : CONTEXT.md / invariants.md / execution plan
 
 First task: {first item in exec-plan task breakdown}
+Order    : red-first — {対応する AC} のテストを AC 本文から起草し、赤を確認してから実装する
 ```

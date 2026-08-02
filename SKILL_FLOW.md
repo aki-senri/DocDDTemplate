@@ -21,28 +21,30 @@ flowchart TD
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
-        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
-        SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md\n⑥ Decide branch name\n⑦ Record start in progress log"]
+        SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md\n⑥ Decide branch name\n⑦ Record start in progress log\n⑧ Implementation order: red-first,\n   then stable layer first"]
     end
 
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
-        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nThen per AC: implement→verify→fix→next\nHalts only on stop conditions"]
+        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: red test→implement→verify→fix→next\nHalts only on stop conditions"]
+        REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe the AC's given/when/then\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
         CODE["Code change\n(Write / Edit)"]
         HOOK["PostToolUse hook\n⚠ Warning message only\n(does not block)"]
         CDF["/check-doc-freshness\nUpdate docs corresponding to\nchanged files via tracks: field"]
         CI["/check-invariants\nVerify no INV-XXX violations"]
-        RT["/run-tests\nRun tests + spec alignment gate\n(forbids adjusting tests to match impl)"]
+        RT["/run-tests\nRun tests + spec alignment gate\n(forbids adjusting tests to match impl)\nred-first run: classify valid vs invalid red"]
 
-        DRIVER -->|drives inner loop| CODE
+        DRIVER -->|drives inner loop| REDFIRST
+        REDFIRST -->|valid red observed| CODE
         CODE --> HOOK
         HOOK -.->|manual, or auto via driver| CDF
         HOOK -.->|manual, or auto via driver| CI
@@ -55,10 +57,10 @@ flowchart TD
 
     IMPL --> PREPR
     IMPL -.->|optional independent code review| DCR
-    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
+    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n⑥ Update exec-plan progress checkboxes"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
     end
 
     PREPR --> PR
@@ -66,7 +68,7 @@ flowchart TD
     PR --> COMPLETE
 
     subgraph COMPLETE_PHASE["Completion (after PR merge)"]
-        COMPLETE["/complete-exec-plan\n① Confirm all AC checkboxes\n② run-tests (final check)\n③ AC coverage check,\n   incl. [E2E] AC passing (else hold)\n④ Move active/ → completed/\n⑤ Update CONTEXT.md priority tasks"]
+        COMPLETE["/complete-exec-plan\n① Confirm all AC checkboxes\n② run-tests (final check)\n③ AC coverage check,\n   incl. [E2E] AC passing (else hold)\n   + red-first evidence (⚠️ only)\n④ Move active/ → completed/\n⑤ Update CONTEXT.md priority tasks"]
     end
 
     COMPLETE --> NEXT
@@ -83,7 +85,7 @@ flowchart TD
 
     subgraph SPEC_PROMO["Spec Version Promotion (sprint boundary)"]
         SPECBR["spec/* branch\n· Accumulate next-version spec (docs only)\n· In-version fixes commit to main directly"]
-        PROMO["/promote-spec\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs"]
+        PROMO["/promote-spec\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs\n  (carries an [E2E] AC; re-opened ACs are\n  re-tested red-first against the new spec)"]
         SPECBR --> PROMO
     end
 
@@ -110,7 +112,7 @@ flowchart TD
 | `pre-pr` | `check-doc-invariants` | Internal call |
 | `pre-pr` | `run-tests` | Internal call |
 | `start-feature` | `run-tests` | Internal call |
-| `run-exec-plan` | `run-tests` | Internal call (per AC, via Skill tool — `run-tests` is model-invocable) |
+| `run-exec-plan` | `run-tests` | Internal call (per AC — once for the red-first run before implementing, once to verify; via Skill tool, `run-tests` is model-invocable) |
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
@@ -124,6 +126,25 @@ flowchart TD
 | —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr` — spawns a subagent via the Agent tool (no internal caller) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
+> **Shared reference file (not a skill):**
+> [`.claude/skills/create-exec-plan/process-walkthrough.md`](.claude/skills/create-exec-plan/process-walkthrough.md)
+> — the laps to walk when a plan changes a **process** (a loop, a resumable run, a stop condition, a
+> gate, an exemption, or a single source other rules consume). `create-exec-plan` (Q3e) requires the
+> plan to carry a walkthrough AC, the implementer records the laps, `doc-review` (§2c) and
+> `docode-review` walk them against the diff, and `pre-pr` (⑤b) checks the record exists (⚠️ only).
+> It exists because comparing call-site descriptions cannot see a process that deadlocks: the
+> descriptions agree and the states do not.
+>
+> **Shared reference file (not a skill):**
+> [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first
+> procedure (INV-T02): write the test from the AC before its implementation, observe a **valid** red,
+> record it (which freezes the expectation), then implement. `run-exec-plan` (Step 0c / Step 2a),
+> `run-tests` (red-first run), `start-feature` (implementation order), `pre-pr` /
+> `complete-exec-plan` (evidence check, ⚠️ only) and `docode-review` all reference it. The action on
+> failure differs by site — HALT for the unattended loop, ask the human on the manual path, report
+> only after the fact — for the same reason as readiness below: deciding an expected result the AC
+> does not state is an outer-gate call.
+>
 > **Shared reference file (not a skill):** `create-exec-plan` (Q3c), `start-feature` (Step 1b),
 > `run-exec-plan` (Step 0b) and `doc-review` (§2) all apply
 > [`.claude/skills/create-exec-plan/ac-readiness.md`](.claude/skills/create-exec-plan/ac-readiness.md)
@@ -201,8 +222,9 @@ context (an issue closes on merge, not on this table):
 | # | Issue | Status |
 |---|-------|--------|
 | G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved (#27, merged) — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
-| G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | 🔄 Addressed, pending merge of #24 — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
-| G-A / G-B / G-D / G-E | Red-first acceptance tests, goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
+| G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved (#24, merged) — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
+| G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | 🔄 Addressed, pending merge of #22 — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
+| G-B / G-D / G-E | Goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
 
 ---
 
@@ -234,6 +256,13 @@ All skills are manually invoked, and hooks do not block execution.
 > waved through the way an advisory warning can. The same holds for AC readiness inside
 > `run-exec-plan`: a NOT READY criterion stops the loop from starting at all. That does not make the
 > skills themselves unskippable; it means those checks are not optional for anyone who runs the gate.
+>
+> **Red-first is the deliberate exception to that pattern.** Inside `run-exec-plan` it blocks (a test
+> that cannot be transcribed halts the loop; an invalid red stops implementation), but at `pre-pr` and
+> `complete-exec-plan` it is ⚠️ only. The evidence is a hand-written Decision Log entry, so after the
+> fact a missing line cannot be told apart from a missed note — and blocking there would mainly teach
+> people to write the line retroactively, destroying the very evidence. It is enforced where it can
+> still be observed, and merely reported where it cannot.
 >
 > Readiness is also the one check deliberately applied at **three** points on the path
 > (`create-exec-plan` → `start-feature` → `run-exec-plan`), because each is the last moment before a

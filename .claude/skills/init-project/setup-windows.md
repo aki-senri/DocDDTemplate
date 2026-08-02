@@ -81,6 +81,7 @@ Follow the rules below during implementation. Violations are automatically detec
 | INV-007 | External network communication is prohibited | Warning |
 | INV-008 | Input validation is performed at the Service layer entry point | Review comment |
 | INV-T01 | Tests must not be modified to match implementation behavior. Test modifications must always be grounded in a spec (AC-ID) | Review comment |
+| INV-T02 | A test's expectation is authored from its AC before the implementation that satisfies it, and observed failing (red-first); the red observation is recorded in the plan's decision log | Review comment |
 
 ### Key coding conventions
 
@@ -119,7 +120,7 @@ The agent only asks the following. The tech stack is already fixed and should no
 | `docs/04_implementation/directory_structure.md` | Directory structure (reflects Q1 app name) | 1 |
 | `docs/04_implementation/coding_standards.md` | C# / WPF coding conventions | 1 |
 | `docs/04_implementation/dependencies.md` | NuGet package list and version management policy | 1 |
-| `docs/04_implementation/invariants.md` | INV-001–008 + INV-T01 (Roslyn enforcement rules) | 1 |
+| `docs/04_implementation/invariants.md` | INV-001–008 + INV-T01 / INV-T02 (Roslyn enforcement rules) | 1 |
 | `docs/04_implementation/patterns.md` | MVVM, Repository, and DI implementation patterns | 1 |
 | `docs/05_quality/test_strategy.md` | Test policy, test_command, AC-ID tagging convention | 1 |
 | `CONTEXT.md` update | Update tech stack and core naming convention sections | 0→1 |
@@ -135,11 +136,13 @@ The agent only asks the following. The tech stack is already fixed and should no
         ↓
 3. Confirm docs/04_implementation/invariants.md (required reading before implementation)
         ↓
-4. Implement on feature/{issue-or-task-name} branch
-   └── Create in order: View → ViewModel → Service → Repository
-        ↓
-5. Add xUnit tests (80%+ coverage for ViewModel and Service layers)
+4. Write the xUnit test for the AC FIRST and run it — it must fail (red-first / INV-T02)
    └── Include AC-ID in tests with [Trait("AC", "AC-XXX")]
+   └── Record the red observation in the exec-plan decision log (it freezes the expectation)
+        ↓
+5. Implement on feature/{issue-or-task-name} branch until the test is green
+   └── Create in order: View → ViewModel → Service → Repository
+   └── 80%+ coverage for ViewModel and Service layers
         ↓
 6. Self-review with docs/05_quality/review_checklist.md
         ↓

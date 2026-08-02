@@ -63,8 +63,9 @@ This collects project overview, tech stack, development rules, and platform via 
 /create-exec-plan    ← create an execution plan (define AC-001~ and the [E2E] AC,
                        check AC readiness)
 /start-feature       ← pre-implementation review, AC readiness re-check, branch creation
-/run-exec-plan       ← autonomously implement ACs one by one (opt-in)
-   (or implement manually: write code → /check-doc-freshness → /check-invariants → /run-tests)
+/run-exec-plan       ← autonomously implement ACs one by one, test first (opt-in)
+   (or manually: write the AC's test and confirm it fails → write code
+    → /check-doc-freshness → /check-invariants → /run-tests)
 /pre-pr              ← comprehensive pre-PR check
 /complete-exec-plan  ← move plan to completed
 ```
@@ -99,9 +100,9 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | `init-project` | Project initialization (Phase 0 → Phase 1). Run once at adoption |
 | `create-requirements` | Define User Stories, the **goal image** (what the user can do when done / primary journey / non-goals), acceptance conditions, and constraints (`docs/01_requirements/`) |
 | `create-spec` | Draft the application spec — *what* the app does — plus **E2E scenarios** (`E2E-001 → AC-001, AC-003` cross-cutting traceability) from approved requirements (`docs/02_spec/`, `status: draft`; needs human approval) |
-| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) |
+| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability). A plan that changes a DocDD process carries a **process-walkthrough** verification AC |
 | `start-feature` | Pre-implementation review, AC readiness re-check, and branch name decision (once per feature) |
-| `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), then autonomously implement ACs one by one (implement → test → fix → next); halts only on stop conditions (opt-in) |
+| `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), place the `[E2E]` test red, then autonomously implement ACs one by one (**write the failing test** → implement → test → fix → next); halts only on stop conditions (opt-in) |
 | `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update) |
 | `complete-exec-plan` | Move execution plan from `active/` to `completed/` |
 | `promote-spec` | Promote a next-version spec (`spec/<label>` branch) into the current target (sprint boundary) |
@@ -111,7 +112,7 @@ Run skills in Claude Code chat by typing `/skill-name`.
 
 | Skill | Purpose |
 |-------|---------|
-| `run-tests` | Run tests and verify against spec (spec alignment gate determines action on failure) |
+| `run-tests` | Run tests and verify against spec (spec alignment gate determines action on failure; classifies valid vs. invalid red on a red-first run) |
 | `check-invariants` | Verify invariants in `invariants.md` against implementation code |
 | `check-doc-freshness` | Check freshness of documents corresponding to changed code |
 | `check-doc-invariants` | Check documents for structural-rule (doc-INV) violations |
@@ -187,9 +188,20 @@ Code file detection is language-agnostic (anything other than `.md`, `.json`, `.
 
 In DocDD, tests are positioned as "executable expressions of the spec."
 
+### Red-first (INV-T02)
+
+An expression of the spec has to be written **from the spec**. For each AC the test is authored
+first — from the AC text, before the implementation exists — and run to confirm it fails for the
+right reason; that red observation is recorded in the exec-plan's decision log and freezes the
+expectation. A test written alongside the code records what the code does and goes green either way.
+
+`/run-exec-plan` does this per AC, and puts the plan's `[E2E]` test in place, red, before any AC is
+implemented. The procedure, the valid/invalid red distinction and the exemptions are in
+[`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md).
+
 ### Spec alignment gate
 
-When a test fails, do not immediately fix the test.
+When a test fails after its implementation exists, do not immediately fix the test.
 The `run-tests` skill presents the following decision gate:
 
 ```

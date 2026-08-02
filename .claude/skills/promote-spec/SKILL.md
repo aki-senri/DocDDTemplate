@@ -253,10 +253,15 @@ Do not proceed to Step 6 without an explicit "yes".
    ## Acceptance Criteria
    - [ ] AC-003: <new AC text> — was implemented under old spec; update impl to match
    - [ ] AC-007: <new AC text> — ...
+   - [ ] AC-NNN: [E2E] E2E-NNN のとおり、<前提>から<完了条件>まで通しで実行できる
+         （再オープンした AC を含む通しフローが、新しい spec のもとで成立する）
+
+   > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
 
    ## Task Breakdown
    - [ ] Review `git diff spec-target-<prev>..spec-target-<label> -- docs/` for each AC
-   - [ ] Update implementation and tests for each stale AC
+   - [ ] For each stale AC: update its test **first** to the new expectation and observe it red
+         (red-first / INV-T02), then update the implementation until it is green
    - [ ] Run /check-doc-freshness and /check-invariants
 
    ## Progress Log
@@ -266,7 +271,23 @@ Do not proceed to Step 6 without an explicit "yes".
 
    ## Decision Log
    - Promotion <label>: AC-003, AC-007 marked stale (spec changed after implementation).
+   - AC readiness / red-first: このプランは `create-exec-plan` の起票インタビューを経ていない。
+     readiness は `/start-feature`（Step 1b）または `/run-exec-plan`（Step 0b）で検査される。
    ```
+
+   **The `[E2E]` AC is required here** (`create-exec-plan` → "When it is required": a reconcile plan
+   re-opening AC-IDs carries one). A reconcile plan that only fixes fragments can go all-green while
+   the flow the new spec describes does not work — the exact failure the criterion exists for.
+
+   - **Which ID to use.** Do not invent a new ID series or a number outside the spec: use the AC-ID
+     that the new spec's `E2E-NNN` traces to — normally one of the re-opened IDs — so DOC-INV-004
+     traceability still holds. If no re-opened AC owns the through-flow, do **not** fabricate one:
+     tell the user to add it via `/create-exec-plan`, where a human decides what the flow is.
+   - **Red-first for a re-opened AC** (`run-tests/red-first.md`): the spec *changed*, so the old
+     test states the old expectation. Rewrite the expectation from the new AC text, observe it red,
+     record it — the "preservation AC" exemption does **not** apply here; it covers ACs whose
+     behavior is unchanged. Grounding the test change in the promoted spec is what keeps this from
+     being an INV-T01 violation, so name the promotion label and AC-ID in the Decision Log entry.
 
    - **NEW** ACs are *not* auto-planned — they need scoping. Suggest the user run
      `/create-exec-plan` for them.
@@ -321,7 +342,7 @@ Promotion changes the development target — confirm to proceed (yes / adjust / 
 ── After promotion (filled in once executed) ─
 Outgoing version preserved : spec-target-<prev>  (baseline seeded if first promotion)
 New target snapshot tagged  : spec-target-<label>
-Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ...)
+Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ... + [E2E] AC-NNN)
 New-AC plans suggested      : /create-exec-plan for AC-015, AC-016
 CONTEXT.md                  : current target updated to <label>
 Spec branch                 : retired (or kept)
@@ -339,4 +360,6 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`
+- [ ] The reconcile plan carries an `[E2E]` AC (using an existing AC-ID from the new spec, not an
+      invented one) and states that it is not complete while that criterion is unchecked
 - [ ] Promotion recorded in the Decision Log and `docs/07_ai_context/CONTEXT.md` updated

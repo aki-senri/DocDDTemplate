@@ -330,14 +330,14 @@ flowchart TD
     F --> G["⑥ Wrap-up<br/>complete-exec-plan"]
 ```
 
-Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "implement → test → fix → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
+Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "write the failing test → implement → test → fix → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
 
 #### C. Responsibility table
 
 | Phase | Human's responsibility | AI's responsibility |
 |-------|------------------------|---------------------|
 | Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY | Elicit through dialogue, write the draft, and run the readiness check (it never rewrites an AC on its own) |
-| Implementation / verification | (Instruction is the AC number only) | Autonomously run implement → test → fix → next AC; run `run-tests` / `check-*` internally |
+| Implementation / verification | (Instruction is the AC number only) | Autonomously run write the failing test → implement → test → fix → next AC; run `run-tests` / `check-*` internally |
 | Spec change / test expectations | Decide whether the change is allowed (outer gate) | Detect that a change is needed and stop to present it |
 | Review / PR | Review the code and approve/merge the PR | Run the consolidated checks via `pre-pr` |
 | Promotion / GC | Decide whether to run `promote-spec` / `gc` | Assist with diff analysis and post-processing |
@@ -355,9 +355,13 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           At least one [E2E] AC in addition to the functional ones
                           (documentation-only plans carry none — record E2E: n/a)
                           AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here
+                          A plan that changes a DocDD process (a loop, a gate, a resumable run)
+                          carries a process-walkthrough AC — walk the laps, don't just match descriptions
 2. /start-feature       → Confirm docs, re-check AC readiness, and create a branch
 3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written
-                          Then autonomously implement ACs one by one (implement → test → fix → next AC)
+                          Put the [E2E] test in place, red, before implementing anything (red-first / INV-T02)
+                          Then autonomously implement ACs one by one
+                          (write the failing test → implement → test → fix → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
                           Checks with the human only when hitting a stop condition (a–e)
 4. /pre-pr              → Consolidated pre-PR checks
@@ -366,7 +370,9 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 ```
 
 > `/run-exec-plan` is opt-in. If you want to proceed one step at a time manually, you can replace
-> Step 3 with the manual loop "write code → `/check-doc-freshness` → `/check-invariants` → `/run-tests`".
+> Step 3 with the manual loop "write the test for the AC and confirm it fails → write code →
+> `/check-doc-freshness` → `/check-invariants` → `/run-tests`". The red-first order is not part of the
+> automation — it applies to the manual path too (INV-T02).
 
 ### Choosing between `/create-requirements` and `/create-exec-plan`
 
@@ -378,9 +384,31 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 
 `/create-requirements` is optional, but running it first when developing as a team or when "what to build" is vague makes the AC definitions in `/create-exec-plan` clearer. When `/create-requirements` finishes, it guides you with "Next step: run `/create-exec-plan`. Recommended ACs: AC-001, AC-002, ...".
 
+### Red-first: the test is written before the implementation (important)
+
+For each AC, write its test **first** — from the AC text, before the implementation exists — run it,
+and confirm it fails for the right reason. Record that red observation in the exec-plan's decision
+log; from then on the expectation is frozen (`INV-T02`).
+
+```
+AC を読む → テストを起草（AC 本文だけを見る） → 実行して赤を確認
+   → 赤の理由を Decision Log に記録（ここで期待値が凍結） → 実装して緑にする
+```
+
+Why the order matters: a test written at the same time as the code records **what the code does**,
+so it goes green whether or not the AC is met. A test that has never been red has never measured
+anything. `INV-T01` (below) forbids bending a test to the code; `INV-T02` closes the same hole on
+the time axis.
+
+A failure only counts as evidence if the test actually ran: `expected 401, actual 500` is a valid
+red; "does not compile" is not — it measured nothing. See
+[`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) for the full
+procedure and the exemptions (documentation-only plans, preservation ACs already covered by a
+green test).
+
 ### Decision gate on test failure (important)
 
-When a test fails, **do not fix the test right away**.
+When a test fails **after its implementation exists**, **do not fix the test right away**.
 
 ```
 A) The test correctly expresses the spec
@@ -470,6 +498,10 @@ tracks:
 ## INV-T01: Test modification rule
 When modifying a test, always confirm the corresponding AC-ID.
 Modifying tests to match implementation behavior is forbidden.
+
+## INV-T02: Red-first rule
+A test's expectation is written from its AC before the implementation that satisfies it,
+and observed failing. Record the red observation in the exec-plan's decision log.
 ```
 
 ---

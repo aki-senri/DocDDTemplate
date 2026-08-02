@@ -84,6 +84,10 @@ cat CLAUDE.md
 
 # AC readiness criteria — the shared testability checks (always, when the document has ACs)
 cat .claude/skills/create-exec-plan/ac-readiness.md
+
+# Process walkthrough laps — only when the document describes a process
+# (a loop, a resumable run, a stop condition, a gate, an exemption)
+cat .claude/skills/create-exec-plan/process-walkthrough.md
 ```
 
 **If related files are not found**, proceed with what is available and note the absence in the review prompt.
@@ -107,6 +111,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 ## Related context
 ### AC readiness criteria (single source — apply these verbatim in §2)
 {full content of .claude/skills/create-exec-plan/ac-readiness.md, or "not available"}
+
+### Process walkthrough laps (single source — apply these in §2c; include only for a process document)
+{full content of .claude/skills/create-exec-plan/process-walkthrough.md, or "not applicable"}
 
 ### constraints.md (if applicable)
 {content, or "not available"}
@@ -168,6 +175,24 @@ something nobody wanted.
   with no passing test, and a documentation change has no test to give them. Flag it and suggest
   restating the criterion as an ordinary functional AC with an observable result.
 
+### 2c. Process documents: does it survive one lap?
+
+Applies only when the document under review **describes a process** — a loop, a resumable run, a
+stop condition, a gate, or an exemption (scope table in
+`.claude/skills/create-exec-plan/process-walkthrough.md`). For ordinary requirement or spec
+documents, skip this section.
+
+Do not check only that the steps read consistently. Walk the process and name the state after each
+step, at least for these laps:
+
+- **second iteration** — the state the first pass leaves behind is the next pass's input;
+- **resume** — a fresh session starting from the files alone, mid-process;
+- **exemption** — the `n/a` path, and whether every downstream gate knows about it.
+
+Report a finding when a state is unreachable or inescapable, when two rules answer the same state
+differently, when a gate fires on the state that means success, or when the process's own output
+violates its own entry condition. Advisory, like the rest of this review.
+
 ### 3. Clarity and completeness
 - For User Stories: is the "As a / I want / So that" structure clear?
   Is the "So that" (the why) meaningful and not circular?
@@ -205,6 +230,11 @@ Type: {document type}
 {For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
 {For spec: E2E シナリオ present? Any AC belonging to no E2E-NNN?}
 {For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
+
+### Process walkthrough (process documents only — omit otherwise)
+{Second iteration: ✅ / ❌ <state where it breaks>}
+{Resume from files alone: ✅ / ❌ <entry check that rejects the left-behind state>}
+{Exemption path: ✅ / ❌ <downstream gate unaware of the exemption>}
 
 ### Findings
 
