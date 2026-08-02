@@ -119,14 +119,14 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | `check-doc-invariants` | Check documents for structural-rule (doc-INV) violations |
 | `update-context` | Update CONTEXT.md to reflect current state |
 
-### Optional independent review (human-invoked when desired, no authoring context)
+### Independent review (no authoring context)
 
-| Skill | Purpose |
-|-------|---------|
-| `doc-review` | Independent agent reviews a requirements or spec document (AC testability via the shared readiness checks, completeness, references) |
-| `docode-review` | Independent agent reviews changed code against the ACs and general quality |
+| Skill | Purpose | When |
+|-------|---------|------|
+| `doc-review` | Independent agent reviews a requirements or spec document (AC testability via the shared readiness checks, completeness, references) | Optional, human-invoked when desired |
+| `docode-review` | Independent agent reviews changed code against the ACs and general quality | **Mandatory** once `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, human-invoked, on the manual `start-feature` path |
 
-> `run-tests` is model-invocable (callers invoke it via the Skill tool); the other internal skills are executed by higher-level skills following their `SKILL.md` steps inline. See CLAUDE.md "検証スキルの呼び出しポリシー".
+> `run-tests` and `docode-review` are model-invocable (callers invoke them via the Skill tool); the other internal skills are executed by higher-level skills following their `SKILL.md` steps inline. See CLAUDE.md "検証スキルの呼び出しポリシー".
 
 ---
 

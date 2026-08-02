@@ -182,7 +182,7 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
 | `start-feature` (Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict in conversation rather than halting |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
-| `docode-review` | Optional independent review | Judge the diff against the sources, not only against the AC line (advisory) |
+| `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory) |
 | `promote-spec` (Step 7) | Generating a reconcile plan | Write the table with the **new** spec's sections and `E2E-NNN` as the sources of the re-opened ACs |
 
 The action differs by site for the same reason as in `ac-readiness.md` and `red-first.md`: whether a

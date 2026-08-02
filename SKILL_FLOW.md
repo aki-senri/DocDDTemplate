@@ -35,7 +35,7 @@ flowchart TD
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
-        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nHalts only on stop conditions"]
+        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here.\n❌ → HALT (f); ✅/⚠️ → hand off\nHalts only on stop conditions"]
         SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction → HALT (a)"]
         REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe given/when/then from\n  the AC line AND its sources\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
         REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC → HALT (a)\n· record it on the AC-NNN done line"]
@@ -61,8 +61,9 @@ flowchart TD
     end
 
     IMPL --> PREPR
-    IMPL -.->|optional independent code review| DCR
-    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
+    IMPL -.->|optional, manual path\n(no run-exec-plan)| DCR
+    DRIVER ==>|mandatory once every AC is - [x]\n(Step 4a)| DCR
+    DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
         PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
@@ -129,7 +130,8 @@ flowchart TD
 | `gc` | `update-context` | Internal call |
 | `promote-spec` | `create-exec-plan` | Handoff (suggests new-AC plans after promotion) |
 | `promote-spec` | `start-feature` | Handoff (reconcile exec-plan → begin reconciliation) |
-| —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr` — spawns a subagent via the Agent tool (no internal caller) |
+| `run-exec-plan` | `docode-review` | Internal call, **mandatory** (Step 4a) — runs once every AC is `- [x]`, before handoff to `pre-pr`; a ❌ verdict halts with stop condition (f) instead of handing off |
+| —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr`, on the manual (`start-feature`) path — spawns a subagent via the Agent tool (no internal caller on this path) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
 > **Shared reference file (not a skill):**
@@ -175,8 +177,11 @@ flowchart TD
 > (`disable-model-invocation: false`), so its callers invoke it via the Skill tool; the other
 > *internal-call* callees keep `disable-model-invocation: true` and are executed inline by following
 > their `SKILL.md` steps (the Skill tool is not exposed for them). `docode-review` is also
-> model-invocable (`false`) — it spawns an independent subagent via the Agent tool — but unlike
-> `run-tests` it has no internal caller: the human invokes it directly. See CLAUDE.md "検証スキルの呼び出しポリシー".
+> model-invocable (`false`) — it spawns an independent subagent via the Agent tool. Unlike the other
+> *internal-call* callees, it now has **two** call paths: `run-exec-plan` Step 4a invokes it via the
+> Skill tool as a **mandatory** internal call once every AC is `- [x]`, while on the manual
+> (`start-feature`) path it still has no internal caller and the human invokes it directly.
+> See CLAUDE.md "検証スキルの呼び出しポリシー".
 
 ---
 
@@ -243,7 +248,7 @@ context (an issue closes on merge, not on this table):
 | G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved (#24, merged) — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
 | G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved (#22, merged) — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
 | G-B / G-D | The goal reaching the driver was one condensed line — the US bullets and the spec section it stands for were never opened (in), and a green run was never checked back against the spec the traceability points at (out) | 🔄 Addressed, pending merge of #23 / #25 — shared `ac-sources.md`: `create-exec-plan` Q3d (`## Sources` table) / `run-exec-plan` Step 1b (read the sources before drafting the test) + Step 3a (spec re-anchor before the box is checked) / `red-first.md` source set / `start-feature` Step 2 / `pre-pr` ⑤c (⚠️) / `docode-review` / `promote-spec` reconcile template |
-| G-E | Mandatory final goal review (independent verification against the goal image, not just the ACs) | Open — see #28 |
+| G-E | Mandatory final goal review (independent verification against the goal image, not just the ACs) | 🔄 Addressed, pending merge of #26 — `run-exec-plan` Step 4a runs `docode-review` mandatorily once every AC is `- [x]`, halting (stop condition (f)) on a ❌ verdict instead of handing off to `pre-pr`; the manual `start-feature` path keeps it optional |
 
 ---
 
@@ -259,7 +264,8 @@ flowchart TD
   C --> L[Implementation loop: optional checks]
   L --> L
 
-  L --> DCR["docode-review (optional)"]
+  L -.->|manual path| DCR["docode-review\n(mandatory if run-exec-plan\ncompleted every AC; optional\non the manual path)"]
+  L ==>|run-exec-plan completes\nevery AC — Step 4a| DCR
   DCR --> P["pre-pr (optional)"]
   P --> M[Create PR → Merge]
   M --> Q["complete-exec-plan (optional)"]
@@ -292,6 +298,15 @@ All skills are manually invoked, and hooks do not block execution.
 > (`create-exec-plan` → `start-feature` → `run-exec-plan`), because each is the last moment before a
 > different kind of cost: writing the plan, writing code by hand, and handing the plan to an
 > unattended loop.
+>
+> **`docode-review` follows the same shape, inverted.** On the manual (`start-feature`) path it stays
+> optional — a human already looked at the diff while writing it, so the marginal gap is smaller.
+> Inside `run-exec-plan`, once every AC is `- [x]`, Step 4a calls it as a **mandatory, blocking**
+> step: the driver and the reviewer of its own work would otherwise be the same agent from start to
+> finish, which is exactly the self-verification bias the other three checks above cannot see (they
+> all still run *inside* the same session that wrote the code). A ❌ verdict halts with stop
+> condition (f) rather than handing off — the skill itself is still opt-in, but once chosen, this
+> gate inside it is not.
 
 > **Spec version promotion** (`/promote-spec`) is a separate, human-gated event that runs at sprint
 > boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the

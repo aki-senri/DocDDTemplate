@@ -307,7 +307,7 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 
 #### A. 人が直接使うスキル / AI が内部で回すスキル
 
-下表は日常の実装フローで使う主要スキル。これ以外に `init-project`（導入時に一度）と `doc-review` / `docode-review`（任意の独立レビュー）があり、スキルは全部で 17 個。日常的に意識するのは下表だけでよい。
+下表は日常の実装フローで使う主要スキル。これ以外に `init-project`（導入時に一度）と `doc-review`（任意の独立レビュー）があり、スキルは全部で 17 個。日常的に意識するのは下表だけでよい。
 
 | 層 | スキル | 人の関わり方 |
 |----|--------|------------|
@@ -315,6 +315,11 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 | AI が内部で回す（実行・検証） | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | 人は直接呼ばない（上位スキルが自動で回す） |
 
 > 人が起動するのは上段（**7 ＋ 周期 2**）。`create-spec` は承認済み要件からアプリ仕様を起草し、人間承認後に `create-exec-plan` へハンドオフする（任意・小さな変更ならスキップ）。`start-feature` は機能ごとに一度、自走を始める前の準備として起動する。下段の検証スキルは、上段スキルがそれぞれ必要な範囲で内部呼び出しする（例: `run-tests` は `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`、`check-*` は `run-exec-plan` / `pre-pr` / `gc`）。`update-context` は `gc` から呼ばれる（`complete-exec-plan` は CONTEXT.md を直接更新し、`update-context` は呼ばない）。
+>
+> `docode-review` は経路によって両方の段にまたがる。`run-exec-plan`（Step 4a）はプランの全 AC が
+> `- [x]` になった時点でこれを**内部から必須呼び出し**し、❌ なら `pre-pr` へ渡さず HALT する。
+> 一方、手動実装（`start-feature`）経路では従来どおり人が直接起動する任意スキルのままである
+> （`doc-review` と同じ扱い）。
 
 #### B. 人間視点のフロー
 

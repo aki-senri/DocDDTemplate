@@ -9,9 +9,13 @@ description: |
   read the AC's sources (the US bullets and spec section its one line condenses) ->
   write the failing test -> implement -> run-tests -> check-invariants -> re-anchor to the spec
   section, and on green it checks the
-  box, records a Decision Log entry, and moves to the next AC. Halts ONLY on explicit stop conditions
+  box, records a Decision Log entry, and moves to the next AC. When every AC is checked, it runs
+  `docode-review` as a mandatory independent goal check before handing off to `pre-pr` — the
+  self-implementing loop is the case that most needs an outside look, since the same agent wrote
+  the code and the tests. Halts ONLY on explicit stop conditions
   (missing/ambiguous AC, tests still red after bounded retries, a test change required,
-  an irreversible/outward action, or an INV violation needing scope expansion).
+  an irreversible/outward action, an INV violation needing scope expansion, or the independent
+  review requesting changes).
   Opt-in: runs only when the user explicitly invokes it; default behavior is unchanged.
 disable-model-invocation: true
 ---
@@ -70,8 +74,11 @@ genuinely need a human, and never in the middle of executing a frozen AC."
       describes — a green test set proves only what was transcribed into it
    g. On green: check the AC box, append a Decision Log entry, continue to the next AC
    h. On red: attempt a **bounded** self-repair (default 3 tries); if still red, **halt**
-3. When all ACs are checked (or a stop condition fires): produce a summary and hand off
-   to `pre-pr` (which remains a separate, human-reviewed step)
+3. When all ACs are checked: run `docode-review` (**mandatory** — see Step 4) as an independent
+   goal check before handing off to `pre-pr`. On ✅ or ⚠️, produce a summary and hand off. On ❌,
+   **halt** with stop condition (f) — do not hand off. (If a stop condition fires before all ACs
+   are checked, the loop stops there and this step does not run; `docode-review` stays optional on
+   that path, same as any human-implemented plan)
 
 ---
 
@@ -331,8 +338,56 @@ looks wrong, that is a spec change — outer gate, stop condition (a).
 
 ### Step 4: Finish the loop
 
-When all ACs are `- [x]` (or a stop condition fired), stop the loop and report (see format
-below). **Do not create a PR.** Hand off to `pre-pr` as a separate, human-reviewed step.
+When a stop condition fired before every AC was checked, stop the loop and report (see format
+below) — Step 4a does not run on this path. `docode-review` remains optional here, same as any
+plan a human is implementing (`start-feature` path): the loop did not reach an unattended
+completion, so there is nothing for the mandatory gate to guard yet.
+
+When every AC is `- [x]`, continue to **Step 4a** before reporting.
+
+#### Step 4a: Mandatory independent review (self-implementing completion only)
+
+This is the one point in the loop where the implementer and the verifier are the same agent from
+start to finish — every AC, every test, every re-anchor was judged by the driver against its own
+work. `docode-review` exists precisely to catch what a self-reviewer cannot: run it now, via the
+`Skill` tool (`docode-review` is model-invocable), **before** reporting completion or handing off
+to `pre-pr`.
+
+- Collect context exactly as `docode-review`'s own Step 1 describes (diff, this plan's `## Sources`
+  and the sections they name) and launch it. Do not skip its independent-subagent design by
+  reviewing the diff yourself instead — that would defeat the reason this step exists.
+- Append the verdict to this plan's `## Decision Log`:
+  ```markdown
+  ### YYYY-MM-DD
+  - docode-review (Step 4a): verdict {✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested}.
+    {one-line summary of the findings, or "no findings"}.
+  ```
+
+| Verdict | Action |
+|---------|--------|
+| ✅ Approved | Continue to reporting; hand off to `pre-pr` |
+| ⚠️ Approved with suggestions | Continue to reporting; hand off to `pre-pr`. Mention the suggestions in the summary so the human sees them at handoff, even though they do not block it |
+| ❌ Changes requested | **Halt** with stop condition (f). Surface the findings verbatim. Do **not** attempt to fix them yourself and re-run — deciding which findings to act on (and how) is the same governance judgment as rewriting an AC, and this gate exists so a human makes it, not the agent that just finished implementing |
+
+**Do not call it twice to produce one report.** "Same pass" means: no new tool call boundary, no new
+message from the user, and no gap in which the human could have changed the repo — i.e., you are
+still inside the single execution that just produced this verdict, about to write it into the final
+report. Anything else (a new invocation of this skill, a later turn, a session that re-reads the
+plan from disk) is a **resumed session** under the rule below, even if it feels like "continuing the
+same conversation" — the file is the only thing that can be trusted to reflect the current diff.
+
+**On a resumed session, always run it fresh — never reuse a recorded verdict.** A `docode-review
+(Step 4a):` entry from an earlier session is evidence about the diff *as it was then*, not now. Two
+concrete ways the diff can have moved since that entry, neither of which touches an AC checkbox:
+a human made fixes after a ❌ halt without reopening any AC, or a reconcile plan reopened and
+re-completed different ACs in a later session. Either way, `- [x]` on every AC no longer implies
+"the diff `docode-review` last saw is the diff sitting here now" — so re-run it and append a new
+entry rather than trusting the old one. (A stale ❌ is not a shortcut to skip re-review, either: if
+the human wants to proceed past it, that happens by getting a fresh ✅/⚠️ or by the human directly
+overriding the halt, not by the driver reasoning "it was already reviewed.")
+
+When all ACs are `- [x]` (and, on this path, Step 4a's verdict is ✅ or ⚠️), stop the loop and report
+(see format below). **Do not create a PR.** Hand off to `pre-pr` as a separate, human-reviewed step.
 
 ---
 
@@ -348,6 +403,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
 | (e) | An INV violation cannot be resolved without expanding scope | Scope expansion is a planning decision, not execution |
+| (f) | `docode-review` (Step 4a), run mandatorily once every AC is `- [x]`, returns ❌ Changes requested | Deciding which findings to act on — and how — is the same governance judgment as rewriting an AC; the driver that just finished implementing is the one party who cannot make it objectively |
 
 If none apply, **keep going** — do not stop merely because progress feels "far enough" or to
 ask for reassurance. (This is the "context anxiety" failure mode the loop exists to avoid.)
@@ -411,6 +467,10 @@ When the budget is exhausted, halt with stop-condition (b).
 - [ ] No test frozen by a red observation was edited to make it pass
 - [ ] Every AC reached is either `- [x]` (green) or recorded as a HALT in the Decision Log
 - [ ] Decision Log updated per the resume-state convention
+- [ ] **If every AC reached `- [x]`**: `docode-review` was run (Step 4a) via the `Skill` tool and its
+      verdict recorded in the Decision Log **before** handoff; a ❌ verdict halted with stop
+      condition (f) instead of handing off (a run that stopped early on another stop condition does
+      not need this — `docode-review` stays optional there)
 - [ ] No PR was created by this skill (handoff to `pre-pr` only)
 
 Final report output by the agent:
@@ -426,6 +486,8 @@ Red-first : ✅ {n}/{n} ACs で赤を観測してから実装   |   ⚠️ AC-NN
 再アンカー: ✅ {n}/{n} AC を spec 該当節と照合 (Step 3a)   |   ➖ n/a ({理由})
 Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 …
 Tests     : ✅ {n} passing
+docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested → HALT (f)
+                         | n/a (loop stopped before every AC was checked — see Stopped at)
 Stopped at: {none | AC-NNN, stop condition <id>: <reason>}
 
 Next action: {run /pre-pr for the completed ACs | human decision needed for the HALT}

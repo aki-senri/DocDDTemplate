@@ -33,6 +33,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
                           and red-first evidence (⚠️ only)
 ⑤b process walkthrough  → For a plan that changed a process: evidence check (⚠️ only)
 ⑤c AC sources           → ## Sources present + spec re-anchor recorded per AC (⚠️ only)
+⑤d docode-review evidence → For a plan completed by run-exec-plan: verdict recorded? (⚠️ only)
 ⑥ exec-plan update      → Record progress in log
 ```
 
@@ -231,6 +232,39 @@ means inferring them from the code, which is the one reading `ac-sources.md` for
 absence; if the plan is still active, the rows are written at the plan from the US and spec — the
 `create-exec-plan` path — never from the diff in front of you.
 
+### ⑤d docode-review evidence for autonomous completions (⚠️ report only)
+
+`run-exec-plan` Step 4a makes `docode-review` **mandatory** once every AC in a plan reaches `- [x]`
+(it halts with stop condition (f) on a ❌ verdict rather than handing off — see
+[`../run-exec-plan/SKILL.md`](../run-exec-plan/SKILL.md)). On the manual `start-feature` path,
+`docode-review` stays optional, as before.
+
+Check whether the plan's `## Decision Log` carries an `AC readiness: ... (Step 0b)` entry. Use
+**only** this phrase as the marker — not `red-first:` / `spec 再アンカー:` entries, which are part of
+the general Decision Log convention and can appear in a manually-authored plan too (a human following
+the same write-up style writes the same phrases without ever running `run-exec-plan`). The
+`(Step 0b)` phrase is the one that is actually unique to that skill's own gate, since only its Step
+0b produces it. If such a marker is present, look for the **most recent**
+`docode-review (Step 4a): verdict ...` entry — recency matters here, since a plan can legitimately
+carry more than one (a reconcile plan reopening ACs runs Step 4a again on its own later completion,
+per `run-exec-plan`'s resume rule).
+
+```
+docode-review evidence:
+  ➖ n/a（手動実装 — run-exec-plan の痕跡なし。docode-review は引き続き任意）
+  ✅ run-exec-plan 完了 → 直近の docode-review verdict ✅ Approved 記録あり
+  ⚠️ run-exec-plan 完了の痕跡があるが docode-review の記録なし（Step 4a が実行されたか後から確認できない）
+  ⚠️ 直近の docode-review verdict が ❌ Changes requested のまま（run-exec-plan は本来ここで HALT する
+     はずであり、それでも PR に進むのは記録の上では未解決の指摘を残したままの手動判断）
+```
+
+**Warning, not a blocker**, for the same reason as ⑤/⑤b/⑤c: the marker and the verdict are both
+hand-written Decision Log prose, so an absent line cannot be told apart mechanically from an
+unrecorded-but-performed step. The real enforcement is upstream, inside `run-exec-plan` itself
+(Step 4a blocks its own handoff on ❌) — this check is a backstop, not the gate. **Do not run
+`docode-review` here to fill the gap**; report the absence and let the human decide whether to go
+back and run it.
+
 ### ⑥ exec-plan progress update
 
 Update the `exec-plans/active/*.md` corresponding to the implemented work.
@@ -260,6 +294,8 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ⑤c AC sources      : ✅ {n}/{n} AC に起点行あり  / ⚠️ ## Sources なし (does not block)
   └ 再アンカー     : ✅ {n}/{n} AC に記録あり  / ⚠️ AC-NNN 記録なし (does not block)
                      / ➖ n/a (起点なし)
+⑤d docode-review   : ✅ verdict 記録あり  / ⚠️ run-exec-plan 完了の痕跡ありだが記録なし (does not block)
+                     / ⚠️ 直近の verdict が ❌ のまま (does not block) / ➖ n/a (手動実装)
 ⑥ exec-plan        : ✅ Progress updated
 
 ---
@@ -284,6 +320,9 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
       reported (⚠️ — does not block, and is not reconstructed here)
 - [ ] The plan's `## Sources` table and the per-AC `spec 再アンカー:` records were checked and any
       absence reported (⚠️ — does not block, and neither is filled in here)
+- [ ] For a plan showing signs of `run-exec-plan` completion: the `docode-review` verdict record was
+      checked and any absence reported (⚠️ — does not block, and `docode-review` is not run here to
+      fill the gap)
 - [ ] If test files were changed, the reason is recorded in the decision log
 - [ ] The progress log in exec-plan has been updated
 - [ ] Output shows "PR creation status: ✅ No issues"

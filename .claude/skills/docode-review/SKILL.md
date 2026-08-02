@@ -7,6 +7,9 @@ description: |
   quality, providing an objective perspective separate from the implementing agent. It also judges whether
   each test expresses its AC rather than mirroring the implementation — the one check the agent
   that wrote both sides cannot perform on itself.
+  Mandatory when `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill
+  before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, as before, on the
+  manual `start-feature` path.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
 # All other skills set this to true because they only issue instructions to the current agent.
@@ -15,15 +18,29 @@ disable-model-invocation: false
 
 # Skill: Independent Agent Code Review
 
-> **When to run**: After implementation is complete, before running `/pre-pr`
+> **When to run**: After implementation is complete, before running `/pre-pr`.
+> **Mandatory** when the plan was completed autonomously by `/run-exec-plan` — its Step 4a calls
+> this skill itself, once every AC is `- [x]`, and halts (stop condition (f)) on a ❌ verdict rather
+> than handing off. **Optional**, as before, when a human implemented the plan via `/start-feature`
+> — that path always had a human look at the diff before the PR, which is the gap this skill exists
+> to fill only when nobody did.
 >
 > **Purpose**: Get an objective review from an agent that has no knowledge of the implementation
-> decisions made during coding. This avoids confirmation bias from the implementing agent.
+> decisions made during coding. This avoids confirmation bias from the implementing agent — the
+> risk is structural (not a matter of diligence) when the same agent authored the code, the tests,
+> and every green check along the way, which is exactly what a `run-exec-plan` completion is.
 >
-> **Prerequisites**:
+> **Prerequisites** (manual/human-invoked path):
 > - The working tree is clean (all changes are committed — run `git status` to verify)
 > - At least one commit exists on the current branch
 > - The branch has diverged from `main` (there are changes to review)
+>
+> **On the `run-exec-plan` Step 4a path, these do not apply as written.** The autonomous loop reaches
+> full completion before anything is necessarily committed — DocDD only commits when the user asks
+> (see CLAUDE.md's git safety rules) — so Step 4a routinely calls this skill against an uncommitted,
+> possibly fully-dirty tree. That is expected here, not a precondition violation: follow Step 1's
+> "working tree is not clean" branch below (include `git diff --cached` and `git diff` in the review
+> context) rather than asking the user to commit first.
 
 ---
 
