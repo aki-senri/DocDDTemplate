@@ -62,7 +62,7 @@ option is to halt.
 |---------|-------------|
 | READY | Write the criterion as answered |
 | ⚠️ (R3 or R4 unmet for a stated reason) | Write it, and record the reason in `## Decision Log` |
-| NOT READY | **Rewrite the criterion with the user** — name the failing check (`R2`) and quote the phrase that fails it, propose a rewrite, confirm it. Do not finalize a plan containing a NOT READY criterion |
+| NOT READY | **Rewrite the criterion with the user** — name every failing check by its own ID (any of `R1` / `R2` / `R5`, and `R3` / `R4` when no reason can be given) and quote the phrase that fails each one, propose a rewrite, confirm it. Do not finalize a plan containing a NOT READY criterion |
 
 Rewriting an AC is a decision about *what to build*, so it is made with the user, not on their
 behalf. If the user declines to rewrite, record their decision and the failing check in the

@@ -117,8 +117,9 @@ AC-003  NOT READY  R2 — 期待結果が本文から特定できない（「適
 Verdict: 1 NOT READY → {rewrite with the user | ask the user | HALT (stop condition (a))}
 ```
 
-Name the failing check by its ID (`R2`) and quote the phrase that fails it. "AC-003 is vague" is
-the judgement this file exists to replace.
+Name **every** failing check by its own ID — `R1` … `R5`, one line each, as AC-003 shows above — and
+quote the phrase that fails it. Do not collapse them onto one representative check: an AC that fails
+R1 and R5 needs both rewritten. "AC-003 is vague" is the judgement this file exists to replace.
 
 ---
 

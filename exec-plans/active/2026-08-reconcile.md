@@ -46,6 +46,7 @@ completed:
 - 進行中プラン `2026-08-ac-readiness-gate.md` の AC-007 を機能 AC に是正
 
 - PR #30 作成（`2026-08-ac-readiness-gate.md` と合同）。マージ後に `/complete-exec-plan` を実行する
+- PR #30 のレビュー対応（Copilot 3 件のうち 1 件が本プラン分）
 ## Decision Log
 
 ### 2026-08-02
@@ -105,3 +106,10 @@ completed:
   `create-exec-plan` の禁止文2行のみ。免除の記述はリポジトリ内に残っていない。
   `exec-plans/active/*.md` は2プランとも `[E2E]` AC なし・`E2E: n/a` 記録あり＝ DOC-INV-006 は ℹ️。
   両プランの AC 行は `AC-(\d{3}):` で解析可能（reconcile: 003/006、ac-readiness-gate: 001〜007）。
+- **PR #30 レビュー対応（Copilot、本プラン分 1 件）**。`SKILL_FLOW.md` の PLAN ノードが
+  「`create-exec-plan` は最低1本の `[E2E]` AC を定義する」と無条件に書いたままで、本プランで変更した
+  規約（documentation-only は置かない）と食い違っていた。CLAUDE.md と README 2件は追従させたのに、
+  フロー図のノードを見落としていた（サマリ表だけを探して図中のテキストを検索対象にしていなかった）。
+  PLAN ノードに documentation-only の分岐を追記。
+  なお §3-6 の G-F 行と §4 の但し書きは「`[E2E]` AC があるときのゲート挙動」を述べており、
+  無条件の要求ではないため変更不要。

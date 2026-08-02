@@ -59,7 +59,7 @@ Check every unchecked AC of the selected plan against the five checks in
 |---------|--------|
 | READY | Proceed |
 | ⚠️ (R3 or R4 unmet for a stated reason) | Report it and proceed |
-| **NOT READY** | Present the failing check (`R2`) and the phrase that fails it, and ask the user: rewrite the AC now, or proceed anyway. **Record the user's decision in the Progress Log** |
+| **NOT READY** | Present every failing check by its own ID (any of `R1` / `R2` / `R5`, and `R3` / `R4` when no reason can be given) with the phrase that fails each one, and ask the user: rewrite the AC now, or proceed anyway. **Record the user's decision in the Progress Log** |
 
 The human is present on this path, so a thin AC can be fixed in conversation rather than blocking.
 Two things follow, and both are intended:

@@ -27,7 +27,7 @@ flowchart TD
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md\n⑥ Decide branch name\n⑦ Record start in progress log"]
     end
