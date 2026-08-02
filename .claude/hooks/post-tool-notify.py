@@ -86,7 +86,7 @@ elif re.search(r"Tests?\.cs$|\.test\.(ts|tsx|js)$|\.spec\.(ts|tsx|js)$", file_pa
         "この変更は仕様（AC-ID）に基づいていますか？"
         "実装の挙動に合わせたテスト修正は禁止です（INV-T01）。"
         "新規に書いたテストは、実装より先に実行して赤を観測し、その観測を exec-plan の判断ログに"
-        "記録してください（red-first / INV-T02）。既存テストの変更理由も同じ判断ログに記録します。"
+        "記録してください（red-first / INV-T02）。既存テストを変更した場合も、その理由を同じ判断ログに記録してください。"
     )
 elif not re.search(r"\.(md|txt|json|yaml|yml|toml|xml|html|css|svg|png|jpg|gif|ico|lock|sum)$", file_path):
     msg = (

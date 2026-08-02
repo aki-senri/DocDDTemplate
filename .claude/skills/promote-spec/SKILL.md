@@ -253,7 +253,7 @@ Do not proceed to Step 6 without an explicit "yes".
    ## Acceptance Criteria
    - [ ] AC-003: <new AC text> — was implemented under old spec; update impl to match
    - [ ] AC-007: <new AC text> — ...
-   - [ ] AC-00X: [E2E] E2E-00Y のとおり、<前提>から<完了条件>まで通しで実行できる
+   - [ ] AC-NNN: [E2E] E2E-NNN のとおり、<前提>から<完了条件>まで通しで実行できる
          （再オープンした AC を含む通しフローが、新しい spec のもとで成立する）
 
    > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
@@ -342,7 +342,7 @@ Promotion changes the development target — confirm to proceed (yes / adjust / 
 ── After promotion (filled in once executed) ─
 Outgoing version preserved : spec-target-<prev>  (baseline seeded if first promotion)
 New target snapshot tagged  : spec-target-<label>
-Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ... + [E2E] AC-00X)
+Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ... + [E2E] AC-NNN)
 New-AC plans suggested      : /create-exec-plan for AC-015, AC-016
 CONTEXT.md                  : current target updated to <label>
 Spec branch                 : retired (or kept)
