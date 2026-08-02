@@ -278,13 +278,15 @@ Report the review result only. Do not make any code changes.
 
 ### Step 4: Present findings to the user
 
-After the independent agent returns its report, present it verbatim and guide next steps:
+After the independent agent returns its report, present it verbatim and guide next steps. The ❌
+row differs by caller — **who may act on the findings is exactly what changed between the two
+paths**:
 
-| Verdict | Recommended action |
-|---------|--------------------|
-| ✅ Approved | Proceed to `/pre-pr` |
-| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` |
-| ❌ Changes requested | Address critical/high findings, then re-run `/docode-review` |
+| Verdict | Manual path (a human ran this skill) | Called from `run-exec-plan` Step 4a |
+|---------|---------------------------------------|--------------------------------------|
+| ✅ Approved | Proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr` |
+| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr`, mentioning the suggestions |
+| ❌ Changes requested | Address critical/high findings yourself, then re-run `/docode-review` | **Halt with stop condition (f) and surface the findings verbatim. Do not fix them and re-run** — see `run-exec-plan/SKILL.md` Step 4a. Deciding which findings to act on is a governance call the driver may not make on its own behalf, precisely because it is the same agent whose self-review this gate exists to check |
 
 ---
 
@@ -296,10 +298,14 @@ After the independent agent returns its report, present it verbatim and guide ne
 {full report from the spawned agent}
 
 ---
-Next step:
+Next step (manual path — a human ran this skill directly):
   ✅ Approved       → Run /pre-pr
   ⚠️  With suggestions → Discuss findings above, then run /pre-pr
   ❌ Changes needed  → Fix issues above, then re-run /docode-review
+
+Next step (called from run-exec-plan Step 4a — see that skill, do not apply the manual-path row above):
+  ✅ / ⚠️  → Hand off to /pre-pr
+  ❌       → HALT with stop condition (f); do not fix and re-run
 ```
 
 ---

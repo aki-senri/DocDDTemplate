@@ -329,13 +329,13 @@ flowchart TD
     B["② Freeze the ACs<br/>create-exec-plan (decide acceptance criteria)"] --> C
     C["③ Prepare & start the loop<br/>start-feature → run-exec-plan"]
     C --> D{Does the AI HALT?}
-    D -->|Stop conditions a–e| E["④ Human decides<br/>add spec / test expectations / irreversible ops, etc."]
+    D -->|Stop conditions a–f| E["④ Human decides<br/>add spec / test expectations / irreversible ops / review findings, etc."]
     E --> C
     D -->|All ACs done| F["⑤ Review & PR<br/>pre-pr → code review → create/merge PR"]
     F --> G["⑥ Wrap-up<br/>complete-exec-plan"]
 ```
 
-Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
+Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–f in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
 
 #### C. Responsibility table
 
@@ -371,7 +371,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           (read the AC's sources → write the failing test → implement → test → fix
                            → re-anchor to the AC's spec section → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
-                          Checks with the human only when hitting a stop condition (a–e)
+                          Checks with the human only when hitting a stop condition (a–f)
 4. /pre-pr              → Consolidated pre-PR checks
 5. Create PR → review → merge
 6. /complete-exec-plan  → Move the plan to completed/

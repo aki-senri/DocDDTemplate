@@ -83,6 +83,11 @@ completed:
   verdict ⚠️ Approved with suggestions（High 2件・Medium 1件・Low 1件）。4件とも対応済み
   （pre-pr ⑤d の検出マーカーを絞る、docode-review の Prerequisites を Step 4a 経路向けに補足、
   SKILL_FLOW.md §4 diagram 更新、Step 4a の「同一パス」定義を明記）。次は commit → PR 作成。
+- commit → push → PR #34 作成。
+- ユーザー依頼によりテンプレート全体の横断矛盾チェックを実施。3件検出（うち1件は
+  docode-review 自身の Step 4 が ❌ 時に「直して再実行」と書いており run-exec-plan Step 4a の
+  「HALT (f)、直して再実行しない」と矛盾——3段階のレビューを通り抜けていた）。全件修正し
+  追加 commit → push 済み。
 
 ## Decision Log
 
@@ -189,3 +194,28 @@ completed:
      変更しうる隙間が無いこと）を明記。
   4件とも修正済み。再レビューは実施しない（verdict が ❌ でないため、AC-002/Step 4a の
   「❌ のときのみ再実行」の対象外。⚠️ 指摘への対応は人間の裁量）。
+- **横断矛盾チェック（ユーザー依頼, 2026-08-03, PR #34 作成後）**。「テンプレート自体をレビューする
+  skill が無い」という前提で、`docode-review` 関連の全13箇所に加え、停止条件・スキル数など他の
+  横断整合性を手動で照合した。検出3件、全件修正済み：
+  1. 🟠 **`docode-review/SKILL.md` 自身の Step 4「Present findings to the user」と
+     「Result report format」が、❌ のときの対応を「指摘を直して再実行」とだけ書いており、
+     `run-exec-plan` Step 4a が定めた「❌ なら HALT (f)。driver は直して再実行してはならない」と
+     直接矛盾していた**。両方とも自走中に読まれうる同一スキルの本文でありながら、手動経路の
+     既定動作しか書いていなかった（当初実装・process walkthrough・`/docode-review` 独立レビュー
+     の3段階すべてが見落とした）。修正: Step 4 の表と Result report format を「手動経路」と
+     「run-exec-plan Step 4a から呼ばれた場合」の2列に分け、後者は「HALT (f)。指摘を直して
+     再実行してはならない」と明記。
+  2. 🟡 `ONBOARDING.md` / `ONBOARDING.ja.md` に「停止条件 a〜e」という表記が計6箇所
+     （mermaid 図2箇所・ASCII フロー2箇所・責任分担の説明文2箇所）残っており、新設の (f) が
+     反映されていなかった。修正: 全6箇所を「a〜f」に更新（英語版の説明文にも
+     "review findings" の例を追加）。
+  3. ℹ️ `run-exec-plan/SKILL.md` の「Design principle」表（inner-loop / outer-gate の対比）に
+     `docode-review` の呼び出しと ❌ 対応判断が入っていなかった。`CLAUDE.md` の対応する表
+     （「自動化してよい範囲 / 残す範囲」）には AC-002 実装時に追加済みだったため、
+     単一ソースであるはずのスキル本体側が要約側より古い状態になっていた。修正:
+     同じ2項目を Design principle 表にも追加。
+  他に確認し矛盾なしと判断した項目: スキル総数（17、変更なし）、`.claude/hooks/*.py` に
+  docode-review への参照なし、`SKILL_FLOW.md` §2 の共有参照ファイル解説（red-first.md /
+  ac-sources.md / process-walkthrough.md の要約段落）は docode-review を中立的に言及するのみで
+  必須/任意の主張を含まないため対象外、既存 `exec-plans/active/*.md`（他プラン）の docode-review
+  言及はすべて過去の Decision Log 記録であり現在の規約を主張するものではないため対象外。

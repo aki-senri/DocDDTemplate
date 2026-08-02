@@ -44,8 +44,8 @@ on the human's behalf.
 
 | Layer | Examples | Who decides |
 |-------|----------|-------------|
-| **Inner loop — automate** | Read the AC's frozen sources, transcribe them into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, check the result against the AC's spec section, advance to the next AC | **This skill (no confirmation)** |
-| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result neither the AC nor its sources state**, **choosing between two frozen documents that disagree**, changing a test's expectation once frozen, modifying the spec, `promote-spec`, creating/pushing a PR | **Human (halt and ask)** |
+| **Inner loop — automate** | Read the AC's frozen sources, transcribe them into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, check the result against the AC's spec section, advance to the next AC, **invoke `docode-review` once every AC is `- [x]` (Step 4a — the call itself is automatic; interpreting a ❌ verdict is not, see below)** | **This skill (no confirmation)** |
+| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result neither the AC nor its sources state**, **choosing between two frozen documents that disagree**, changing a test's expectation once frozen, **deciding which `docode-review` findings to act on when Step 4a returns ❌**, modifying the spec, `promote-spec`, creating/pushing a PR | **Human (halt and ask)** |
 
 Writing a test is on the inner-loop side **only in the transcription sense**: the given / when / then
 come from material a human already froze — the AC line, plus the US bullets and spec section it
