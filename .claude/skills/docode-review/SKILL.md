@@ -114,7 +114,7 @@ other rules consume — also collect the **referrers**, for review point 1d's de
 # table is hand-maintained and a site can name the rule without ever naming the file.
 # 2>/dev/null || true so a missing range path (no docs/, no exec-plans/active/) and a
 # no-match result both yield "nothing found" rather than a non-zero exit under set -e.
-grep -rln "{changed single source basename}\|{rule or step IDs: R2, INV-T02, Q3d, ⑤c}" \
+grep -rln "{changed single source basename without .md}\|{rule or step IDs: R2, INV-T02, Q3d, ⑤c}" \
   .claude/ exec-plans/active/ docs/ *.md 2>/dev/null || true
 # then cat each hit — including the ones the diff did NOT touch, which are the point
 ```

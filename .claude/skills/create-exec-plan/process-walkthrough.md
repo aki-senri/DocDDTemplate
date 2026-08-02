@@ -97,10 +97,10 @@ conclude from memory that nothing consumes the change; that judgement is the one
    # 2>/dev/null || true: a range path may not exist in a given repo (no docs/, no
    # exec-plans/active/), and a no-match grep exits 1. Neither is a failure of this
    # lap — "nothing found" is a result. Without both, the command dies under set -e.
-   grep -rn "ac-readiness\|R2" .claude/ exec-plans/active/ *.md 2>/dev/null || true
+   grep -rn "ac-readiness\|R2" .claude/ exec-plans/active/ docs/ *.md 2>/dev/null || true
    ```
 
-   The range is `.claude/**`, `exec-plans/active/**` and the root `*.md`. Enumeration is the cheap
+   The range is `.claude/**`, `exec-plans/active/**`, `docs/**` and the root `*.md`. Enumeration is the cheap
    net, not the expensive part — **step 3 is where the findings come from.** In the case below all
    three failing sites were already listed in the call-site table; what was missing was walking them.
    Three rules about the range:
@@ -108,7 +108,7 @@ conclude from memory that nothing consumes the change; that judgement is the one
    | Rule | Why |
    |------|-----|
    | **Do not** treat the call-site table as complete | It lists *sites*, by hand. A site can consume the rule through something the table does not name — in the case below, `doc-review` was listed, but the context it hands its subagent lives in the prompt template, which no table row covers. Grep finds what the table forgot; it does not replace reading the table |
-   | **Do** include `exec-plans/active/**` and the root `*.md` | A plan's Task Breakdown and Decision Log cite step names and question numbers routinely. A plan still pointing at `Q2b` after the question became `Q3d` is the same drift, in a file nobody thinks of as a "call site" |
+   | **Do** include `exec-plans/active/**`, `docs/**` and the root `*.md` | A plan's Task Breakdown and Decision Log cite step names and question numbers routinely. A plan still pointing at `Q2b` after the question became `Q3d` is the same drift, in a file nobody thinks of as a "call site". `docs/**` is in range for the same reason: in a project built from this template, `invariants.md`, `review_checklist.md` and the spec cite rule IDs (`INV-TNN`, `DOC-INV-NNN`, `AC-NNN`). This template repo has no `docs/` tree, which is exactly why the command needs `2>/dev/null \|\| true` |
    | **Do not** treat a `## Decision Log` or `## Progress Log` entry **as a finding** | Those sections are append-only history (CLAUDE.md「再開状態のファイル化規約」): they record what was true when written, including values that have since changed. "AC-008 の本文を「1周」→「6周」に修正" must keep saying 1周, and a previous plan's own lap record must keep the lap count it walked, or the record of what was corrected is destroyed. Detection is mechanical; this exclusion is not — a person or the driver decides which hits are history. **Unchecked** (`- [ ]`) AC lines and Task Breakdown entries are *not* history and are in scope |
 
 3. **Walk each referrer from the top of its own skill**, not from the line the grep matched. At the
@@ -176,7 +176,7 @@ In the plan's `## Decision Log`:
   (happy / 2周目 / 再開 / 免除 / ゲート境界 / 成功時 / 依存の逆流)。検出 {n} 件:
   - {状態} で {規則 A} と {規則 B} が矛盾 → {修正}
   - 依存の逆流: {参照元 file:line} は {新しい判定材料} を持たない地点で判定 → {修正}
-  依存の逆流の列挙: 呼び出し地点表 {n} 件 ＋ `grep -rn "{パターン}" .claude/ exec-plans/active/ *.md`
+  依存の逆流の列挙: 呼び出し地点表 {n} 件 ＋ `grep -rn "{パターン}" .claude/ exec-plans/active/ docs/ *.md`
   で {n} 件 → {参照元を列挙}（うち履歴 {n} 件は対象外）。
   全周 PASS。
 ```
@@ -194,7 +194,7 @@ outright rather than claiming a count:
 
 ```markdown
 - AC-NNN process walkthrough: 依存の逆流のみ（{変更}は状態遷移を伴わない改称のため
-  1〜6周は適用外）。列挙: 呼び出し地点表 ＋ `grep -rn "{旧ラベル}" .claude/ exec-plans/active/ *.md`
+  1〜6周は適用外）。列挙: 呼び出し地点表 ＋ `grep -rn "{旧ラベル}" .claude/ exec-plans/active/ docs/ *.md`
   → {参照元}（うち履歴 {n} 件は対象外）。検出 {n} 件: {…} → {修正}。PASS。
 ```
 
