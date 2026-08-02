@@ -64,13 +64,13 @@ GitHub issue #23 (G-B) と #25 (G-D) の解消。両者は「既にある情報�
 ## Task Breakdown
 
 - [x] AC-001 — `.claude/skills/create-exec-plan/ac-sources.md` を新規作成
-- [x] AC-002 — `.claude/skills/create-exec-plan/SKILL.md`（Q2b・テンプレート・Steps・完了条件）
+- [x] AC-002 — `.claude/skills/create-exec-plan/SKILL.md`（Q3d・テンプレート・Steps 2b・完了条件）
 - [x] AC-003 — `.claude/skills/run-exec-plan/SKILL.md` に Step 1b を追加
-- [x] AC-004 — 同 SKILL.md の Step 3 に spec 再アンカーを追加
+- [x] AC-004 — 同 SKILL.md の Step 3 に検証項目4、その下に Step 3a（spec 再アンカー）を追加
 - [x] AC-005 — `.claude/skills/run-tests/red-first.md` の参照集合を更新
 - [x] AC-006 — `.claude/skills/start-feature/SKILL.md` の Step 2
 - [x] AC-007 — `.claude/skills/pre-pr/SKILL.md` に ⑤c を追加
-- [x] AC-008 — `.claude/skills/docode-review/SKILL.md` の観点 1e
+- [x] AC-008 — `.claude/skills/docode-review/SKILL.md` の観点 1（AC compliance）と Step 1 / Step 2
 - [x] AC-009 — `.claude/skills/promote-spec/SKILL.md` Step 7 のテンプレート
 - [x] AC-010 — `.claude/skills/check-doc-invariants/SKILL.md` の DOC-INV-001
 - [x] AC-011 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md`
@@ -84,6 +84,8 @@ GitHub issue #23 (G-B) と #25 (G-D) の解消。両者は「既にある情報�
 - Plan created
 - AC-001〜AC-012 完了
 - `/check-doc-invariants` を実行
+- PR #32 作成
+- PR #32 のレビュー対応（Copilot 1 件 ＋ 同種の未指摘 1 件）
 
 ## Decision Log
 
@@ -211,3 +213,16 @@ GitHub issue #23 (G-B) と #25 (G-D) の解消。両者は「既にある情報�
   これは本 PR 以前からの書式不具合。
   検証: 全 md の相対リンク解決（0 件の破損）、run-exec-plan の Step 名参照の突き合わせ、
   表分断の機械検出（0 件）、13 項目の存在確認。
+
+- **PR #32 レビュー対応**: Copilot が本プランの Task Breakdown の `Q2b`（存在しない質問番号）を
+  指摘。横断照合で `ac-sources.md` 側の同じ誤りは直したが、**プラン自身の Task Breakdown を
+  照合対象に含めていなかった**ため残っていた。指摘の1件に加え、同種の誤りをもう1件自力で検出:
+  AC-008 の `観点 1e` は実在せず、実際の追加先は `docode-review` の観点1（AC compliance）と
+  Step 1 / Step 2。AC-004 の記述も `Step 3` → `Step 3 の検証項目4 ＋ Step 3a` に精密化。
+  - 再発防止として、プラン内の全ラベル参照（`QNn` / `Step Nx` / `⑤c` / `DOC-INV-NNN`）が
+    参照先ファイルに実在するかを機械的に突き合わせた。残る `Q2b` は上記所見1の**記録として
+    旧値を引用している箇所**のみで、これは履歴なので残す。
+  - この drift は本サイクルで3回目（`ac-readiness-gate` プラン → `ac-sources.md` → 本プラン）。
+    いずれも「単一ソースを直したが、それを指す側のどれかが取り残される」形であり、
+    #33 で起票した「依存の逆流」周回が扱う範囲。参照先には exec-plan 自身も含めるべき、
+    という点を #33 に追記した。
