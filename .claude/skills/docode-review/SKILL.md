@@ -7,6 +7,9 @@ description: |
   quality, providing an objective perspective separate from the implementing agent. It also judges whether
   each test expresses its AC rather than mirroring the implementation — the one check the agent
   that wrote both sides cannot perform on itself.
+  Mandatory when `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill
+  before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, as before, on the
+  manual `start-feature` path.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
 # All other skills set this to true because they only issue instructions to the current agent.
@@ -15,15 +18,29 @@ disable-model-invocation: false
 
 # Skill: Independent Agent Code Review
 
-> **When to run**: After implementation is complete, before running `/pre-pr`
+> **When to run**: After implementation is complete, before running `/pre-pr`.
+> **Mandatory** when the plan was completed autonomously by `/run-exec-plan` — its Step 4a calls
+> this skill itself, once every AC is `- [x]`, and halts (stop condition (f)) on a ❌ verdict rather
+> than handing off. **Optional**, as before, when a human implemented the plan via `/start-feature`
+> — that path always had a human look at the diff before the PR, which is the gap this skill exists
+> to fill only when nobody did.
 >
 > **Purpose**: Get an objective review from an agent that has no knowledge of the implementation
-> decisions made during coding. This avoids confirmation bias from the implementing agent.
+> decisions made during coding. This avoids confirmation bias from the implementing agent — the
+> risk is structural (not a matter of diligence) when the same agent authored the code, the tests,
+> and every green check along the way, which is exactly what a `run-exec-plan` completion is.
 >
-> **Prerequisites**:
+> **Prerequisites** (manual/human-invoked path):
 > - The working tree is clean (all changes are committed — run `git status` to verify)
 > - At least one commit exists on the current branch
 > - The branch has diverged from `main` (there are changes to review)
+>
+> **On the `run-exec-plan` Step 4a path, these do not apply as written.** The autonomous loop reaches
+> full completion before anything is necessarily committed — DocDD only commits when the user asks
+> (see CLAUDE.md's git safety rules) — so Step 4a routinely calls this skill against an uncommitted,
+> possibly fully-dirty tree. That is expected here, not a precondition violation: follow Step 1's
+> "working tree is not clean" branch below (include `git diff --cached` and `git diff` in the review
+> context) rather than asking the user to commit first.
 
 ---
 
@@ -261,13 +278,15 @@ Report the review result only. Do not make any code changes.
 
 ### Step 4: Present findings to the user
 
-After the independent agent returns its report, present it verbatim and guide next steps:
+After the independent agent returns its report, present it verbatim and guide next steps. The ❌
+row differs by caller — **who may act on the findings is exactly what changed between the two
+paths**:
 
-| Verdict | Recommended action |
-|---------|--------------------|
-| ✅ Approved | Proceed to `/pre-pr` |
-| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` |
-| ❌ Changes requested | Address critical/high findings, then re-run `/docode-review` |
+| Verdict | Manual path (a human ran this skill) | Called from `run-exec-plan` Step 4a |
+|---------|---------------------------------------|--------------------------------------|
+| ✅ Approved | Proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr` |
+| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr`, mentioning the suggestions |
+| ❌ Changes requested | Address critical/high findings yourself, then re-run `/docode-review` | **Halt with stop condition (f) and surface the findings verbatim. Do not fix them and re-run** — see `run-exec-plan/SKILL.md` Step 4a. Deciding which findings to act on is a governance call the driver may not make on its own behalf, precisely because it is the same agent whose self-review this gate exists to check |
 
 ---
 
@@ -279,10 +298,14 @@ After the independent agent returns its report, present it verbatim and guide ne
 {full report from the spawned agent}
 
 ---
-Next step:
+Next step (manual path — a human ran this skill directly):
   ✅ Approved       → Run /pre-pr
   ⚠️  With suggestions → Discuss findings above, then run /pre-pr
   ❌ Changes needed  → Fix issues above, then re-run /docode-review
+
+Next step (called from run-exec-plan Step 4a — see that skill, do not apply the manual-path row above):
+  ✅ / ⚠️  → Hand off to /pre-pr
+  ❌       → HALT with stop condition (f); do not fix and re-run
 ```
 
 ---

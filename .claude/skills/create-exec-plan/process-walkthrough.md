@@ -101,7 +101,7 @@ exists to replace.
 | `create-exec-plan` | Writing the plan's verification AC | If the change is in scope, the plan **must** carry an AC that requires this walkthrough. A verification AC that only compares descriptions is insufficient on its own |
 | The implementer | Before checking that AC's box | Perform the laps and record them; unrecorded is not done |
 | `doc-review` | Optional review of a process document | Walk laps 2 / 3 / 4 against the diff; report findings (advisory) |
-| `docode-review` | Optional independent review | Same, against the diff — an independent reader is more likely to notice a state the author assumed away |
+| `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Same, against the diff — an independent reader is more likely to notice a state the author assumed away |
 | `pre-pr` | Before the PR | ⚠️ Report a plan in scope whose Decision Log has no walkthrough record. Does **not** block |
 | `complete-exec-plan` | After the merge | **Deliberately not checked here.** Unlike red-first evidence — a claim about *how tests came to exist*, worth one last audit before the plan is archived — the walkthrough's finding is either already fixed in this diff or it is not, and completion happens after the PR merged, where re-reporting changes nothing. `pre-pr` is the gate |
 

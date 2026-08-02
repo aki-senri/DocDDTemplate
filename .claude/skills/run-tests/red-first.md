@@ -135,7 +135,7 @@ to build* is present.
 | `run-tests` | Whenever it is invoked for a red-first run, and on every later run while an AC is unimplemented | Classify and report valid / invalid red. Never report an invalid red as "expected red". Report expected reds (above) apart from real failures |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
 | `pre-pr` / `complete-exec-plan` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
-| `docode-review` | Optional independent review | Report a test that mirrors the implementation rather than the AC as a finding (advisory) |
+| `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Report a test that mirrors the implementation rather than the AC as a finding (advisory) |
 
 ---
 
