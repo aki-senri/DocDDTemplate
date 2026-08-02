@@ -22,9 +22,10 @@ disable-model-invocation: true
 ## What this skill does
 
 1. Confirm and select the execution plan
-2. Load the documents needed for implementation
-3. Determine the branch name
-4. Record the start of work in the progress log
+2. Check the plan's ACs for readiness (testability) before any code is written
+3. Load the documents needed for implementation
+4. Determine the branch name
+5. Record the start of work in the progress log
 
 ---
 
@@ -47,6 +48,28 @@ List the files in `exec-plans/active/` and confirm the plan to work on with the 
 - If there is only one plan, select it
 - If there are multiple plans, prompt the user to select one
 - If there are no plans, prompt to run the `create-exec-plan` skill and stop
+
+### Step 1b: AC readiness check
+
+Check every unchecked AC of the selected plan against the five checks in
+[`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md) — the same file
+`create-exec-plan` and `run-exec-plan` use. Follow it; do not re-derive the criteria here.
+
+| Verdict | Action |
+|---------|--------|
+| READY | Proceed |
+| ⚠️ (R3 or R4 unmet for a stated reason) | Report it and proceed |
+| **NOT READY** | Present every failing check by its own ID (any of `R1` / `R2` / `R5`, and `R3` / `R4` when no reason can be given) with the phrase that fails each one, and ask the user: rewrite the AC now, or proceed anyway. **Record the user's decision in the Progress Log** |
+
+The human is present on this path, so a thin AC can be fixed in conversation rather than blocking.
+Two things follow, and both are intended:
+
+- Proceeding anyway is the user's call about *their own* next step. It does not clear the criterion —
+  a later `run-exec-plan` will still halt on it (stop condition (a)), because an unattended loop
+  cannot make the judgement the user just made.
+- A plan created through `create-exec-plan` should already be clean here. A NOT READY criterion at
+  this point usually means the plan came from somewhere else (a reconcile plan from `promote-spec`,
+  or a hand-written one).
 
 ### Step 2: Load required documents
 
@@ -119,6 +142,8 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 
 - [ ] Confirmed that baseline tests all pass (Step 0)
 - [ ] Execution plan selected and confirmed
+- [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
+      and their decision recorded in the Progress Log (Step 1b)
 - [ ] Loaded `CONTEXT.md`, `invariants.md`, and the selected execution plan
 - [ ] Branch name finalized
 - [ ] "Implementation started" recorded in the execution plan's progress log
@@ -130,6 +155,7 @@ Final report output by the agent:
 
 Baseline  : ✅ All {n} tests passed
 Work plan : exec-plans/active/YYYY-MM-{name}.md
+Readiness : ✅ {n} ACs READY   |   ⚠️ AC-NNN (R4: {reason})   |   ❌ AC-NNN NOT READY (R2) — {user's decision}
 Branch    : feature/{name}
 Confirmed : CONTEXT.md / invariants.md / execution plan
 

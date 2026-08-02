@@ -60,11 +60,27 @@ AC が凍結された範囲内の **実行**（実装→テスト→修正→次
 
 | ID | 条件 |
 |----|------|
-| (a) | 次の AC が欠落・曖昧・実装に不十分（＝何を作るかの判断が必要） |
+| (a) | AC が欠落・曖昧・実装に不十分（＝何を作るかの判断が必要）。**ループ開始前**の AC readiness ゲートで検出し、ループ中は backstop として働く |
 | (b) | 有限回（既定 3 回）の自己修正後もテストが赤 |
 | (c) | テストの**期待値**変更が必要（テスト変更は仕様変更に紐づける＝INV-T01） |
 | (d) | 不可逆/外向き操作が次に来る（PR 作成/push、`/promote-spec`、タグ削除） |
 | (e) | スコープ拡張なしに解消できない INV 違反 |
+
+### AC readiness（自走前の測定可能性ゲート）
+
+痩せた AC には操舵できない。AC が**テストで合否判定できる形になっているか**の検査は、
+`.claude/skills/create-exec-plan/ac-readiness.md` を**単一ソース**として次の4地点で同じ基準を適用する。
+基準は同一で、違うのは「その場に AC を書き直せる人がいるか」だけ。
+
+| 地点 | タイミング | NOT READY のときの措置 |
+|------|-----------|----------------------|
+| `/create-exec-plan`（Q3c） | プラン確定前 | 人と対話して AC を書き直す。書き直すまで確定しない |
+| `/start-feature`（Step 1b） | 実装開始前（手動） | 人に提示して判断を仰ぐ。決定を Progress Log に記録 |
+| `/run-exec-plan`（Step 0b） | ループ開始前 | **ループを開始せず HALT**（停止条件 (a)） |
+| `/doc-review`（§2） | 任意レビュー | 助言として報告のみ（ファイルは変更しない） |
+
+AC の書き直しは「何を作るか」の決定＝外側ゲートであり、スキルが代行してはならない。人が同席する
+地点では対話で解決し、自走では止めるしかない。これは地点間の重大度の不一致ではなく、同じ原則の帰結。
 
 ### 検証スキルの呼び出しポリシー
 
@@ -166,9 +182,9 @@ AC が凍結された範囲内の **実行**（実装→テスト→修正→次
 | `/create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・制約・AC を定義する | 実装前・create-spec の前 |
 | `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements / create-spec 後・create-exec-plan の前（任意） |
 | `/create-spec` | 承認済み要件からアプリ仕様（docs/02_spec/：何をするか）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を草案として起草する | create-requirements 後・create-exec-plan の前 |
-| `/create-exec-plan` | AC（受け入れ基準）と **`[E2E]` AC** を定義する | 実装前（必須） |
-| `/start-feature` | 実装開始前の準備チェック | create-exec-plan 後 |
-| `/run-exec-plan` | AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件のみで人間に委譲 | start-feature 後・自走させたいとき（opt-in） |
+| `/create-exec-plan` | AC（受け入れ基準）と **`[E2E]` AC**（documentation-only プランは置かず `E2E: n/a` を記録）を定義し、**AC readiness**（測定可能性）を検査する | 実装前（必須） |
+| `/start-feature` | 実装開始前の準備チェック（AC readiness の再検査を含む） | create-exec-plan 後 |
+| `/run-exec-plan` | ループ前に AC readiness を検査し、AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件のみで人間に委譲 | start-feature 後・自走させたいとき（opt-in） |
 | `/run-tests` | テスト実行と仕様照合 | 実装中・完了時 |
 | `/check-doc-freshness` | コードとドキュメントの乖離確認 | コード変更後 |
 | `/check-invariants` | コードの INV 違反確認 | コード変更後 |

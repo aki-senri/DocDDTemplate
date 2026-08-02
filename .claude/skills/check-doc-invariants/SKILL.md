@@ -117,6 +117,11 @@ For each `exec-plans/active/*.md`:
   gate stricter than the test gates would block on something the test gates deliberately let pass
 - **Exemption**: a plan whose Decision Log records `E2E: n/a (documentation-only)` is not even a
   warning — report it as informational, since the criterion was considered and ruled out
+- **The converse**: a plan that records `E2E: n/a (documentation-only)` **and** still defines an
+  `[E2E]` AC is a ⚠️ warning. Such a plan cannot be completed — `run-tests` / `pre-pr` /
+  `complete-exec-plan` hold on an `[E2E]` AC with no passing test, and `create-exec-plan` therefore
+  forbids the combination. It stays a warning rather than a violation for the same reason as above:
+  the document gate must not be stricter than the test gates that already block it
 
 *Violation levels*:
 
@@ -127,6 +132,7 @@ For each `exec-plans/active/*.md`:
 | Spec AC belonging to no `E2E-NNN` scenario | ⚠️ Warning |
 | Active plan with no `[E2E]` AC | ⚠️ Warning |
 | Active plan with `E2E: n/a (documentation-only)` recorded | ℹ️ Informational |
+| Active plan recording `E2E: n/a (documentation-only)` that nonetheless has an `[E2E]` AC | ⚠️ Warning |
 
 ---
 
@@ -204,9 +210,14 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
 2. For each `docs/02_spec/**/*.md`: check for a `## E2E シナリオ` heading and at least one
    `### E2E-NNN:`; collect the `満たす AC` lists and compare against the ACs the spec references
 3. For each `exec-plans/active/*.md`: check for at least one `- [ ] AC-NNN: [E2E]` /
-   `- [x] AC-NNN: [E2E]` line. If none, look for `E2E: n/a` in the `## Decision Log` — if present,
-   report as informational; if absent, report as a **warning** (not a violation), matching how
-   `run-tests` / `pre-pr` / `complete-exec-plan` treat a plan with no `[E2E]` AC
+   `- [x] AC-NNN: [E2E]` line, and for `E2E: n/a` in the `## Decision Log`
+
+   | `[E2E]` AC | `E2E: n/a` recorded | Report |
+   |:----------:|:-------------------:|--------|
+   | present | absent | ✅ (nothing to report) |
+   | absent | present | ℹ️ informational — documentation-only, criterion ruled out |
+   | absent | absent | ⚠️ warning (not a violation), matching how `run-tests` / `pre-pr` / `complete-exec-plan` treat a plan with no `[E2E]` AC |
+   | present | present | ⚠️ warning — contradictory: the plan calls itself documentation-only yet carries a criterion the test gates will hold on |
 
 ---
 
@@ -246,6 +257,8 @@ Exec-plans checked: {count}
   - docs/02_spec/app_spec.md: AC-004 belongs to no E2E-NNN scenario
   - exec-plans/active/2026-01-feature.md: no [E2E] AC (predates the requirement?)
     Fix: Add an [E2E] AC (see create-exec-plan), or record E2E: n/a if documentation-only
+  - exec-plans/active/2026-03-docs.md: records E2E: n/a but defines AC-004 [E2E]
+    Fix: Restate AC-004 as an ordinary functional AC — the test gates will hold on it otherwise
   ℹ️ exec-plans/active/2026-02-docs.md: documentation-only, E2E exempt
 
 ---

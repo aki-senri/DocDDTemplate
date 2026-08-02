@@ -2,7 +2,9 @@
 name: run-exec-plan
 description: |
   Autonomous driver that implements an exec-plan's acceptance criteria one at a time
-  without stopping for confirmation between criteria. For each unchecked AC it runs
+  without stopping for confirmation between criteria. Before the loop starts it gates on
+  AC readiness (testability), so an untestable criterion stops the run before any code is
+  written rather than mid-implementation. For each unchecked AC it runs
   implement -> run-tests -> check-invariants, and on green it checks the box, records a
   Decision Log entry, and moves to the next AC. Halts ONLY on explicit stop conditions
   (missing/ambiguous AC, tests still red after bounded retries, a test change required,
@@ -45,7 +47,8 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ## What this skill does
 
-1. Select the active exec-plan and confirm baseline is green
+1. Select the active exec-plan, confirm baseline is green, and gate on **AC readiness**
+   (every unchecked AC is testable as written — otherwise halt before the loop starts)
 2. Loop over each unchecked AC:
    a. Implement the AC
    b. Run `run-tests` (spec alignment gate)
@@ -65,13 +68,42 @@ genuinely need a human, and never in the middle of executing a frozen AC."
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
 - Run `run-tests` as a baseline. If baseline is already red, **halt** — do not start a loop
   on a red baseline (you could not attribute failures to your own changes).
+- **Run the AC readiness gate** (below) over every unchecked AC.
 - See **Retry budget** below; default `MAX_REPAIR_ATTEMPTS = 3`.
+
+#### Step 0b: AC readiness gate (before the loop, not inside it)
+
+Check **every** unchecked AC in the plan — not just the first — against the five checks in
+[`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md). Follow that file;
+do not re-derive the criteria here.
+
+| Verdict | Action |
+|---------|--------|
+| All READY | Start the loop |
+| ⚠️ (R3 / R4 unmet) **and the reason is already in the plan's Decision Log** | Start the loop |
+| ⚠️ with no recorded reason | Treat as NOT READY — the driver may not author the reason itself |
+| Any **NOT READY** | **Do not start the loop.** Halt with stop condition (a) |
+
+Record the result in the plan's `## Decision Log` either way — as
+`AC readiness: all N ACs READY (Step 0b)`, or as the HALT entry described in the resume-state
+convention, naming the failing check and the phrase that fails it.
+
+Why the whole set and not just the next AC: the point of the gate is to spend the human's attention
+**once**, before implementation, rather than halting three ACs later on a defect that was already
+visible. A criterion that is READY today does not become unready by being implemented, so nothing is
+lost by checking early.
+
+Why the driver may not fix a NOT READY criterion itself: rewriting an AC decides *what to build* —
+outer-gate (see the Design principle above). Halting is the only correct move when no human is
+present, which is exactly why `create-exec-plan` runs the same check at authoring time, where a
+human is.
 
 ### Step 1: Pick the next AC
 
 - From the plan, take the first `- [ ]` (unchecked) AC in order.
-- If the AC text is ambiguous or under-specified for implementation, **halt** with
-  stop-condition (a). Do not guess the intent.
+- Step 0b already cleared the whole set for readiness. If implementing it nonetheless reveals that
+  the AC is ambiguous or under-specified (e.g. it reads as testable but two incompatible readings
+  both satisfy it), **halt** with stop-condition (a). Do not guess the intent.
 - If no unchecked AC remains, go to Step 4.
 
 ### Step 2: Implement the AC
@@ -131,7 +163,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | The next AC is missing, ambiguous, or under-specified — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle) |
+| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion), and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle) |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass | Test changes must be grounded in a spec change (INV-T01) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
@@ -173,6 +205,8 @@ re-verifications. When the budget is exhausted, halt with stop-condition (b).
 ## Completion criteria
 
 - [ ] Target plan selected and baseline confirmed green (Step 0)
+- [ ] AC readiness gate run over **every** unchecked AC before the loop, and its result recorded in
+      the Decision Log (Step 0b)
 - [ ] Each processed AC went through implement -> run-tests -> check-invariants
 - [ ] Every AC reached is either `- [x]` (green) or recorded as a HALT in the Decision Log
 - [ ] Decision Log updated per the resume-state convention
@@ -184,6 +218,7 @@ Final report output by the agent:
 === Autonomous run complete ===
 
 Plan      : exec-plans/active/YYYY-MM-{name}.md
+Readiness : ✅ {n} ACs READY (Step 0b)   |   ❌ AC-NNN NOT READY (R2) → loop not started
 Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 …
 Tests     : ✅ {n} passing
 Stopped at: {none | AC-NNN, stop condition <id>: <reason>}
