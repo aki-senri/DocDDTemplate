@@ -66,7 +66,7 @@ flowchart TD
     DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
     end
 
     PREPR --> PR

@@ -307,7 +307,7 @@ In DocDD, **the human makes "decisions" and the AI does "execution."** The human
 
 #### A. Skills the human uses directly / skills the AI runs internally
 
-The table below lists the main skills used in the daily implementation flow. Beyond these there are `init-project` (once, at adoption) and `doc-review` (optional independent review) — 17 skills in total. Day to day, you only need to be aware of the ones below.
+The table below lists the main skills used in the daily implementation flow. Beyond these there are `init-project` (once, at adoption), `doc-review` (optional independent review), and `docode-review` (see the note below the table — it sits on both rows depending on the path) — 17 skills in total. Day to day, you only need to be aware of the ones below.
 
 | Layer | Skills | How the human is involved |
 |-------|--------|---------------------------|

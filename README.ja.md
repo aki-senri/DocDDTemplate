@@ -126,7 +126,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `doc-review` | 独立エージェントが要件・仕様ドキュメントをレビュー（共通の AC readiness 基準による検証可能性・網羅性・参照方向） | 任意・必要に応じて人が起動 |
 | `docode-review` | 独立エージェントが変更コードを AC と一般品質に対してレビュー | `run-exec-plan` が自走完了した時点で**必須**（Step 4a が `pre-pr` への handoff 前に本スキルを呼び、❌ なら HALT）。手動実装（`start-feature`）経路では従来どおり任意 |
 
-> `run-tests` と `docode-review` はモデル起動可（呼び出し側は Skill ツールで起動）。他の内部スキルは上位スキルが `SKILL.md` の手順をインライン実行する。CLAUDE.md「検証スキルの呼び出しポリシー」を参照。
+> `run-tests`・`doc-review`・`docode-review` はモデル起動可（呼び出し側は Skill ツールで起動）。他の内部スキルは上位スキルが `SKILL.md` の手順をインライン実行する。CLAUDE.md「検証スキルの呼び出しポリシー」を参照。
 
 ---
 

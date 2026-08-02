@@ -88,6 +88,7 @@ completed:
   docode-review 自身の Step 4 が ❌ 時に「直して再実行」と書いており run-exec-plan Step 4a の
   「HALT (f)、直して再実行しない」と矛盾——3段階のレビューを通り抜けていた）。全件修正し
   追加 commit → push 済み。
+- PR #34 の Copilot レビュー（2回）を確認・対応。4件（実質3種、英日重複含む）修正し追加 commit → push。
 
 ## Decision Log
 
@@ -219,3 +220,21 @@ completed:
   ac-sources.md / process-walkthrough.md の要約段落）は docode-review を中立的に言及するのみで
   必須/任意の主張を含まないため対象外、既存 `exec-plans/active/*.md`（他プラン）の docode-review
   言及はすべて過去の Decision Log 記録であり現在の規約を主張するものではないため対象外。
+- **PR #34 の Copilot レビュー対応（2026-08-03、commit `3f5a5de` に対する2回のレビュー）**。
+  計4件（うち1件は英日で重複）。全件修正済み：
+  1. `SKILL_FLOW.md`（§1 diagram, PREPR ノード）が ⑤d（新設した docode-review evidence 確認）を
+     列挙しておらず、`pre-pr/SKILL.md` の実体と diagram が食い違っていた。修正: PREPR ノードに
+     `⑤d docode-review verdict recorded? for autonomous completions (⚠️ only)` を追加。
+  2. `ONBOARDING.md:310` / `ONBOARDING.ja.md:310` の「これ以外に init-project と doc-review が
+     あり」という列挙が `docode-review`（下表の外にあるスキルの1つ）を含んでおらず、
+     直後の段落の説明（docode-review は経路によって両方の段にまたがる）と噛み合っていなかった。
+     修正: 列挙に `docode-review` を明記。
+  3. `README.md:129` / `README.ja.md:129`（「model-invocable なのは run-tests と docode-review
+     のみ」という記述）が、同じ独立レビュー節に並ぶ `doc-review`
+     （`disable-model-invocation: false`、docode-review と同じ理由で model-invocable）を除外して
+     しまっていた——独立レビュー2スキルを1つの節にまとめた際に見落とした一般化ミス。
+     修正: `doc-review` を列挙に追加。
+  4番目の指摘（AC-006 の cross-check で「全13箇所」と記録していたが、実際は本レビューで
+  さらに複数箇所検出された）は数を数える形の記録がまた合わなくなる例（#22 の Decision Log で
+  既知の失敗パターン）。今後同種のプランでは箇所数を明記せず「網羅した」という結果だけを
+  記録する方が安全、という教訓を残す。
