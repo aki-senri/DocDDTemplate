@@ -37,7 +37,10 @@ Before starting implementation, verify that all tests currently pass.
 
 - Run the `run-tests` skill (AC coverage check can be skipped)
 - **All pass → proceed to the next step**
-- **If there are failures → do not start implementation on this branch**
+- **Expected reds are not failures here.** If the plan is being resumed and a test was frozen red by
+  a red-first observation whose AC is still unchecked (`run-tests` Step 2c), it is the target being
+  steered toward, not a broken baseline. Everything else must pass
+- **If there are other failures → do not start implementation on this branch**
   - Determine the course of action through the spec alignment gate and fix the issues first
   - Starting implementation from a green test state makes it clear whether failures are caused by your changes or were pre-existing
 
@@ -154,7 +157,7 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 
 ## Completion criteria
 
-- [ ] Confirmed that baseline tests all pass (Step 0)
+- [ ] Confirmed that baseline tests all pass, expected reds aside (Step 0)
 - [ ] Execution plan selected and confirmed
 - [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
       and their decision recorded in the Progress Log (Step 1b)

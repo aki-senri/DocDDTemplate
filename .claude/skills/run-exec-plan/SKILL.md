@@ -76,6 +76,10 @@ genuinely need a human, and never in the middle of executing a frozen AC."
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
 - Run `run-tests` as a baseline. If baseline is already red, **halt** — do not start a loop
   on a red baseline (you could not attribute failures to your own changes).
+  **Expected reds do not count as a red baseline.** When resuming a partly-done plan, the tests
+  frozen red by an earlier session (`run-tests` Step 2c: a recorded `AC-NNN red-first:` entry whose
+  AC is still `- [ ]`) are the reference signal this run is steering toward, not breakage. Baseline
+  is green when everything *else* passes. Any other failure still halts.
 - **Run the AC readiness gate** (below) over every unchecked AC.
 - **Put every `[E2E]` AC's test in place as a failing test** (Step 0c below).
 - See **Retry budget** below; default `MAX_REPAIR_ATTEMPTS = 3`.
@@ -117,6 +121,7 @@ observation in the Decision Log; that entry freezes the expectation.
 | Situation | Action |
 |-----------|--------|
 | Valid red observed for every `[E2E]` AC | Record it and start the loop |
+| An earlier session already placed it (a recorded `red-first` entry, AC still `- [ ]`) | Re-run it, confirm the same red, and start the loop — do not rewrite the test |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
 | Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
@@ -152,9 +157,9 @@ other tests are green"; do not re-interpret the failing E2E test as a red baseli
      no behavior — and re-run. This counts against `MAX_REPAIR_ATTEMPTS`; if it is still not valid
      red, **halt** with (b).
    - **Green on the first run** → stop and think before proceeding. Either the AC is already
-     satisfied (record it, check the box, and move on — do not write code to have written code) or
-     the test does not actually assert the AC. Rewriting the test to be *weaker* is never the
-     resolution here; if you cannot tell the two apart, **halt** with (a).
+     satisfied (record that, go to Step 3, and let Step 3b check the box — do not write code to have
+     written code) or the test does not actually assert the AC. Rewriting the test to be *weaker* is
+     never the resolution here; if you cannot tell the two apart, **halt** with (a).
 3. Append the `red-first` line from `red-first.md` to the Decision Log **before** implementing.
    From that point the expectation is frozen: changing it is stop condition (c).
 
@@ -162,9 +167,16 @@ If the test cannot be written without deciding an expected result the AC does no
 with stop-condition (a). That is a readiness escape (`R2` / `R3` slipped through Step 0b), and the
 fix is a human rewriting the AC — not the driver choosing what "correct" means.
 
-For a `[E2E]` AC the test already exists from Step 0c: re-run it, confirm it is still red for the
-same reason, and go to Step 2b. For a preservation AC covered by an existing green test, record the
-`n/a` exemption line and go to Step 2b.
+**For a `[E2E]` AC** the test already exists from Step 0c — do not write it again. Re-run it:
+
+| Result | What it means | Next |
+|--------|---------------|------|
+| **Green** | The functional ACs added up: the through-flow now works. This is the run succeeding, not an anomaly — the "green on first run" branch above does **not** apply | Go to Step 3 (full verification), then Step 3b checks the box |
+| **Still red, same reason as Step 0c** | The fragments do not yet add up — something in the flow is missing | Go to Step 2b and implement what connects them |
+| **Red for a different reason** (no longer compiles, setup broke) | The test stopped measuring | Fix that first (counts against `MAX_REPAIR_ATTEMPTS`), then re-assess |
+
+For a preservation AC covered by an existing green test, record the `n/a` exemption line and go to
+Step 2b.
 
 ### Step 2b: Implement the AC
 
@@ -172,8 +184,10 @@ same reason, and go to Step 2b. For a preservation AC covered by an existing gre
   (stable layer first), same as `start-feature` describes.
 - Keep the change scoped to this AC. If satisfying it requires expanding scope or violating
   an invariant you cannot resolve within scope, **halt** with stop-condition (e).
-- **Do not touch the test written in Step 2a.** If it now looks wrong, that is stop condition (c),
-  not an edit to make in passing.
+- **Do not change the expectation of the test written in Step 2a** — its given / when / then are
+  frozen. (Mechanical edits that leave all three identical — renaming, extracting a helper — are
+  allowed, per `red-first.md`.) If the expectation itself now looks wrong, that is stop condition
+  (c), not an edit to make in passing.
 
 ### Step 3: Verify
 
@@ -186,12 +200,11 @@ Run the verification skills. Note the two invocation modes (they differ by
 
 1. `run-tests` (invoke via the Skill tool)
    - **All green** -> continue to Step 3b.
-   - **Only the `[E2E]` test(s) placed red in Step 0c are failing, and this AC is not one of them**
-     -> this is the expected state for most of the loop. Treat the run as green for this AC and
-     continue to Step 3b. It counts as red only once the loop reaches the `[E2E]` AC itself.
-     Confirm the failure is still the *same* one recorded in Step 0c; if the E2E test now fails for
-     a different reason (it no longer compiles, its setup broke), fix that — an E2E test that
-     stopped running has stopped measuring.
+   - **Only expected reds remain** (`run-tests` Step 2c — recorded red-first tests whose AC is still
+     unchecked, typically the `[E2E]` test from Step 0c) -> this is the expected state for most of
+     the loop. Treat the run as green for this AC and continue to Step 3b. `run-tests` reports these
+     apart from failures and flags any whose failure reason changed; a changed reason is a real
+     failure, so fix it (it counts against `MAX_REPAIR_ATTEMPTS`).
    - **Red because the implementation has a bug** (spec alignment gate option A): this is the
      normal inner-loop case. Fix the implementation and re-run. Count this attempt against
      `MAX_REPAIR_ATTEMPTS`.
@@ -284,7 +297,7 @@ budget is exhausted, halt with stop-condition (b).
 
 ## Completion criteria
 
-- [ ] Target plan selected and baseline confirmed green (Step 0)
+- [ ] Target plan selected and baseline confirmed green — expected reds aside (Step 0)
 - [ ] AC readiness gate run over **every** unchecked AC before the loop, and its result recorded in
       the Decision Log (Step 0b)
 - [ ] Every `[E2E]` AC had its test written and observed in **valid red** before the loop started,

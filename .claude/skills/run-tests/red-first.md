@@ -82,6 +82,26 @@ reads to know the test was not written to fit the code.
 
 ---
 
+## While the AC is unimplemented: the red is the reference signal
+
+Between the freeze and the green, that test fails on every run — and a `[E2E]` test placed red
+before the loop fails for most of the run. Those failures are **expected reds**, and confusing them
+with breakage stops the very loop they exist to steer:
+
+A failing test is an expected red when both hold: the plan's `## Decision Log` names it in an
+`AC-NNN red-first:` entry, **and** that `AC-NNN` is still `- [ ]`.
+
+| Where | How an expected red is treated |
+|-------|-------------------------------|
+| `run-tests` (Step 2c) | Reported separately from failures; never routed through the spec alignment gate |
+| Baseline checks (`run-exec-plan` Step 0, `start-feature` Step 0) | Not a red baseline — everything *else* must be green |
+| Per-AC verification inside the loop | "Only expected reds remain" is the loop's version of green for the AC being worked on |
+| `pre-pr` / `complete-exec-plan` | **No longer expected.** These run after every AC is implemented, so a still-red test means the AC is not met — the existing hold applies unchanged |
+
+Two things end an expected red: the AC is implemented (it goes green, and its box is checked), or
+the failure reason changes — it no longer compiles, its setup broke. The second means the test has
+stopped measuring, and it is a real failure, not an expected one.
+
 ## After the freeze: the only way a test may change
 
 | Change to a frozen test | Allowed? |
@@ -102,7 +122,7 @@ to build* is present.
 |-----------|--------------|------------------------------------------------------------------|
 | `run-exec-plan` (Step 0c) | Before the loop, for every `[E2E]` AC | **HALT** with stop condition (a) — the through-flow cannot be transcribed from the AC |
 | `run-exec-plan` (Step 2a) | Before implementing each functional AC | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
-| `run-tests` | Whenever it is invoked for a red-first run | Classify and report valid / invalid red. Never report an invalid red as "expected red" |
+| `run-tests` | Whenever it is invoked for a red-first run, and on every later run while an AC is unimplemented | Classify and report valid / invalid red. Never report an invalid red as "expected red". Report expected reds (above) apart from real failures |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
 | `pre-pr` / `complete-exec-plan` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
 | `docode-review` | Optional independent review | Report a test that mirrors the implementation rather than the AC as a finding (advisory) |
