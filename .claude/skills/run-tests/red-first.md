@@ -136,6 +136,7 @@ to build* is present.
 | **Documentation-only plan** | There is no test harness to be red in, and such a plan carries no `[E2E]` AC either. The evidence check reports `n/a (documentation-only)` |
 | **A preservation AC** — refactoring, or a reconcile plan whose AC re-opens behavior that already has a passing test | The test predates the change, so independence holds by construction: it was not written to fit the new code. Red-first would require breaking working behavior on purpose. Record `AC-NNN red-first: n/a（既存テスト <name> が AC を表現し、変更前から緑）`. **This exemption does not apply if the AC changes the expected behavior** — then the new expectation is authored fresh and must be red first |
 | **Harness / tooling work** with no AC of its own (adding a runner, CI wiring) | Nothing about a product AC is being asserted. Such work belongs to a task, not an AC |
+| **A record-producing AC** — one whose observable result *is* an entry in the plan (a verification walkthrough, an analysis whose output is the Decision Log record) | There is no runtime behavior to assert: the artifact is the record, and it either exists or does not. Record `AC-NNN red-first: n/a（成果物が記録そのもので、実行時の振る舞いを持たない）`. This exemption is **not** available to an AC that changes behavior and merely *also* writes a record |
 
 An exemption is a recorded judgement, never a silence: writing the `n/a` line with its reason is
 what distinguishes it from a skipped step.

@@ -4,7 +4,7 @@ created: 2026-08-02
 completed:
 ---
 
-# reconcile-2
+# reconcile-promote-spec-e2e
 
 ## Goal & Scope
 

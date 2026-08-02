@@ -99,7 +99,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
 | `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/`、`status: draft`。人間承認が必要） |
-| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査 |
+| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、DocDD のプロセスを変えるプランには「1周辿る」検証 AC を置く |
 | `start-feature` | 実装開始前の確認・**AC readiness の再検査**・ブランチ名決定（機能ごとに一度） |
 | `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**テストを先に赤で置く**→実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
 | `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新） |

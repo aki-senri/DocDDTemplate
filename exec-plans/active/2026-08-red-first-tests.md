@@ -89,7 +89,7 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
   実行不可。E2E カバレッジは「プランに `[E2E]` AC が無い」＝ ⚠️ 報告のみ、red-first 証跡は
   documentation-only のため ➖ n/a。⑥ 更新済み。PR 作成は人間ゲートのため保留
 - 矛盾チェック第2巡（ループ1周の照合）で6件、第3巡（全フロー1周の照合）で2件を検出・修正
-- `/check-doc-invariants` を再実行（`2026-08-reconcile-2.md` 追加後）。DOC-INV-004 が 11 件
+- `/check-doc-invariants` を再実行（`2026-08-reconcile-promote-spec-e2e.md` 追加後）。DOC-INV-004 が 11 件
   （既知）、006 は両プランとも ℹ️（`[E2E]` AC 無し＋`E2E: n/a` 記録あり）、001 は両プランとも
   Markdown リンク無しで PASS
 
@@ -256,11 +256,11 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 
   | # | 矛盾 | 由来 | 措置 |
   |---|------|------|------|
-  | 1 | `promote-spec` が生成する reconcile プランのテンプレートに `[E2E]` AC が無い。一方 `create-exec-plan` は「reconcile プランは `[E2E]` AC が **Required**」と定めている | #27（規約は追加したが、規約を**適用する側**の生成テンプレートを更新しなかった） | 完了済み AC の再オープンにあたるため `exec-plans/active/2026-08-reconcile-2.md` を起票し AC-003 を再オープン。テンプレートに `[E2E]` AC 行・完了条件の注記・**ID を捏造しない**規則を追加 |
+  | 1 | `promote-spec` が生成する reconcile プランのテンプレートに `[E2E]` AC が無い。一方 `create-exec-plan` は「reconcile プランは `[E2E]` AC が **Required**」と定めている | #27（規約は追加したが、規約を**適用する側**の生成テンプレートを更新しなかった） | 完了済み AC の再オープンにあたるため `exec-plans/active/2026-08-reconcile-promote-spec-e2e.md` を起票し AC-003 を再オープン。テンプレートに `[E2E]` AC 行・完了条件の注記・**ID を捏造しない**規則を追加 |
   | 2 | 同テンプレートの Task Breakdown が「実装とテストを更新する」＝ red-first 以前の順序 | #22（本プラン。適用先の列挙に `promote-spec` が入っていなかった） | 「新しい AC 本文からテストを先に赤にしてから実装」に修正。あわせて「spec が変わった AC は preservation 免除に該当しない」を明記 |
 
   2 は本プラン（実装中）由来の追従漏れのため、CLAUDE.md「実装中の AC は当該プランの Decision Log に
-  記録」に従いここに記録する。1 は完了済みプラン由来のため別プラン（`2026-08-reconcile-2.md`）側に
+  記録」に従いここに記録する。1 は完了済みプラン由来のため別プラン（`2026-08-reconcile-promote-spec-e2e.md`）側に
   記録した。両者は同じファイルを触るが、記録先を分けるのは CLAUDE.md の stale 規約どおり。
 - **`post-tool-notify.py` のテストファイル通知を INV-T02 に追従**。フック文言が「テスト**修正**」の
   ケースしか述べておらず、新規に書いたテストを実装前に赤で確認する規約に触れていなかった。

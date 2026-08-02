@@ -160,6 +160,19 @@ Perform a thorough review covering:
      behavior were removed?
    - This, like 1b, is a check the implementing agent cannot perform on itself: it wrote both sides.
 
+1d. **Process changes: does the process still run one lap?**
+   - Applies when the diff changes a **documented process** — a loop, a resumable run, a stop
+     condition, a gate, an exemption, or a rule other rules consume (skill definitions, CLAUDE.md,
+     hooks). Skip for ordinary feature diffs.
+   - Do not stop at "every call site describes the rule the same way". Walk the process and name the
+     state after each step, at least: the **second iteration** (the state the first pass leaves is
+     the next pass's input), a **resume** from the files alone mid-process, and the **exemption**
+     path (does every downstream gate know about it?).
+   - Report: a state that cannot be entered or left, two rules answering the same state differently,
+     a gate that fires on the state meaning success, or an entry condition the process's own output
+     violates.
+   - The convention and its laps are in `.claude/skills/create-exec-plan/process-walkthrough.md`.
+
 2. **Correctness**
    - Logic errors, edge cases not handled, off-by-one errors
    - Incorrect assumptions about inputs or state
@@ -191,6 +204,11 @@ Branch diff: main...HEAD
 ### [E2E] AC Compliance
 {For each [E2E] AC: ✅ through-flow holds / ❌ breaks at {step} / N/A (no [E2E] AC in plan)}
 {Whole-flow test exists? ✅ / ❌ per-AC tests only}
+
+### Process walkthrough (only if the diff changes a documented process — omit otherwise)
+{Second iteration: ✅ / ❌ <state where it breaks>}
+{Resume from files alone: ✅ / ❌ <entry check that rejects the left-behind state>}
+{Exemption path: ✅ / ❌ <downstream gate unaware of the exemption>}
 
 ### Tests vs. ACs (independence)
 {For each AC: ✅ the test asserts what the AC states / ⚠️ partially / ❌ the test mirrors the

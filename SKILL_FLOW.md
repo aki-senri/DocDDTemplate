@@ -21,13 +21,13 @@ flowchart TD
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
-        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md\n⑥ Decide branch name\n⑦ Record start in progress log\n⑧ Implementation order: red-first,\n   then stable layer first"]
     end
@@ -57,10 +57,10 @@ flowchart TD
 
     IMPL --> PREPR
     IMPL -.->|optional independent code review| DCR
-    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
+    DCR["/docode-review (optional)\n· Independent agent reviews the diff\n· Against ACs + general code quality\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
     end
 
     PREPR --> PR
@@ -126,6 +126,15 @@ flowchart TD
 | —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr` — spawns a subagent via the Agent tool (no internal caller) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
+> **Shared reference file (not a skill):**
+> [`.claude/skills/create-exec-plan/process-walkthrough.md`](.claude/skills/create-exec-plan/process-walkthrough.md)
+> — the laps to walk when a plan changes a **process** (a loop, a resumable run, a stop condition, a
+> gate, an exemption, or a single source other rules consume). `create-exec-plan` (Q3e) requires the
+> plan to carry a walkthrough AC, the implementer records the laps, `doc-review` (§2c) and
+> `docode-review` walk them against the diff, and `pre-pr` (⑤b) checks the record exists (⚠️ only).
+> It exists because comparing call-site descriptions cannot see a process that deadlocks: the
+> descriptions agree and the states do not.
+>
 > **Shared reference file (not a skill):**
 > [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first
 > procedure (INV-T02): write the test from the AC before its implementation, observe a **valid** red,

@@ -106,6 +106,26 @@ AC 本文からテストを起草し、赤を観測してから実装する**。
 （記録漏れと規約違反を機械的に区別できず、ブロックすると証跡を後から書く動機を生むため）。
 実効的なブロックは従来どおり AC カバレッジ・E2E カバレッジが担う。
 
+### プロセス照合（規約変更を1周辿って検証する）
+
+DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除・他の規約が参照する単一ソース）を変える
+プランは、**各地点の記述が一致するかの照合だけでは検証にならない**。記述が完全に一致していても、
+状態としては動かないことがある（再開時に自分の出力が自分の入口条件に弾かれる、成功した瞬間に
+ゲートが発火する、など）。適用条件・辿る周回・所見の型・記録書式は
+`.claude/skills/create-exec-plan/process-walkthrough.md` を**単一ソース**とする。
+
+| 地点 | タイミング | 措置 |
+|------|-----------|------|
+| `/create-exec-plan`（Q3e） | プラン起票時 | 対象なら「1周辿る」AC を置く。記述照合だけの検証 AC は不十分として扱う |
+| 実装者 | その AC を `- [x]` にする前 | 周回を辿り、所見と修正を Decision Log に記録する（記録が無いものは未実施） |
+| `/doc-review`（§2c） / `/docode-review` | 任意レビュー | 2周目・再開・免除の周回を辿って所見を報告（助言） |
+| `/pre-pr`（⑤b） | PR 前 | 記録の有無を **⚠️ 報告のみ**。ブロックしない |
+
+他の検証との違い: readiness は「測れるか」、red-first は「測定が実装から独立か」、E2E カバレッジは
+「断片が利用者の役に立つ形に積み上がるか」を問う。プロセス照合が問うのは
+**「その文書が書いているプロセスは、2周目・再開・免除の経路で実際に走るか」**。前三者は
+プロダクトについての検証で、これはプロセス文書自身についての検証である。
+
 ### 検証スキルの呼び出しポリシー
 
 `/run-exec-plan` は検証スキルを AC ごとに自動で回す。ただし呼び出し方式はスキルの副作用の有無で分ける。
@@ -192,7 +212,17 @@ AC 本文からテストを起草し、赤を観測してから実装する**。
 
 - 未処理の reconcile は必ず `exec-plans/active/` に置く（spec-gate・pre-pr・gc が走査する唯一の場所）。
 - 専用の「Spec Drift Log」節は作らない（走査されず archive されて陳腐化するため）。
-- reconcile プランは無限に追記せず、サイクルごとに閉じて新規を起こす（全 AC が `- [x]` にならず complete できなくなるのを防ぐ）。命名は in-version が `YYYY-MM-reconcile.md`、昇格起点（`/promote-spec`）が `YYYY-MM-reconcile-<label>.md`。両者は `active/` に併存し、扱い（同 AC-ID 再オープン＋Decision Log 記録）は同一。
+- reconcile プランは無限に追記せず、サイクルごとに閉じて新規を起こす（全 AC が `- [x]` にならず complete できなくなるのを防ぐ）。両者は `active/` に併存し、扱い（同 AC-ID 再オープン＋Decision Log 記録）は同一。命名は次のとおり。
+
+  | 起点 | 命名 | 例 |
+  |------|------|----|
+  | in-version（不備修正）・当月1本目 | `YYYY-MM-reconcile.md` | `2026-08-reconcile.md` |
+  | in-version・**当月2本目以降** | `YYYY-MM-reconcile-<topic>.md` — `<topic>` は**内容が分かる語**（何を reconcile するのか）。連番（`-2`）は適切な語が無いときの最後の手段 | `2026-08-reconcile-promote-spec-e2e.md` |
+  | 昇格起点（`/promote-spec`） | `YYYY-MM-reconcile-<label>.md` | `2026-08-reconcile-sprint-12.md` |
+
+  当月2本目以降が要るのは、同じ月に前サイクルの reconcile が完了・archive 済みの場合。完了時に `completed/` で同名衝突するため、同名で起こしてはならない。
+
+  **サフィックスが `<topic>` か `<label>` かの判別**: `<label>` は昇格ラベルであり、`spec/<label>` ブランチと `spec-target-<label>` タグに一致する語**でなければならない**。一致するものが無ければそれは in-version の `<topic>`。ファイル名だけで迷う場合は、そのプランの Goal & Scope とルーティング記録（`main` の不備修正か昇格追従か）が正であり、ファイル名は目印にすぎない。
 - 当面 reconcile しないと判断した場合は、その active プランの Decision Log に `reconcile: deferred`（または `reconcile: n/a`）と記録する。これにより `/gc` backstop の再フラグを抑止する。
 - 起票漏れは `/gc` の spec-drift backstop が週次で検出する（結果は確認候補であり確定ではない）。
 
@@ -213,7 +243,7 @@ AC 本文からテストを起草し、赤を観測してから実装する**。
 | `/create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・制約・AC を定義する | 実装前・create-spec の前 |
 | `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements / create-spec 後・create-exec-plan の前（任意） |
 | `/create-spec` | 承認済み要件からアプリ仕様（docs/02_spec/：何をするか）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を草案として起草する | create-requirements 後・create-exec-plan の前 |
-| `/create-exec-plan` | AC（受け入れ基準）と **`[E2E]` AC**（documentation-only プランは置かず `E2E: n/a` を記録）を定義し、**AC readiness**（測定可能性）を検査する | 実装前（必須） |
+| `/create-exec-plan` | AC（受け入れ基準）と **`[E2E]` AC**（documentation-only プランは置かず `E2E: n/a` を記録）を定義し、**AC readiness**（測定可能性）を検査する。プロセスを変えるプランには「1周辿る」検証 AC を置く | 実装前（必須） |
 | `/start-feature` | 実装開始前の準備チェック（AC readiness の再検査を含む） | create-exec-plan 後 |
 | `/run-exec-plan` | ループ前に AC readiness を検査し、`[E2E]` テストを赤で配置。AC を1つずつ自走実装（テストを先に赤で置く→実装→テスト→修正→次）。停止条件のみで人間に委譲 | start-feature 後・自走させたいとき（opt-in） |
 | `/run-tests` | テスト実行と仕様照合（red-first 実行では妥当な赤／無効な赤を判別） | 実装前（赤の確認）・実装中・完了時 |

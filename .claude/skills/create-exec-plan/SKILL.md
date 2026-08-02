@@ -26,6 +26,8 @@ disable-model-invocation: true
 
 1. Collect plan details via an interview
 2. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
+2b. For a plan that changes a process (a loop, a gate, a resumable run), require a
+   **process walkthrough** AC rather than a description-consistency one
 3. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
    alongside the functional ones
 4. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
@@ -42,7 +44,12 @@ The agent asks the following questions **one at a time, in order**.
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
-| Q3c | *(not asked — run by the agent)* Check every criterion from Q3 / Q3b against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
+| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
+| Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
+
+> Q3e is asked **before** Q3c although it is lettered later: readiness must run over the finished AC
+> set. An AC added after the readiness gate has never been through it — which is the failure the gate
+> exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on it.
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
 
 ---
@@ -71,7 +78,28 @@ table in `ac-readiness.md`).
 
 ---
 
-## E2E acceptance criteria
+## Process changes (plans that change how DocDD itself runs)
+
+A plan whose deliverable is a **rule** rather than a feature — it changes a loop, a resumable run,
+a stop condition, a gate, an exemption, or a single source other skills consume — needs a
+verification AC of its own kind. Apply
+[`process-walkthrough.md`](process-walkthrough.md) (the scope table there decides); do not
+re-derive the laps here.
+
+**Why a normal verification AC is not enough.** The reflex is to write "全地点の記述が一致することを
+照合し、結果を Decision Log に記録する". That check compares text to text, and a process can be
+described identically everywhere and still deadlock — a resumed run rejected by its own entry
+check, a gate that fires at the moment the run succeeds. Those states are only visible by walking
+the process one lap.
+
+| Plan changes… | Verification AC to write |
+|---------------|--------------------------|
+| A process in the scope of `process-walkthrough.md` | An AC requiring the walkthrough — naming the laps (happy / second iteration / resume / exemption / gate boundary / success moment) and requiring the findings and their fixes in the Decision Log |
+| Only descriptions with no state transitions | The ordinary cross-site consistency AC is enough |
+
+The walkthrough AC **replaces nothing**: readiness still applies to it (it is an ordinary AC and
+must state a single observable outcome), and a plan that also implements functionality still carries
+its `[E2E]` AC.
 
 A plan that implements requirements or required functionality must carry **at least one E2E
 acceptance criterion** in addition to its functional ones. Functional ACs are fragments: each can
@@ -191,12 +219,15 @@ completed:
 
 1. Complete the Q1–Q4 interview (including Q3b — read the spec's `## E2E シナリオ` section first
    if a spec exists, so the E2E criteria can be derived rather than asked from scratch)
-2. Run the readiness check (Q3c) over every criterion using [`ac-readiness.md`](ac-readiness.md);
+2. If the plan changes a process (Q3e — scope table in
+   [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
+   readiness check, so it is checked with the rest
+3. Run the readiness check (Q3c) over every criterion using [`ac-readiness.md`](ac-readiness.md);
    rewrite the NOT READY ones with the user and note any ⚠️ reasons for the Decision Log
-3. Confirm today's date in `YYYY-MM-DD` format
-4. Create the `exec-plans/active/` directory if it doesn't exist
-5. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
-6. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
+4. Confirm today's date in `YYYY-MM-DD` format
+5. Create the `exec-plans/active/` directory if it doesn't exist
+6. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
+7. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
    - Add a link to the newly created plan file in the priority tasks section
 
 ---
@@ -213,6 +244,9 @@ completed:
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
 - [ ] **Every criterion was checked against [`ac-readiness.md`](ac-readiness.md)**, and the plan
       contains no NOT READY criterion (any ⚠️ has its reason recorded in the Decision Log)
+- [ ] If the plan changes a process in the scope of
+      [`process-walkthrough.md`](process-walkthrough.md): it carries an AC requiring that
+      walkthrough, naming its laps — a description-consistency AC alone does not satisfy this
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 
 Final report output by the agent:

@@ -355,6 +355,8 @@ flowchart TD
                           機能 AC に加えて最低1本の [E2E] AC を置く
                           （documentation-only プランは置かず E2E: n/a を記録）
                           AC readiness 検査（R1〜R5）＝テストで判定できない AC はここで書き直す
+                          DocDD のプロセス（ループ・ゲート・再開）を変えるプランは
+                          「1周辿る」検証 AC を置く（記述の突き合わせだけでは足りない）
 2. /start-feature       → ドキュメント確認・AC readiness の再検査・ブランチ作成
 3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）
                           次に [E2E] のテストを実装前に赤で配置（red-first / INV-T02）
