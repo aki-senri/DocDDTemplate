@@ -45,6 +45,7 @@ completed:
 - AC-006 完了
 - 進行中プラン `2026-08-ac-readiness-gate.md` の AC-007 を機能 AC に是正
 
+- PR #30 作成（`2026-08-ac-readiness-gate.md` と合同）。マージ後に `/complete-exec-plan` を実行する
 ## Decision Log
 
 ### 2026-08-02

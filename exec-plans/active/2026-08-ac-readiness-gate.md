@@ -56,6 +56,7 @@ GitHub issue #24 (G-C) の解消。
   実行不可。E2E カバレッジは「プランに [E2E] AC が無い」＝ ⚠️ 報告のみでブロックしない
   （documentation-only。規約変更前は ❌ 保留だった — Decision Log 参照）。PR 作成は人間ゲートのため保留
 
+- PR #30 作成（reconcile と合同）。マージ後に `/complete-exec-plan` を実行する
 ## Decision Log
 
 ### 2026-08-02
