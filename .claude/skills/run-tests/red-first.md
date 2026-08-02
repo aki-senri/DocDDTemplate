@@ -25,16 +25,26 @@ That observation is what makes the later green mean something.
 
 | # | Step | What must be true when it is done |
 |---|------|-----------------------------------|
-| 1 | Read the AC and its E2E anchor. **Do not read or write implementation code for it yet** | The intended given / when / then come from the AC text, not from existing code |
-| 2 | Write the test **from the AC text alone**, tagged with the AC-ID | Its assertion is the AC's expected result, transcribed |
+| 1 | Read the AC **and its sources** — the US bullets and spec section named in the plan's `## Sources`, plus its E2E anchor. **Do not read or write implementation code for it yet** | The intended given / when / then come from frozen spec material, not from existing code |
+| 2 | Write the test **from that material**, tagged with the AC-ID | Its assertion is the AC's expected result, transcribed |
 | 3 | Run it and observe **valid red** (below) | The failure is attributable to the missing behavior |
 | 4 | Record the observation in the plan's `## Decision Log` | The expectation is now **frozen** (see below) |
 | 5 | Implement until green | The test was not edited to get there |
 
+**The source set is the AC line plus its sources — never the code.** An exec-plan AC is a
+one-line condensation; the checkable bullets stay in the US file and the behavior in the spec.
+Writing the test from the one-liner alone means writing it from an interpretation of the one-liner.
+Which documents are admissible, and what to do when one of them disagrees with the AC line, is
+defined in [`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md) — follow that
+file. Widening what may be read must never widen it toward the implementation: that is the one
+reading this rule exists to exclude.
+
 **Transcription, not invention.** If the test cannot be written without inventing an expected result
-the AC does not state, stop — that is a defect in the AC (readiness `R2` / `R3`), not a
-test-writing problem. Deciding the expected result is *what to build*: an outer-gate decision
-(CLAUDE.md「自律実装ループ」). See the call-site table for the action at each site.
+**neither the AC nor its sources** state, stop — that is a defect in the AC (readiness `R2` / `R3`),
+not a test-writing problem. Deciding the expected result is *what to build*: an outer-gate decision
+(CLAUDE.md「自律実装ループ」). An expected result that is absent from the one-liner but present in the
+US bullets is transcription, not invention, and does not stop anything. See the call-site table for
+the action at each site.
 
 ---
 
@@ -66,8 +76,8 @@ assertion.
 Append to the plan's `## Decision Log`, before implementing:
 
 ```markdown
-- AC-NNN red-first: `tests/AuthServiceTest.cs::Login_WithInvalidPassword_Returns401` を AC 本文から
-  起草し、実行して赤を観測（expected: 401 / actual: 500）。以降この期待値は凍結。
+- AC-NNN red-first: `tests/AuthServiceTest.cs::Login_WithInvalidPassword_Returns401` を AC 行と
+  起点（`## Sources`）から起草し、実行して赤を観測（expected: 401 / actual: 500）。以降この期待値は凍結。
 ```
 
 and after the implementation is green, the usual entry:
@@ -121,7 +131,7 @@ to build* is present.
 | Call site | When it runs | Action when the test cannot be written / red cannot be observed |
 |-----------|--------------|------------------------------------------------------------------|
 | `run-exec-plan` (Step 0c) | Before the loop, for every `[E2E]` AC | **HALT** with stop condition (a) — the through-flow cannot be transcribed from the AC |
-| `run-exec-plan` (Step 2a) | Before implementing each functional AC | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
+| `run-exec-plan` (Step 2a) | Before implementing each functional AC, after Step 1b has read its sources | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
 | `run-tests` | Whenever it is invoked for a red-first run, and on every later run while an AC is unimplemented | Classify and report valid / invalid red. Never report an invalid red as "expected red". Report expected reds (above) apart from real failures |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
 | `pre-pr` / `complete-exec-plan` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
@@ -148,7 +158,8 @@ what distinguishes it from a skipped step.
 [`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md) `R2` asks whether a
 test *could* be written from the AC text.
 Red-first is the same question asked **empirically**, at the last moment before implementation:
-someone actually writes it.
+someone actually writes it — from the AC and the sources
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md) points at.
 
 - A NOT READY AC never gets here — `run-exec-plan` Step 0b stops the loop first.
 - An AC that passed readiness but cannot be transcribed is a **readiness escape**. The correct move

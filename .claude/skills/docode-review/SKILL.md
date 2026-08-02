@@ -2,8 +2,9 @@
 name: docode-review
 description: |
   Launches an independent agent (with no implementation context) to review changed code.
-  The agent reviews the diff against acceptance criteria (if available) and general code quality,
-  providing an objective perspective separate from the implementing agent. It also judges whether
+  The agent reviews the diff against acceptance criteria (if available) — including the US bullets
+  and spec sections the plan's ## Sources names, not only the one-line AC — and general code
+  quality, providing an objective perspective separate from the implementing agent. It also judges whether
   each test expresses its AC rather than mirroring the implementation — the one check the agent
   that wrote both sides cannot perform on itself.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
@@ -82,6 +83,11 @@ git diff
 ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No active exec-plan"
 ```
 
+Then read the plan's `## Sources` table and **open every US / spec section it names**. The subagent
+inherits no session context, so a path it cannot read is a path it will ignore: paste the relevant
+sections into the prompt rather than referencing them. If a plan has no `## Sources` table, or every
+row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all there is.
+
 **If the working tree is not clean** (uncommitted changes exist):
 - Remind the user to commit or stash all changes before running this skill, OR
 - Include `git diff --cached` and `git diff` output in the review context in addition to `git diff main...HEAD`
@@ -94,7 +100,8 @@ ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No acti
 
 | Condition | Review focus |
 |-----------|-------------|
-| exec-plan with AC-001~ exists | AC compliance + tests-vs-ACs independence + code quality |
+| exec-plan with AC-001~ exists, and its `## Sources` name US / spec sections | AC compliance **judged against those sections** + tests-vs-ACs independence + code quality |
+| exec-plan with AC-001~ exists, but no `## Sources` (or all `n/a`) | Same, judged against the AC lines alone — say so in the verdict, since a one-liner is a weaker yardstick |
 | No exec-plan | Code quality only (correctness, readability, security, maintainability) — the tests-vs-ACs check needs AC text to judge against |
 
 ### Step 3: Launch independent agent
@@ -122,6 +129,10 @@ Review the following changes objectively.
 ## Acceptance criteria (from exec-plan)
 {contents of exec-plans/active/*.md, or "None — review for general quality only"}
 
+## AC sources (the US bullets / spec sections each AC condenses)
+{for each row of the plan's ## Sources table: the AC-ID, the section's path, and the section text.
+ Or "None — the plan has no ## Sources table" / "n/a — {reason recorded in the plan}"}
+
 ## Review instructions
 
 Perform a thorough review covering:
@@ -129,6 +140,14 @@ Perform a thorough review covering:
 1. **AC compliance** (if AC exists)
    - Does the implementation satisfy each AC?
    - Are there any ACs not covered by the changes?
+   - **Judge against the AC's sources, not only its one line.** An exec-plan AC is a condensation:
+     the checkable bullets live in the US file and the behavior in the spec section. The plan's
+     `## Sources` table names both — open them and judge the diff against what they say. An
+     implementation can satisfy the wording of a one-liner and miss the bullets it stands for.
+   - Report any AC where the diff satisfies the line but not its source, and any place the source
+     and the AC line disagree (that is a spec defect, not an implementation one).
+   - If the plan has no `## Sources` table, say so and review against the AC lines alone — do not
+     guess which spec section applies.
 
 1b. **`[E2E]` AC compliance — judge the whole, not only the fragments**
    - The plan's `[E2E]` acceptance criteria (`- [x] AC-NNN: [E2E] ...`) state the through-flow that

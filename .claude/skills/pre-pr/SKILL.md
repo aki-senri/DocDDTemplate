@@ -32,6 +32,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ⑤ run-tests             → Run tests and verify against spec, incl. [E2E] AC coverage
                           and red-first evidence (⚠️ only)
 ⑤b process walkthrough  → For a plan that changed a process: evidence check (⚠️ only)
+⑤c AC sources           → ## Sources present + spec re-anchor recorded per AC (⚠️ only)
 ⑥ exec-plan update      → Record progress in log
 ```
 
@@ -201,6 +202,34 @@ hand-written, so a missing line cannot be told apart mechanically from an unreco
 Report it; do not reconstruct the walkthrough here — after the fact, "it looked consistent" is
 exactly the judgement this check exists to replace.
 
+### ⑤c AC sources and spec re-anchor (⚠️ report only)
+
+Two things, both read from the plan file (see
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md)):
+
+1. **`## Sources` present** — a table with a row for every AC, each naming a section or an explicit
+   `n/a（理由）`. A plan authored before this convention has no table at all; report that too.
+2. **Spec re-anchor recorded per AC** — each `AC-NNN done.` entry in the `## Decision Log` should
+   carry a `spec 再アンカー:` line naming the section the finished result was checked against, or
+   `n/a（理由）`.
+
+```
+AC sources / spec re-anchor:
+  ✅ ## Sources: 5/5 AC に行あり
+  ✅ AC-001 → spec 再アンカー記録あり（app_spec.md §「タグの付与」）
+  ⚠️ AC-002 → 再アンカー記録なし（緑判定が spec に照らされたか後から確認できない）
+  ➖ AC-003 → n/a（起点なし）
+```
+
+**Warning, not a blocker**, same reasoning as ⑤ and ⑤b: both artifacts are hand-written prose, so a
+missing line cannot be distinguished mechanically from an unrecorded-but-performed check, and
+blocking would teach people to add the line afterwards — destroying the evidence. What blocks PR
+creation stays what it was: failing tests, uncovered ACs, uncovered `[E2E]` ACs.
+
+**Do not fill in a missing table here.** Reconstructing sources after the implementation exists
+means inferring them from the code, which is the one reading `ac-sources.md` forbids. Report the
+absence and, if the plan is still active, have them written at the plan, not at the gate.
+
 ### ⑥ exec-plan progress update
 
 Update the `exec-plans/active/*.md` corresponding to the implemented work.
@@ -227,6 +256,9 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
                      / ➖ n/a (documentation-only)
 ⑤b walkthrough     : ✅ {n} 周の記録あり  / ⚠️ プロセス変更だが記録なし (does not block)
                      / ➖ n/a (状態遷移なし)
+⑤c AC sources      : ✅ {n}/{n} AC に起点行あり  / ⚠️ ## Sources なし (does not block)
+  └ 再アンカー     : ✅ {n}/{n} AC に記録あり  / ⚠️ AC-NNN 記録なし (does not block)
+                     / ➖ n/a (起点なし)
 ⑥ exec-plan        : ✅ Progress updated
 
 ---
@@ -240,7 +272,7 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 
 ## Completion criteria
 
-- [ ] All checks ① through ⑥ (including ⑤b) are complete
+- [ ] All checks ① through ⑥ (including ⑤b and ⑤c) are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation
 - [ ] If tests failed, they were resolved through the spec alignment gate
 - [ ] Every `[E2E]` AC in the plan has a test that exists and passed (or the plan's lack of an
@@ -249,6 +281,8 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
       block PR creation, and a missing entry is never filled in after the fact)
 - [ ] For a plan that changed a process: the walkthrough record was checked and any absence
       reported (⚠️ — does not block, and is not reconstructed here)
+- [ ] The plan's `## Sources` table and the per-AC `spec 再アンカー:` records were checked and any
+      absence reported (⚠️ — does not block, and neither is filled in here)
 - [ ] If test files were changed, the reason is recorded in the decision log
 - [ ] The progress log in exec-plan has been updated
 - [ ] Output shows "PR creation status: ✅ No issues"

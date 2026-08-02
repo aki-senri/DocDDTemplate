@@ -330,14 +330,14 @@ flowchart TD
     F --> G["⑥ 後始末<br/>complete-exec-plan"]
 ```
 
-上図のボックス ①②③④⑤⑥ はいずれも人が起動する操作（③ は機能ごとに一度 `start-feature` で準備してから `run-exec-plan` を起動する）。ただし ③ で起動した後の「テストを先に赤で置く→実装→テスト→修正→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜e）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
+上図のボックス ①②③④⑤⑥ はいずれも人が起動する操作（③ は機能ごとに一度 `start-feature` で準備してから `run-exec-plan` を起動する）。ただし ③ で起動した後の「起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜e）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
 
 #### C. 責任分担表
 
 | フェーズ | 人の責任 | AI の責任 |
 |---------|---------|----------|
-| 要件・仕様 | User Story / AC を定義・凍結する。readiness 検査で NOT READY となった AC を書き直す | 対話で引き出し、ドラフトを書き、readiness 検査を実行する（AC を独断で書き換えることはしない） |
-| 実装・検証 | （指示は AC 番号のみ） | テストを先に赤で置く→実装→テスト→修正→次 AC を自走、`run-tests` / `check-*` を内部実行 |
+| 要件・仕様 | User Story / AC を定義・凍結する。readiness 検査で NOT READY となった AC を書き直す。起点と AC 行が食い違うときにどちらが正かを決める | 対話で引き出し、ドラフトを書き、各 AC の起点を記録し、readiness 検査を実行する（AC を独断で書き換えたり、食い違う2つの凍結文書のどちらかを独断で選んだりはしない） |
+| 実装・検証 | （指示は AC 番号のみ） | 起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC を自走、`run-tests` / `check-*` を内部実行 |
 | 仕様変更・テスト期待値 | 変更可否を判断する（外側ゲート） | 変更が必要だと検知したら停止・提示する |
 | レビュー・PR | コードをレビューし PR を承認・マージする | `pre-pr` で総合チェックを実行する |
 | 昇格・GC | `promote-spec` / `gc` の実行可否を判断する | 差分解析・後処理を支援する |
@@ -355,13 +355,16 @@ flowchart TD
                           機能 AC に加えて最低1本の [E2E] AC を置く
                           （documentation-only プランは置かず E2E: n/a を記録）
                           AC readiness 検査（R1〜R5）＝テストで判定できない AC はここで書き直す
+                          ## Sources ＝ 各 AC がどの US bullet・どの spec 節を凝縮したかを記録
                           DocDD のプロセス（ループ・ゲート・再開）を変えるプランは
                           「1周辿る」検証 AC を置く（記述の突き合わせだけでは足りない）
-2. /start-feature       → ドキュメント確認・AC readiness の再検査・ブランチ作成
+2. /start-feature       → ドキュメント確認（## Sources が指す US / spec を含む）・
+                          AC readiness の再検査・ブランチ作成
 3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）
                           次に [E2E] のテストを実装前に赤で配置（red-first / INV-T02）
                           通過後、AC を 1 つずつ自走実装
-                          （テストを先に赤で置く→実装→テスト→修正→次 AC）
+                          （起点を読む→テストを先に赤で置く→実装→テスト→修正→
+                           その AC の spec 該当節へ再アンカー→次 AC）
                           内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
                           停止条件（a〜e）に当たったときだけ人に確認
 4. /pre-pr              → PR 前の総合チェック
@@ -369,10 +372,13 @@ flowchart TD
 6. /complete-exec-plan  → 計画を completed/ へ移動
 ```
 
-> `/run-exec-plan` は opt-in。1 つずつ手動で進めたい場合は、Step 3 を「その AC のテストを書いて
-> 赤を確認する → コードを書く → `/check-doc-freshness` → `/check-invariants` → `/run-tests`」の
+> `/run-exec-plan` は opt-in。1 つずつ手動で進めたい場合は、Step 3 を「その AC の起点を読む →
+> テストを書いて
+> 赤を確認する → コードを書く → `/check-doc-freshness` → `/check-invariants` → `/run-tests` →
+> 出来上がりを spec 該当節と照合する」の
 > 手動ループに置き換えてもよい。red-first は自走の仕組みではなく規約（INV-T02）なので、
-> 手動パスでも同じ順序で行う。
+> 手動パスでも同じ順序で行う。起点を読むことも同様で、`start-feature` がそのために
+> `## Sources` の指す文書を読み込む。
 
 ### `/create-requirements` と `/create-exec-plan` の使い分け
 
@@ -386,12 +392,14 @@ flowchart TD
 
 ### red-first: テストは実装より先に書く（重要）
 
-AC ごとに、**まずテストを書きます**。実装がまだ存在しない状態で AC 本文だけを見て起草し、実行して
+AC ごとに、**まずテストを書きます**。実装がまだ存在しない状態で **AC 行とその起点**だけを見て起草し、
+実行して
 「正しい理由で赤になる」ことを確認します。その観測を exec-plan の Decision Log に記録した時点で、
 期待値は凍結されます（`INV-T02`）。
 
 ```
-AC を読む → テストを起草（AC 本文だけを見る） → 実行して赤を確認
+AC と ## Sources が指す US bullet / spec 該当節を読む
+   → テストを起草（実装コードは見ない） → 実行して赤を確認
    → 赤の理由を Decision Log に記録（ここで期待値が凍結） → 実装して緑にする
 ```
 
@@ -404,6 +412,30 @@ AC を満たしていなくても緑になります。一度も赤になって�
 「コンパイルが通らない」は何も測っていないため無効な赤です。手順と適用外
 （documentation-only プラン、既に緑のテストで保証される preservation AC）は
 [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) を参照してください。
+
+### AC の起点: 1行の AC は「指し示すもの」
+
+exec-plan の AC が1行なのは、`spec-gate.py` が `AC-(\d{3}):` で拾うからです。検証可能な 2〜5 個の
+bullet は User Story に、振る舞いは spec の「satisfies AC-NNN」節に残ります。そこで各プランは、
+AC ごとにその詳細がどこにあるかを書いた `## Sources` 表を持ちます。
+
+```markdown
+## Sources
+
+| AC | US（検証可能な bullet） | spec（振る舞いの節） |
+|----|------------------------|---------------------|
+| AC-001 | `docs/01_requirements/user_stories/US-003_tagging.md` § AC-001 | `docs/02_spec/app_spec.md` §「タグの付与」 |
+```
+
+この表は2回読まれます。**テストを起草する前**（凝縮された1行ではなく目標そのものを転記するため）と、
+**AC を `- [x]` にする前**（*spec 再アンカー*。出来上がった振る舞いを spec 該当節ともう一度
+突き合わせる）です。テストが緑でも、それは転記された分しか証明していません。
+
+覚えておくべき規則は2つ。起点の無い AC は空欄ではなく `n/a（理由）` と書くこと。起点は凍結された
+仕様文書だけで、代わりに実装コードを読むと red-first が閉じた穴が開くこと。詳細（起点が AC 行と
+食い違うときの扱いを含む）は
+[`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
+を参照してください。
 
 ### テスト失敗時の判断ゲート（重要）
 
@@ -500,7 +532,8 @@ tracks:
 実装の挙動に合わせたテスト修正は禁止。
 
 ## INV-T02: red-first ルール
-テストの期待値は、それを満たす実装より先に AC から起草し、赤を観測してから凍結すること。
+テストの期待値は、それを満たす実装より先に AC（およびプランの `## Sources` が指す起点）から
+起草し、赤を観測してから凍結すること。
 赤の観測は exec-plan の Decision Log に記録する。
 ```
 

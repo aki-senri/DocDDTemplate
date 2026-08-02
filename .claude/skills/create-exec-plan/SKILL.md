@@ -6,7 +6,9 @@ description: |
   Any plan that implements requirements or functionality — refactoring included — carries at least
   one [E2E] acceptance criterion alongside the functional ones, so a plan cannot be completed by
   turning fragments green without the through-flow working. Documentation-only plans record
-  "E2E: n/a" instead. Every criterion is checked for testability (AC readiness) before the plan
+  "E2E: n/a" instead. Each criterion also records where the detail it condenses lives (the US
+  bullets and the spec section), so the implementer receives the whole goal rather than one line.
+  Every criterion is checked for testability (AC readiness) before the plan
   file is finalized, so ambiguity is caught while it is still cheap to rewrite.
 disable-model-invocation: true
 ---
@@ -25,11 +27,12 @@ disable-model-invocation: true
 ## What this skill does
 
 1. Collect plan details via an interview
-2. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
-2b. For a plan that changes a process (a loop, a gate, a resumable run), require a
+2. Record each criterion's **sources** — the US bullets and spec section its one line condenses
+2b. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
+2c. For a plan that changes a process (a loop, a gate, a resumable run), require a
    **process walkthrough** AC rather than a description-consistency one
 3. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
-   alongside the functional ones
+   alongside the functional ones, and a `## Sources` table covering every criterion
 4. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
 
 ---
@@ -45,12 +48,39 @@ The agent asks the following questions **one at a time, in order**.
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
 | Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
+| Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
 
-> Q3e is asked **before** Q3c although it is lettered later: readiness must run over the finished AC
-> set. An AC added after the readiness gate has never been through it — which is the failure the gate
-> exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on it.
+> Q3e and Q3d are asked **before** Q3c although they are lettered later. Readiness must run over the
+> finished AC set: an AC added after the readiness gate has never been through it — which is the
+> failure the gate exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on
+> it. Q3d comes before Q3c for a second reason: knowing which `E2E-NNN` and which spec section a
+> criterion condenses is what makes the `R4` anchor check answerable rather than a guess.
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
+
+---
+
+## AC sources
+
+An exec-plan AC is one line by necessity (`spec-gate.py` parses `AC-(\d{3}):`), and
+`create-requirements` states plainly that the verifiable bullets stay in the US file. The one-liner
+is therefore a **pointer**, and a plan that does not say where it points hands the implementer a
+condensed goal to interpret alone.
+
+Q3d fills the `## Sources` table. Apply [`ac-sources.md`](ac-sources.md) — the single source shared
+with `run-exec-plan`, `start-feature`, `pre-pr`, `docode-review` and `promote-spec`. Read that file
+for the table format, the admissible sources, and the pitfall about colons after `AC-NNN`; do not
+re-derive them here.
+
+| Situation at authoring time | What to write in the row |
+|-----------------------------|--------------------------|
+| A US section and a spec section exist for the criterion | Both, each named down to the **section** |
+| `/create-spec` was skipped (small change) | The US section, and `n/a（spec 未作成 — 起点は US の該当節）` |
+| The plan's subject is the repository's own conventions, with no US and no spec | One row covering the range, `n/a（理由）` |
+| The source genuinely cannot be identified | `n/a（理由）` — **with the user**. "There is no spec for this" is a claim about the spec, not a gap the agent may declare on its own |
+
+Never leave a cell blank. A blank cannot be told apart from a forgotten row, and the table's value
+is exactly that a later reader can distinguish "there is nothing to read" from "nobody looked".
 
 ---
 
@@ -200,6 +230,17 @@ completed:
 <!-- documentation-only プランの場合は上の [E2E] AC と注記を置かず、代わりに
      Decision Log へ `E2E: n/a (documentation-only)` を記録する -->
 
+## Sources
+
+| AC | US（検証可能な bullet） | spec（振る舞いの節） |
+|----|------------------------|---------------------|
+| AC-001 | `docs/01_requirements/user_stories/US-XXX_{name}.md` § AC-001 | `docs/02_spec/app_spec.md` §「{節名}」 |
+| AC-002 | 同上 § AC-002 | 同上 §「{節名}」 |
+| AC-003 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | 同上 § E2E-001 |
+
+<!-- 全 AC に行を置く。起点が無い AC は空欄にせず `n/a（理由）` と書く。
+     この表の中では AC-NNN の直後にコロンを置かない（spec-gate.py が AC として拾うため）。
+     書式・許容される起点・食い違いの扱いは ac-sources.md を参照 -->
 
 ## Task Breakdown
 {Answer to Q4 in checklist format}
@@ -222,6 +263,8 @@ completed:
 2. If the plan changes a process (Q3e — scope table in
    [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
    readiness check, so it is checked with the rest
+2b. Collect each criterion's sources (Q3d) per [`ac-sources.md`](ac-sources.md), so the readiness
+   check that follows can answer `R4` against a named scenario rather than a guess
 3. Run the readiness check (Q3c) over every criterion using [`ac-readiness.md`](ac-readiness.md);
    rewrite the NOT READY ones with the user and note any ⚠️ reasons for the Decision Log
 4. Confirm today's date in `YYYY-MM-DD` format
@@ -242,6 +285,9 @@ completed:
       when no spec exists). For a documentation-only plan: **no `[E2E]` AC is present**, and
       `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
+- [ ] The plan has a `## Sources` table with **a row for every criterion**, each naming a section
+      (not just a file) or an explicit `n/a（理由）` — no blank cells, and no colon directly after
+      `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md))
 - [ ] **Every criterion was checked against [`ac-readiness.md`](ac-readiness.md)**, and the plan
       contains no NOT READY criterion (any ⚠️ has its reason recorded in the Decision Log)
 - [ ] If the plan changes a process in the scope of
@@ -257,6 +303,7 @@ Final report output by the agent:
 File     : exec-plans/active/YYYY-MM-{name}.md
 機能 AC  : AC-001, AC-002, ...
 E2E AC   : AC-NNN [E2E] ← E2E-001 (or "derived from US-XXX ゴール像")
+Sources  : {n}/{n} AC に起点あり  |  n/a {n} 件（{理由}）
 
 === AC readiness ===
 AC-001  READY

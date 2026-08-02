@@ -330,14 +330,14 @@ flowchart TD
     F --> G["⑥ Wrap-up<br/>complete-exec-plan"]
 ```
 
-Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "write the failing test → implement → test → fix → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
+Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–e in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
 
 #### C. Responsibility table
 
 | Phase | Human's responsibility | AI's responsibility |
 |-------|------------------------|---------------------|
-| Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY | Elicit through dialogue, write the draft, and run the readiness check (it never rewrites an AC on its own) |
-| Implementation / verification | (Instruction is the AC number only) | Autonomously run write the failing test → implement → test → fix → next AC; run `run-tests` / `check-*` internally |
+| Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY; decide which reading wins when a source and its AC line disagree | Elicit through dialogue, write the draft, record each AC's sources, and run the readiness check (it never rewrites an AC or picks between two frozen documents on its own) |
+| Implementation / verification | (Instruction is the AC number only) | Autonomously run read the sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC; run `run-tests` / `check-*` internally |
 | Spec change / test expectations | Decide whether the change is allowed (outer gate) | Detect that a change is needed and stop to present it |
 | Review / PR | Review the code and approve/merge the PR | Run the consolidated checks via `pre-pr` |
 | Promotion / GC | Decide whether to run `promote-spec` / `gc` | Assist with diff analysis and post-processing |
@@ -355,13 +355,16 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           At least one [E2E] AC in addition to the functional ones
                           (documentation-only plans carry none — record E2E: n/a)
                           AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here
+                          ## Sources: per AC, which US bullets and which spec section it condenses
                           A plan that changes a DocDD process (a loop, a gate, a resumable run)
                           carries a process-walkthrough AC — walk the laps, don't just match descriptions
-2. /start-feature       → Confirm docs, re-check AC readiness, and create a branch
+2. /start-feature       → Confirm docs (incl. the US / spec sections in ## Sources),
+                          re-check AC readiness, and create a branch
 3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written
                           Put the [E2E] test in place, red, before implementing anything (red-first / INV-T02)
                           Then autonomously implement ACs one by one
-                          (write the failing test → implement → test → fix → next AC)
+                          (read the AC's sources → write the failing test → implement → test → fix
+                           → re-anchor to the AC's spec section → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
                           Checks with the human only when hitting a stop condition (a–e)
 4. /pre-pr              → Consolidated pre-PR checks
@@ -370,9 +373,12 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 ```
 
 > `/run-exec-plan` is opt-in. If you want to proceed one step at a time manually, you can replace
-> Step 3 with the manual loop "write the test for the AC and confirm it fails → write code →
-> `/check-doc-freshness` → `/check-invariants` → `/run-tests`". The red-first order is not part of the
-> automation — it applies to the manual path too (INV-T02).
+> Step 3 with the manual loop "read the AC's sources → write the test for the AC and confirm it
+> fails → write code →
+> `/check-doc-freshness` → `/check-invariants` → `/run-tests` → check the result against the AC's
+> spec section". The red-first order is not part of the
+> automation — it applies to the manual path too (INV-T02) — and neither is reading the sources:
+> `start-feature` loads them for exactly this reason.
 
 ### Choosing between `/create-requirements` and `/create-exec-plan`
 
@@ -386,12 +392,14 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 
 ### Red-first: the test is written before the implementation (important)
 
-For each AC, write its test **first** — from the AC text, before the implementation exists — run it,
+For each AC, write its test **first** — from the AC line **and the sources it points at**, before the
+implementation exists — run it,
 and confirm it fails for the right reason. Record that red observation in the exec-plan's decision
 log; from then on the expectation is frozen (`INV-T02`).
 
 ```
-AC を読む → テストを起草（AC 本文だけを見る） → 実行して赤を確認
+AC と ## Sources が指す US bullet / spec 該当節を読む
+   → テストを起草（実装コードは見ない） → 実行して赤を確認
    → 赤の理由を Decision Log に記録（ここで期待値が凍結） → 実装して緑にする
 ```
 
@@ -405,6 +413,30 @@ red; "does not compile" is not — it measured nothing. See
 [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) for the full
 procedure and the exemptions (documentation-only plans, preservation ACs already covered by a
 green test).
+
+### AC sources: the one-line AC is a pointer
+
+An exec-plan AC is one line, because `spec-gate.py` parses `AC-(\d{3}):`. The 2–5 checkable bullets
+live in the User Story, and the behavior lives in the spec section marked "satisfies AC-NNN". So
+every plan carries a `## Sources` table saying, per AC, where its detail is:
+
+```markdown
+## Sources
+
+| AC | US（検証可能な bullet） | spec（振る舞いの節） |
+|----|------------------------|---------------------|
+| AC-001 | `docs/01_requirements/user_stories/US-003_tagging.md` § AC-001 | `docs/02_spec/app_spec.md` §「タグの付与」 |
+```
+
+It is read twice: **before the test is drafted** (so you transcribe the whole goal, not a
+condensation of it) and **before the AC's box is checked** — the *spec re-anchor*, where the
+finished behavior is compared once more against that spec section. Green tests only prove what was
+transcribed into them.
+
+Two rules are worth remembering: an AC with no source is written `n/a（理由）`, never left blank;
+and the sources are frozen spec documents only — reading the implementation instead would undo
+red-first. The details, including what to do when a source disagrees with its AC line, are in
+[`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md).
 
 ### Decision gate on test failure (important)
 
@@ -500,8 +532,9 @@ When modifying a test, always confirm the corresponding AC-ID.
 Modifying tests to match implementation behavior is forbidden.
 
 ## INV-T02: Red-first rule
-A test's expectation is written from its AC before the implementation that satisfies it,
-and observed failing. Record the red observation in the exec-plan's decision log.
+A test's expectation is written from its AC (and the sources the plan's `## Sources` names)
+before the implementation that satisfies it, and observed failing.
+Record the red observation in the exec-plan's decision log.
 ```
 
 ---
