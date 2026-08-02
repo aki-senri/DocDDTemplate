@@ -258,6 +258,14 @@ Do not proceed to Step 6 without an explicit "yes".
 
    > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
 
+   ## Sources
+
+   | AC | US（検証可能な bullet） | spec（振る舞いの節） |
+   |----|------------------------|---------------------|
+   | AC-003 | `docs/01_requirements/user_stories/US-XXX_<name>.md` § AC-003 | `docs/02_spec/<file>.md` §「<新 spec の該当節>」 |
+   | AC-007 | 同上 § AC-007 | 同上 §「<新 spec の該当節>」 |
+   | AC-NNN [E2E] | 同上 § ゴール像／主要ユーザージャーニー | 同上 § E2E-NNN |
+
    ## Task Breakdown
    - [ ] Review `git diff spec-target-<prev>..spec-target-<label> -- docs/` for each AC
    - [ ] For each stale AC: update its test **first** to the new expectation and observe it red
@@ -274,6 +282,15 @@ Do not proceed to Step 6 without an explicit "yes".
    - AC readiness / red-first: このプランは `create-exec-plan` の起票インタビューを経ていない。
      readiness は `/start-feature`（Step 1b）または `/run-exec-plan`（Step 0b）で検査される。
    ```
+
+   **The `## Sources` table must point at the *new* spec** (`../create-exec-plan/ac-sources.md`).
+   A reconcile plan exists because the spec moved; if its sources still named the pre-promotion
+   sections, the implementer would be steered by the very text the promotion replaced, and
+   `run-exec-plan`'s Step 3a re-anchor would confirm the old behavior as correct. Fill each row from
+   the post-merge `docs/02_spec/**` — the sections the diff in Step 4 flagged as CHANGED — and use
+   `git diff spec-target-<prev>..spec-target-<label> -- docs/` to locate them. If a re-opened AC's
+   spec section cannot be identified, write `n/a（理由）` rather than guessing; do not leave a cell
+   blank.
 
    **The `[E2E]` AC is required here** (`create-exec-plan` → "When it is required": a reconcile plan
    re-opening AC-IDs carries one). A reconcile plan that only fixes fragments can go all-green while
@@ -362,4 +379,6 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`
 - [ ] The reconcile plan carries an `[E2E]` AC (using an existing AC-ID from the new spec, not an
       invented one) and states that it is not complete while that criterion is unchecked
+- [ ] The reconcile plan carries a `## Sources` table with a row per re-opened AC, pointing at the
+      **post-promotion** spec sections (or an explicit `n/a（理由）`) — never the replaced text
 - [ ] Promotion recorded in the Decision Log and `docs/07_ai_context/CONTEXT.md` updated

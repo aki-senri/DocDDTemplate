@@ -60,9 +60,11 @@ Claude Code で以下を実行します：
 ```
 /create-requirements ← User Story・ゴール像・AC 条件を定義（任意・推奨）
 /create-spec         ← アプリ仕様と E2E シナリオを起草（任意・小さな変更ならスキップ）
-/create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義し AC readiness を検査）
+/create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義し、各 AC の起点を
+                       記録して AC readiness を検査）
 /start-feature       ← 実装前の確認・AC readiness の再検査・ブランチ作成
-/run-exec-plan       ← AC を1つずつ、テストを先に赤で置いてから自走実装（opt-in）
+/run-exec-plan       ← AC を1つずつ自走実装（起点を読む→テストを先に赤で置く→実装→
+                       緑になったら spec 該当節へ再アンカー）（opt-in）
    （手動で進める場合: その AC のテストを書いて赤を確認 → コードを書く
      → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
@@ -99,9 +101,9 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
 | `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/`、`status: draft`。人間承認が必要） |
-| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、DocDD のプロセスを変えるプランには「1周辿る」検証 AC を置く |
-| `start-feature` | 実装開始前の確認・**AC readiness の再検査**・ブランチ名決定（機能ごとに一度） |
-| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**テストを先に赤で置く**→実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
+| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、**`## Sources`**（その AC が凝縮した US bullet と spec 該当節）を記録する。DocDD のプロセスを変えるプランには「1周辿る」検証 AC を置く |
+| `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度） |
+| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in） |
 | `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新） |
 | `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
 | `promote-spec` | 次バージョン仕様（`spec/<label>` ブランチ）を現ターゲットへ昇格（スプリント境界） |
@@ -190,13 +192,33 @@ DocDD では、テストを「仕様の実行可能な表現」として位置�
 ### red-first（INV-T02）
 
 仕様の表現である以上、テストは**仕様から**書かれなければなりません。AC ごとに、実装が存在しない
-状態で AC 本文からテストを起草し、実行して「正しい理由で赤になる」ことを確認します。その観測を
+状態で **AC 行とその起点**からテストを起草し、実行して「正しい理由で赤になる」ことを確認します。
+その観測を
 exec-plan の Decision Log に記録した時点で期待値が凍結されます。実装と同時に書かれたテストは
 コードの挙動を写したものになり、AC を満たしていても満たしていなくても緑になります。
 
 `/run-exec-plan` は AC ごとにこれを行い、`[E2E]` のテストはどの AC の実装よりも先に赤で配置します。
 手順・妥当な赤と無効な赤の区別・適用外は
 [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) を参照してください。
+
+### AC の起点と spec 再アンカー
+
+exec-plan の AC は**1行**です（`spec-gate.py` が `AC-(\d{3}):` で拾うため）。検証可能な bullet は
+User Story に、振る舞いは spec の「satisfies AC-NNN」節に残ります。どこを指しているかを書いていない
+プランは、実装者に目標ではなく「1行の解釈」を渡すことになります。
+
+そこで各プランは `## Sources` 表（AC ごとに1行）を持ち、それが2つの場面で読まれます。
+
+- **テストを起草する前**（`run-exec-plan` Step 1b、`start-feature` Step 2）— given/when/then が、
+  凝縮された1行ではなく凍結された目標そのものから来るようにするため。
+- **AC を `- [x]` にする前**（`run-exec-plan` Step 3a）— *spec 再アンカー*。テストが緑でも、それは
+  転記された分しか証明しません。出来上がった振る舞いを、その AC が辿る spec 該当節ともう一度
+  突き合わせます。
+
+起点として認めるのは人が凍結した仕様文書だけで、実装コードは含みません（含めると red-first が
+閉じた穴が開きます）。表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
+[`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
+を参照してください。
 
 ### 仕様照合ゲート
 

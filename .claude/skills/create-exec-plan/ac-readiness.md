@@ -29,11 +29,19 @@ not against a general impression of quality.
 | # | Check | The question | Fails when |
 |---|-------|--------------|------------|
 | **R1** | 単一の観測可能な結果 | Does the AC name **one** outcome an observer can see? | It bundles several independent outcomes ("…し、かつ…も"), or names an activity rather than a result ("〜を検討する", "〜を改善する", "〜に対応する") |
-| **R2** | given-when-then に落とせる | Can 前提 / 操作 / 期待結果 each be identified from the AC text? | Any of the three is absent — most often the expected result ("適切にハンドリングする", "正しく動作する"). If a test cannot be written from the text alone, R2 fails |
+| **R2** | given-when-then に落とせる | Can 前提 / 操作 / 期待結果 each be identified from the AC **and the sources its `## Sources` row names**? | Any of the three is absent — most often the expected result ("適切にハンドリングする", "正しく動作する"). If a test cannot be written from that material, R2 fails |
 
+> **R2 is judged against the same material red-first will transcribe from** — the AC line plus its
+> sources ([`ac-sources.md`](ac-sources.md)), falling back to the line alone when the row is `n/a`
+> or the plan has no `## Sources` table at all.
+> Judging it against the one-liner in isolation would fail ACs whose detail is correctly recorded in
+> the US bullets, and would make this check disagree with the empirical one below. What R2 still
+> refuses is detail that exists **nowhere**: a pointer to a section that does not answer 前提 /
+> 操作 / 期待結果 is no better than no pointer.
+>
 > **R2 is checked again, empirically, before implementation.** Red-first
 > ([`../run-tests/red-first.md`](../run-tests/red-first.md), INV-T02) has someone actually write the
-> test from the AC text and observe it fail. An AC that passed readiness here but cannot be
+> test from that material and observe it fail. An AC that passed readiness here but cannot be
 > transcribed there is a readiness escape, and the response is the same as a NOT READY verdict:
 > rewrite it with a human, or halt.
 | **R3** | 成功指標が具体 | Is the pass/fail signal concrete — a threshold, a value, a named output shape? | The decision rests on a subjective word: 速い / 使いやすい / 十分に / きれいに / 適切に |

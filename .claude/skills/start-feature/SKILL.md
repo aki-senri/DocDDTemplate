@@ -23,7 +23,7 @@ disable-model-invocation: true
 
 1. Confirm and select the execution plan
 2. Check the plan's ACs for readiness (testability) before any code is written
-3. Load the documents needed for implementation
+3. Load the documents needed for implementation, **including the sources each AC condenses**
 4. Determine the branch name
 5. Record the start of work in the progress log
 
@@ -58,6 +58,13 @@ Check every unchecked AC of the selected plan against the five checks in
 [`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md) — the same file
 `create-exec-plan` and `run-exec-plan` use. Follow it; do not re-derive the criteria here.
 
+`R2` is judged against the AC line **together with its sources**, so open the plan's `## Sources`
+rows for the ACs being checked before applying it. Step 2 loads that material in full for
+implementation; the gate needs it one step earlier, because a one-liner judged in isolation fails R2
+for detail that is properly recorded in the US. When a row is `n/a` or the plan has no `## Sources`
+table, `R2` falls back to the AC line, as `ac-readiness.md` states — an older plan must not collect
+NOT READY verdicts merely for predating the convention.
+
 | Verdict | Action |
 |---------|--------|
 | READY | Proceed |
@@ -82,7 +89,21 @@ Load the following documents and confirm the implementation prerequisites.
 |----------|-------------------|
 | `docs/07_ai_context/CONTEXT.md` | Current phase, development rules, tech stack |
 | `docs/04_implementation/invariants.md` | Invariants to follow (INV-XXX) |
-| Selected `exec-plans/active/*.md` | Acceptance criteria and task breakdown |
+| Selected `exec-plans/active/*.md` | Acceptance criteria, `## Sources`, and task breakdown |
+| Everything the plan's `## Sources` names | The US bullets and spec sections each AC condenses |
+
+**Why the sources and not just the plan.** An exec-plan AC is one line; `create-requirements` keeps
+its 2–5 checkable bullets in the US file and `create-spec` keeps the behavior in the spec section
+marked "satisfies AC-NNN". Starting from the one-liner means starting from an interpretation of it.
+Open the AC rows you are about to work on and read what they point at — the same material the
+autonomous driver reads in its Step 1b, per
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md).
+
+| What you find | Action on this path |
+|---------------|--------------------|
+| **Refinement** of the AC line | Use it — it is the granularity to implement and test at |
+| A **separate outcome**, or a **contradiction** with the AC line | Present both readings to the user and let them decide. The human is here, so this is a conversation rather than the HALT the unattended loop takes |
+| The row says `n/a（理由）`, or the plan has no `## Sources` table | Note it and proceed on the AC text. Do not reconstruct sources from existing code |
 
 Also load the following depending on the platform:
 
@@ -113,7 +134,8 @@ Append the following to the selected `exec-plans/active/*.md`.
 ## Implementation order guide
 
 **Before any of the layer ordering below: write the test first.** For each AC, transcribe its
-given / when / then into a test, run it, and confirm it fails for the right reason **before**
+given / when / then — from the AC line **and the sources loaded in Step 2**, never from existing
+code — into a test, run it, and confirm it fails for the right reason **before**
 writing the implementation — the red-first rule (`INV-T02`), defined in
 [`../run-tests/red-first.md`](../run-tests/red-first.md). The layer order in this section decides
 what to build first *once the failing test is in place*; it does not come before it.
@@ -122,9 +144,9 @@ If the plan has a `[E2E]` AC, its test goes in first, red, before the functional
 implemented — same reason the autonomous driver does it in Step 0c: it is the one test in the run
 that no implementation could have shaped.
 
-If a test cannot be written from the AC text without deciding an expected result the AC does not
-state, that is a readiness defect (`R2` / `R3`), not a test-writing problem — rewrite the AC with
-the user, as in Step 1b.
+If a test cannot be written from the AC text **and its sources** without deciding an expected result
+none of them states, that is a readiness defect (`R2` / `R3`), not a test-writing problem — rewrite
+the AC with the user, as in Step 1b.
 
 **Basic principle of implementation order**: Implement from the stable layer (the depended-upon side) first, then the unstable layer (the depending side) afterward.
 The specific order follows the definitions in `docs/04_implementation/patterns.md`.
@@ -161,7 +183,9 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 - [ ] Execution plan selected and confirmed
 - [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
       and their decision recorded in the Progress Log (Step 1b)
-- [ ] Loaded `CONTEXT.md`, `invariants.md`, and the selected execution plan
+- [ ] Loaded `CONTEXT.md`, `invariants.md`, the selected execution plan, and the US / spec sections
+      its `## Sources` names for the ACs being worked on (any conflict between a source and its AC
+      line was put to the user)
 - [ ] Branch name finalized
 - [ ] "Implementation started" recorded in the execution plan's progress log
 - [ ] The red-first order is understood for the first task: its test is written from the AC and
@@ -177,7 +201,8 @@ Work plan : exec-plans/active/YYYY-MM-{name}.md
 Readiness : ✅ {n} ACs READY   |   ⚠️ AC-NNN (R4: {reason})   |   ❌ AC-NNN NOT READY (R2) — {user's decision}
 Branch    : feature/{name}
 Confirmed : CONTEXT.md / invariants.md / execution plan
+Sources   : {読んだ US / spec の節}   |   ⚠️ プランに ## Sources が無い   |   ➖ n/a ({理由})
 
 First task: {first item in exec-plan task breakdown}
-Order    : red-first — {対応する AC} のテストを AC 本文から起草し、赤を確認してから実装する
+Order    : red-first — {対応する AC} のテストを AC 行と起点（`## Sources`）から起草し、赤を確認してから実装する
 ```

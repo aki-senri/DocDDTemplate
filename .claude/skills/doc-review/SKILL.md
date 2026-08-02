@@ -75,9 +75,12 @@ cat {target document path}
 cat docs/01_requirements/constraints.md 2>/dev/null || echo "not found"
 grep -l "AC-" exec-plans/active/*.md 2>/dev/null | head -3 | xargs cat 2>/dev/null || echo "no active exec-plans"
 
-# For exec-plan review: load the referenced US file(s)
-# Extract US references from exec-plan frontmatter or body, then:
+# For exec-plan review: load every section the plan's ## Sources table names.
+# R2 is judged against the AC line AND its sources (ac-readiness.md), so a reviewer
+# given only the one-liners would return a stricter verdict than the other gates.
+sed -n '/^## Sources/,/^## /p' {target exec-plan} 2>/dev/null || echo "no ## Sources table"
 cat docs/01_requirements/user_stories/{referenced-US}.md 2>/dev/null || echo "not found"
+cat docs/02_spec/{referenced-spec}.md 2>/dev/null || echo "not found"
 
 # Project documentation rules
 cat CLAUDE.md
@@ -121,6 +124,10 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 ### Related User Story or exec-plan (if applicable)
 {content, or "not available"}
 
+### AC sources (the US bullets / spec sections the plan's ## Sources names — needed to apply R2)
+{for each row: the AC-ID, the section path, and the section text.
+ Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so" }
+
 ### Project documentation rules (CLAUDE.md excerpt)
 {relevant sections covering doc rules, diagram rules, etc.}
 
@@ -140,7 +147,11 @@ including the verdict rule (NOT READY when R1 / R2 / R5 fails). Use those checks
 do not substitute your own notion of a "good" AC, and name the failing check by ID in your findings.
 
 `create-exec-plan`, `start-feature` and `run-exec-plan` apply the same file at their own gates, so a
-verdict here should match theirs. This review is **advisory**: report the verdict, change nothing.
+verdict here should match theirs. For that to hold, judge **R2 against the AC line together with the
+sources supplied above** — the other three gates do, and judging a one-liner in isolation would
+manufacture NOT READY verdicts they will never reproduce. If the sources were not available, say so
+in the finding rather than failing R2 for detail you were not shown.
+This review is **advisory**: report the verdict, change nothing.
 
 Then, beyond readiness:
 - Are happy-path, error-case, and boundary conditions covered across the AC set?

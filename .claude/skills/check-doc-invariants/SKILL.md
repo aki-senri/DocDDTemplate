@@ -41,13 +41,22 @@ Documents must not reference documents at a more concrete abstraction layer.
 | Layer | Path | May reference |
 |-------|------|---------------|
 | 1 – Requirements | `docs/01_requirements/` | External resources, `constraints.md` within layer 1 |
-| 1.5 – Exec-plans | `exec-plans/` | `docs/01_requirements/` (US files) only |
 | 2 – Spec | `docs/02_spec/` | Layer 1 and below |
+| 2.5 – Exec-plans | `exec-plans/` | Layers 1–2 (US files and spec sections) |
 | 3 – Design | `docs/03_design/` | Layers 1–2 and below |
 | 4 – Implementation | `docs/04_implementation/` | Layers 1–3 and below |
 | 5 – Quality | `docs/05_quality/` | All `docs/` layers |
 
 **Violation example**: A `docs/01_requirements/` file links to `docs/03_design/api_spec.md`.
+
+**Why exec-plans sit at 2.5 and not 1.5.** A plan is written *from* an approved spec — that is the
+`create-requirements → create-spec → create-exec-plan` order — so the spec is upstream of the plan,
+not downstream of it. The earlier 1.5 placement predates `docs/02_spec/` being a required layer, and
+it made the `## Sources` table an exec-plan must carry
+(`../create-exec-plan/ac-sources.md`) into a violation of this very invariant: the plan is required
+to name the spec section each AC condenses, and `run-exec-plan` re-anchors to it before checking the
+box. Exec-plans still may not reference design or implementation docs (layers 3+) — a plan describes
+*what must become true*, not how the code is arranged.
 
 **Note**: Links going upward in abstraction (e.g., implementation doc referencing a requirement)
 are valid forward references — only downward references (requirements referencing implementation) are violations.
@@ -157,8 +166,8 @@ Assign layer numbers:
 | Prefix | Layer |
 |--------|-------|
 | `docs/01_requirements/` | 1 |
-| `exec-plans/` | 1.5 |
 | `docs/02_spec/` | 2 |
+| `exec-plans/` | 2.5 |
 | `docs/03_design/` | 3 |
 | `docs/04_implementation/` | 4 |
 | `docs/04_implementation/invariants.md` | 4 |

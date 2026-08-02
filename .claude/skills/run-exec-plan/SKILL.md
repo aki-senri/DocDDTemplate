@@ -6,7 +6,9 @@ description: |
   AC readiness (testability), so an untestable criterion stops the run before any code is
   written rather than mid-implementation, and puts the plan's [E2E] test in place as a failing
   test. For each unchecked AC it runs
-  write the failing test -> implement -> run-tests -> check-invariants, and on green it checks the
+  read the AC's sources (the US bullets and spec section its one line condenses) ->
+  write the failing test -> implement -> run-tests -> check-invariants -> re-anchor to the spec
+  section, and on green it checks the
   box, records a Decision Log entry, and moves to the next AC. Halts ONLY on explicit stop conditions
   (missing/ambiguous AC, tests still red after bounded retries, a test change required,
   an irreversible/outward action, or an INV violation needing scope expansion).
@@ -38,12 +40,14 @@ on the human's behalf.
 
 | Layer | Examples | Who decides |
 |-------|----------|-------------|
-| **Inner loop — automate** | Transcribe a frozen AC into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, advance to the next AC | **This skill (no confirmation)** |
-| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result the AC does not state**, changing a test's expectation once frozen, modifying the spec, `promote-spec`, creating/pushing a PR | **Human (halt and ask)** |
+| **Inner loop — automate** | Read the AC's frozen sources, transcribe them into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, check the result against the AC's spec section, advance to the next AC | **This skill (no confirmation)** |
+| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result neither the AC nor its sources state**, **choosing between two frozen documents that disagree**, changing a test's expectation once frozen, modifying the spec, `promote-spec`, creating/pushing a PR | **Human (halt and ask)** |
 
 Writing a test is on the inner-loop side **only in the transcription sense**: the given / when / then
-come from an AC that a human already froze, and readiness (`R2`) guarantees they are present in its
-text. The moment the driver would have to *decide* an expected result, it is on the outer-gate side
+come from material a human already froze — the AC line, plus the US bullets and spec section it
+condenses (Step 1b, [`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md)) — and
+readiness (`R2`) guarantees they are present in it. The moment the driver would have to *decide* an
+expected result none of that material states, it is on the outer-gate side
 and must halt — see [`../run-tests/red-first.md`](../run-tests/red-first.md).
 
 The point of autonomy here is *not* "stop less". It is "stop **only** at the boundaries that
@@ -57,12 +61,15 @@ genuinely need a human, and never in the middle of executing a frozen AC."
    (every unchecked AC is testable as written — otherwise halt before the loop starts), and put
    each `[E2E]` AC's test in place **as a failing test** before any AC is implemented
 2. Loop over each unchecked AC:
-   a. Write the test for this AC **first**, from the AC text, and observe it fail (red-first)
-   b. Implement the AC
-   c. Run `run-tests` (spec alignment gate)
-   d. Run `check-invariants` (and `check-doc-freshness`, advisory)
-   e. On green: check the AC box, append a Decision Log entry, continue to the next AC
-   f. On red: attempt a **bounded** self-repair (default 3 tries); if still red, **halt**
+   a. Read the AC's **sources** — the US bullets and spec section named in the plan's `## Sources`
+   b. Write the test for this AC **first**, from the AC and its sources, and observe it fail (red-first)
+   c. Implement the AC
+   d. Run `run-tests` (spec alignment gate)
+   e. Run `check-invariants` (and `check-doc-freshness`, advisory)
+   f. **Re-anchor to the spec**: confirm the implemented behavior does what the AC's spec section
+      describes — a green test set proves only what was transcribed into it
+   g. On green: check the AC box, append a Decision Log entry, continue to the next AC
+   h. On red: attempt a **bounded** self-repair (default 3 tries); if still red, **halt**
 3. When all ACs are checked (or a stop condition fires): produce a summary and hand off
    to `pre-pr` (which remains a separate, human-reviewed step)
 
@@ -90,6 +97,12 @@ Check **every** unchecked AC in the plan — not just the first — against the 
 [`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md). Follow that file;
 do not re-derive the criteria here.
 
+`R2` is judged against the AC line **together with its sources**, so read the plan's `## Sources`
+rows and open what they name before running the gate — the per-AC read in Step 1b comes too late to
+inform a gate that must clear the whole set up front. Judging the one-liners alone would halt the
+loop on ACs whose detail is correctly recorded in the US, which is not what NOT READY means. When a
+row is `n/a` or the plan has no table, `R2` falls back to the AC line, as `ac-readiness.md` states.
+
 | Verdict | Action |
 |---------|--------|
 | All READY | Start the loop |
@@ -114,8 +127,18 @@ human is.
 #### Step 0c: E2E red-first (still before the loop)
 
 For **every unchecked `[E2E]` AC** in the plan, write its test now — before any AC is implemented —
-following [`../run-tests/red-first.md`](../run-tests/red-first.md). Transcribe the through-flow from
-the AC text (which traces to the spec's `E2E-NNN`), run it, and confirm **valid red**. Record the
+following [`../run-tests/red-first.md`](../run-tests/red-first.md). Read its row in the plan's
+`## Sources` first and open **whatever that row names** — 前提, 完了条件 and the journey are written
+there in full, and the AC line is their one-line condensation:
+
+| The `[E2E]` AC's source row names… | What to open |
+|-----------------------------------|--------------|
+| A spec `E2E-NNN` | `docs/02_spec/**` の `### E2E-NNN` シナリオ |
+| `n/a（spec 未作成…）` with a US section — `/create-spec` was skipped for a small change | the US `## ゴール像` の主要ユーザージャーニー, which is what `create-exec-plan` derived the AC from |
+| `n/a` for both, or the plan has no `## Sources` | Nothing to open — transcribe from the AC line alone and say so in the report |
+
+Transcribe the through-flow from the AC text **and that material**, run it, and confirm
+**valid red**. Record the
 observation in the Decision Log; that entry freezes the expectation.
 
 | Situation | Action |
@@ -123,6 +146,7 @@ observation in the Decision Log; that entry freezes the expectation.
 | Valid red observed for every `[E2E]` AC | Record it and start the loop |
 | An earlier session already placed it (a recorded `red-first` entry, AC still `- [ ]`) | Re-run it, confirm the same red, and start the loop — do not rewrite the test |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
+| The source scenario or journey **contradicts** the `[E2E]` AC line (different 完了条件) | **HALT** with (a) — which one is the target is a spec judgement (`ac-sources.md`) |
 | Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
 | The plan has **no** `[E2E]` AC (documentation-only, or it predates the requirement) | Nothing to do here — continue |
@@ -144,13 +168,36 @@ other tests are green"; do not re-interpret the failing E2E test as a red baseli
   both satisfy it), **halt** with stop-condition (a). Do not guess the intent.
 - If no unchecked AC remains, go to Step 4.
 
+### Step 1b: Read the AC's sources (before drafting its test)
+
+The AC line is a **condensation** — `create-requirements` keeps the 2–5 checkable bullets in the US
+file, and `create-spec` keeps the behavior in the spec section marked "satisfies AC-NNN". Steering
+by the one line means steering by whatever the driver reads into it.
+
+Open the AC's row in the plan's `## Sources` and read what it names. Follow
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md); do not re-derive the
+admissible sources here. **Do not read implementation code for this AC** — the widened source set is
+frozen spec material only, and reading the code would undo what Step 2a exists for.
+
+| What you find | Action |
+|---------------|--------|
+| **Refinement** — the same outcome with concrete preconditions, boundaries or expected values | Use it. Step 2a transcribes at *that* granularity, not the one-liner's |
+| **A separate outcome** the AC line does not cover | **HALT** with (a). Either the AC bundles several results (`R1`) or a criterion was never written; both are a human's call |
+| **A contradiction** — the same outcome, a different expected value | **HALT** with (a). Do not pick a side, and do not edit the AC or the spec to agree |
+| **One column** is `n/a（理由）` (typically spec, when `/create-spec` was skipped) | Read the other one. A partial `n/a` is not an exemption — the goal simply lives one layer up |
+| **Both columns** are `n/a（理由）` | Nothing to read. The AC line is the whole goal — go to Step 2a |
+| The plan has **no** `## Sources` table (it predates the convention) | Continue, and say so in the run's report. Do not reconstruct sources by reading the code — that is the one reading this step forbids |
+
+Reading is execution; resolving a disagreement between two frozen documents is governance. That is
+why the two conflict rows halt instead of choosing.
+
 ### Step 2a: Write the test for this AC and observe it red
 
 **Before writing or reading implementation code for this AC**, follow
 [`../run-tests/red-first.md`](../run-tests/red-first.md):
 
 1. Transcribe the AC's given / when / then into a test, tagged with the AC-ID. Take them from the
-   **AC text**, not from the code that happens to exist.
+   **AC text and the sources read in Step 1b**, not from the code that happens to exist.
 2. Run it and classify the failure (`run-tests`, red-first run — the criteria are in `red-first.md`):
    - **Valid red** → go to Step 2b.
    - **Invalid red** → the test measured nothing. Add the **minimal signature** the test names —
@@ -163,9 +210,17 @@ other tests are green"; do not re-interpret the failing E2E test as a red baseli
 3. Append the `red-first` line from `red-first.md` to the Decision Log **before** implementing.
    From that point the expectation is frozen: changing it is stop condition (c).
 
-If the test cannot be written without deciding an expected result the AC does not state, **halt**
-with stop-condition (a). That is a readiness escape (`R2` / `R3` slipped through Step 0b), and the
-fix is a human rewriting the AC — not the driver choosing what "correct" means.
+**If an earlier session already placed this test** — the Decision Log has an `AC-NNN red-first:`
+entry and the AC is still `- [ ]` — do **not** write it again. Re-run it, confirm the same red, and
+go to Step 2b. Rewriting it would author a new expectation over a frozen one, which is (c). (Same
+rule as the resumed-`[E2E]` row in Step 0c.) If it now fails for a *different* reason, it has
+stopped measuring: fix that first, counting against `MAX_REPAIR_ATTEMPTS`.
+
+If the test cannot be written without deciding an expected result **neither the AC nor its sources**
+state, **halt** with stop-condition (a). That is a readiness escape (`R2` / `R3` slipped through
+Step 0b), and the fix is a human rewriting the AC — not the driver choosing what "correct" means.
+Note the bar moved with Step 1b: an expected result that is missing from the one-liner but present
+in the US bullets is *transcription*, not invention, and does not halt.
 
 **For a `[E2E]` AC** the test already exists from Step 0c — do not write it again. Re-run it:
 
@@ -198,11 +253,18 @@ Run the verification skills. Note the two invocation modes (they differ by
   their `SKILL.md` and following the steps inline. Do not try to call them via the Skill tool; it
   is not exposed for them.
 
+The four items run **in order**, and Step 3b is reached only through item 4 — a green test run is
+not by itself permission to check the box.
+
 1. `run-tests` (invoke via the Skill tool)
-   - **All green** -> continue to Step 3b.
+   - **All green** -> continue to item 2.
    - **Only expected reds remain** (`run-tests` Step 2c — recorded red-first tests whose AC is still
      unchecked, typically the `[E2E]` test from Step 0c) -> this is the expected state for most of
-     the loop. Treat the run as green for this AC and continue to Step 3b. `run-tests` reports these
+     the loop. Treat the run as green for this AC and continue to item 2.
+     **An expected red belonging to the AC being processed right now does not qualify.** Its box is
+     about to be checked, so its own measurement must be green — including any test added during
+     Step 3a, which is recorded red-first against this same still-unchecked AC and would otherwise
+     read as "expected". Only *other* ACs' pending reds are expected here. `run-tests` reports these
      apart from failures and flags any whose failure reason changed; a changed reason is a real
      failure, so fix it (it counts against `MAX_REPAIR_ATTEMPTS`).
    - **Red because the implementation has a bug** (spec alignment gate option A): this is the
@@ -226,10 +288,45 @@ Run the verification skills. Note the two invocation modes (they differ by
      stop-condition (b).
    - Violation requiring scope expansion -> **halt** with stop-condition (e).
 3. `check-doc-freshness` (follow inline, advisory) — update any docs whose `tracks:` matches changed files.
+4. **Spec re-anchor** — see below. Run it after the tests are green, before Step 3b.
+
+#### Step 3a: Spec re-anchor (before the box is checked)
+
+Green tests prove the expectations that were *transcribed* hold. They cannot prove the
+implementation does what the spec section describes: the tests are bounded by what Step 2a wrote
+down, and the transcription may have condensed something. `create-spec` records
+`AC → spec → code` traceability precisely so it can be read back here — without this step it is
+traceability on paper only.
+
+Open what this AC's `## Sources` row names — the spec section, or the US bullets when the spec
+column is `n/a` because `/create-spec` was skipped (the selection table is in
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md); "no spec section" is not
+the same as "no re-anchor"). Ask **"does the behavior now
+implemented do what this material describes for this AC?"** — not "did the tests pass" (already
+known) and not "does the code look right". Take the verdict from the table in that file; the loop's
+actions are:
+
+| Verdict | Action in the loop |
+|---------|--------------------|
+| **一致** | Go to Step 3b and check the box |
+| **spec の振る舞いを満たしていない** | Implementation gap the transcribed tests missed. Fix and re-run Step 3. Counts against `MAX_REPAIR_ATTEMPTS`; if exhausted, **halt** with (b) |
+| **spec が述べる振る舞いに対応するテストが無い** | Measurement gap. Add a **new** test for it red-first (Step 2a's procedure), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS`. Never edit or weaken a frozen test to cover the gap — that is (c) |
+| **spec が AC 行と矛盾** | **Halt** with (a). Change neither side |
+| **The missing behavior is a separate outcome, not part of this AC** | **Halt** with (a) — same row as Step 1b's "separate outcome" |
+| **起点なし** — both columns `n/a`, or the plan has no `## Sources` table | Nothing to anchor to. Record `spec 再アンカー: n/a（{理由}）` and go to Step 3b |
+
+**Scope the comparison to this AC.** A spec section — and an `E2E-NNN` scenario in particular —
+usually names several ACs (`満たす AC: AC-001, AC-003, AC-005`). Behavior it attributes to an AC
+outside this plan, or to one still unchecked, is **not** a gap in the AC being verified: note it and
+continue. Without this, the re-anchor of the last `[E2E]` AC would halt at the moment the run
+succeeded, because the scenario always describes more than any single criterion.
+
+This step reads documents and compares them with behavior. It never edits the spec: if the spec
+looks wrong, that is a spec change — outer gate, stop condition (a).
 
 **Step 3b — on green:**
 - Change the AC's `- [ ]` to `- [x]` in the plan.
-- Append a Decision Log entry (see "Resume-state convention" below).
+- Append a Decision Log entry **including the re-anchor result** (see "Resume-state convention" below).
 - Return to Step 1 **without asking the user**.
 
 ### Step 4: Finish the loop
@@ -246,7 +343,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion) and by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result, and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle) |
+| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
@@ -268,15 +365,18 @@ iteration records enough state in the plan itself:
   that the test was not written to fit the code:
   ```markdown
   ### YYYY-MM-DD
-  - AC-NNN red-first: `<test file>::<test name>` を AC 本文から起草し、実行して赤を観測
+  - AC-NNN red-first: `<test file>::<test name>` を AC 行と起点（`## Sources`）から起草し、実行して赤を観測
     (expected: <…>, actual: <…>)。以降この期待値は凍結。
   ```
   (or the `n/a` exemption line from [`../run-tests/red-first.md`](../run-tests/red-first.md))
-- After each completed AC, append to `## Decision Log`:
+- After each completed AC, append to `## Decision Log` — the re-anchor line is part of the entry,
+  not an optional extra, because it is the only record that Step 3a happened:
   ```markdown
   ### YYYY-MM-DD
   - AC-NNN done. <one line: what was implemented + key files>. Tests green ({n} passing).
+    spec 再アンカー: `<spec ファイル>` §「<節>」と照合し一致。
   ```
+  (or `spec 再アンカー: n/a（起点なし — <理由>）`)
 - On any halt, append:
   ```markdown
   ### YYYY-MM-DD
@@ -289,9 +389,10 @@ Decision Log — never assume the prior conversation is available.
 ## Retry budget
 
 `MAX_REPAIR_ATTEMPTS` defaults to **3** per AC. Counts implementation-bug repair attempts
-(spec alignment gate option A), in-scope invariant fixes that re-run verification, and attempts to
-turn an **invalid red** into a valid one in Step 0c / Step 2a — not green re-verifications. When the
-budget is exhausted, halt with stop-condition (b).
+(spec alignment gate option A), in-scope invariant fixes that re-run verification, attempts to
+turn an **invalid red** into a valid one in Step 0c / Step 2a, and fixes prompted by the Step 3a
+re-anchor (an implementation gap, or a missing test added red-first) — not green re-verifications.
+When the budget is exhausted, halt with stop-condition (b).
 
 ---
 
@@ -302,8 +403,11 @@ budget is exhausted, halt with stop-condition (b).
       the Decision Log (Step 0b)
 - [ ] Every `[E2E]` AC had its test written and observed in **valid red** before the loop started,
       with the observation recorded (Step 0c) — or its exemption recorded
-- [ ] Each processed AC went through write-the-failing-test -> implement -> run-tests ->
-      check-invariants, and its `red-first` Decision Log entry precedes its `done` entry
+- [ ] Each processed AC went through read-the-sources -> write-the-failing-test -> implement ->
+      run-tests -> check-invariants -> spec re-anchor, and its `red-first` Decision Log entry
+      precedes its `done` entry
+- [ ] Every processed AC's `done` entry carries a `spec 再アンカー:` line — the section it was
+      checked against, or an explicit `n/a（理由）`
 - [ ] No test frozen by a red observation was edited to make it pass
 - [ ] Every AC reached is either `- [x]` (green) or recorded as a HALT in the Decision Log
 - [ ] Decision Log updated per the resume-state convention
@@ -317,7 +421,9 @@ Final report output by the agent:
 Plan      : exec-plans/active/YYYY-MM-{name}.md
 Readiness : ✅ {n} ACs READY (Step 0b)   |   ❌ AC-NNN NOT READY (R2) → loop not started
 E2E red   : ✅ AC-NNN [E2E] → {test name} 赤で配置 (Step 0c)   |   n/a (no [E2E] AC)
+Sources   : ✅ {n}/{n} AC の起点を読んでから起草 (Step 1b)   |   ⚠️ プランに ## Sources が無い
 Red-first : ✅ {n}/{n} ACs で赤を観測してから実装   |   ⚠️ AC-NNN n/a ({理由})
+再アンカー: ✅ {n}/{n} AC を spec 該当節と照合 (Step 3a)   |   ➖ n/a ({理由})
 Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 …
 Tests     : ✅ {n} passing
 Stopped at: {none | AC-NNN, stop condition <id>: <reason>}
