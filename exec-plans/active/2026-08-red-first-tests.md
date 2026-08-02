@@ -243,6 +243,21 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
   `CLAUDE.md` の red-first 表にも `run-tests` の行を追加（`red-first.md` の call-site 表は6地点なのに
   CLAUDE.md 側が5行で、#24 の照合で FAIL とした「表の不一致」と同型だった）。
   Step 0c には「前セッションが既に赤で置いている場合は書き直さず再実行して同じ赤を確認する」行を追加。
+- **矛盾チェック第3巡（#27 / #24 を含む全フローの1周照合、2026-08-02）**。第2巡の学びに従い、
+  今度は自走ループだけでなく **`create-requirements` → `create-spec` → `create-exec-plan` →
+  `start-feature` → `run-exec-plan` → `pre-pr` → `complete-exec-plan` → `promote-spec` / `gc`** を
+  1周辿った。未読だったスキル（`promote-spec` / `gc` / `create-spec` / `doc-review`）を対象に含めた。
+  結果、**`promote-spec` に2件**の矛盾。他（`gc` の spec-drift backstop、`doc-review` §2b、
+  `create-spec` の E2E シナリオ、`check-doc-invariants` DOC-INV-006）は整合を確認した。
+
+  | # | 矛盾 | 由来 | 措置 |
+  |---|------|------|------|
+  | 1 | `promote-spec` が生成する reconcile プランのテンプレートに `[E2E]` AC が無い。一方 `create-exec-plan` は「reconcile プランは `[E2E]` AC が **Required**」と定めている | #27（規約は追加したが、規約を**適用する側**の生成テンプレートを更新しなかった） | 完了済み AC の再オープンにあたるため `exec-plans/active/2026-08-reconcile-2.md` を起票し AC-003 を再オープン。テンプレートに `[E2E]` AC 行・完了条件の注記・**ID を捏造しない**規則を追加 |
+  | 2 | 同テンプレートの Task Breakdown が「実装とテストを更新する」＝ red-first 以前の順序 | #22（本プラン。適用先の列挙に `promote-spec` が入っていなかった） | 「新しい AC 本文からテストを先に赤にしてから実装」に修正。あわせて「spec が変わった AC は preservation 免除に該当しない」を明記 |
+
+  2 は本プラン（実装中）由来の追従漏れのため、CLAUDE.md「実装中の AC は当該プランの Decision Log に
+  記録」に従いここに記録する。1 は完了済みプラン由来のため別プラン（`2026-08-reconcile-2.md`）側に
+  記録した。両者は同じファイルを触るが、記録先を分けるのは CLAUDE.md の stale 規約どおり。
 - **`post-tool-notify.py` のテストファイル通知を INV-T02 に追従**。フック文言が「テスト**修正**」の
   ケースしか述べておらず、新規に書いたテストを実装前に赤で確認する規約に触れていなかった。
   自動で出る唯一のテスト関連ナッジがここなので、1文追加した（AC-009 の対象外ファイルだが、
