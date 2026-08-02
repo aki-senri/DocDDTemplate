@@ -58,6 +58,11 @@ Check every unchecked AC of the selected plan against the five checks in
 [`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md) — the same file
 `create-exec-plan` and `run-exec-plan` use. Follow it; do not re-derive the criteria here.
 
+`R2` is judged against the AC line **together with its sources**, so open the plan's `## Sources`
+rows for the ACs being checked before applying it. Step 2 loads that material in full for
+implementation; the gate needs it one step earlier, because a one-liner judged in isolation fails R2
+for detail that is properly recorded in the US.
+
 | Verdict | Action |
 |---------|--------|
 | READY | Proceed |

@@ -105,7 +105,7 @@ A failing test is an expected red when both hold: the plan's `## Decision Log` n
 |-------|-------------------------------|
 | `run-tests` (Step 2c) | Reported separately from failures; never routed through the spec alignment gate |
 | Baseline checks (`run-exec-plan` Step 0, `start-feature` Step 0) | Not a red baseline — everything *else* must be green |
-| Per-AC verification inside the loop | "Only expected reds remain" is the loop's version of green for the AC being worked on |
+| Per-AC verification inside the loop | "Only expected reds remain" is the loop's version of green — but only for reds belonging to **other** ACs. The AC being worked on is about to have its box checked, so its own tests must be green; an expected red of its own is not an exemption |
 | `pre-pr` / `complete-exec-plan` | **No longer expected.** These run after every AC is implemented, so a still-red test means the AC is not met — the existing hold applies unchanged |
 
 Two things end an expected red: the AC is implemented (it goes green, and its box is checked), or

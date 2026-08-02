@@ -27,10 +27,10 @@ disable-model-invocation: true
 ## What this skill does
 
 1. Collect plan details via an interview
-2. Record each criterion's **sources** — the US bullets and spec section its one line condenses
-2b. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
-2c. For a plan that changes a process (a loop, a gate, a resumable run), require a
+2. For a plan that changes a process (a loop, a gate, a resumable run), require a
    **process walkthrough** AC rather than a description-consistency one
+2b. Record each criterion's **sources** — the US bullets and spec section its one line condenses
+2c. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
 3. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
    alongside the functional ones, and a `## Sources` table covering every criterion
 4. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
@@ -50,13 +50,16 @@ The agent asks the following questions **one at a time, in order**.
 | Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
 | Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
+| Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
 
-> Q3e and Q3d are asked **before** Q3c although they are lettered later. Readiness must run over the
+> **Ask them in the order the rows appear**, not in alphabetical order of their labels: Q1 → Q2 →
+> Q3 → Q3b → Q3e → Q3d → Q3c → Q4. Q3e and Q3d come **before** Q3c although they are lettered
+> later. Readiness must run over the
 > finished AC set: an AC added after the readiness gate has never been through it — which is the
 > failure the gate exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on
-> it. Q3d comes before Q3c for a second reason: knowing which `E2E-NNN` and which spec section a
-> criterion condenses is what makes the `R4` anchor check answerable rather than a guess.
-| Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
+> it. Q3d comes before Q3c for a second reason: `R2` and `R4` are judged against the AC line
+> **together with its sources**, so the readiness check cannot run correctly until Q3d has named
+> which US section and which `E2E-NNN` each criterion condenses.
 
 ---
 

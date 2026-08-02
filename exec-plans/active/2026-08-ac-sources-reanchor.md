@@ -182,3 +182,32 @@ GitHub issue #23 (G-B) と #25 (G-D) の解消。両者は「既にある情報�
 
 - **red-first 免除の再確認**: AC-012 は `red-first.md`「record-producing AC」（成果物が記録そのもの）
   にも該当するため、documentation-only 免除と二重に適用外。
+
+- **AC-012 追加照合（PR #32 push 後・全文横断）**: このテンプレート自身をレビューするスキルが無い
+  ため、単一ソースと呼び出し地点の突き合わせを手作業で1周した。6周照合で見落としていた
+  矛盾 6 件を検出し、すべて修正:
+  1. **単一ソースの自己矛盾**: `ac-sources.md` の呼び出し地点表が `create-exec-plan (Q2b)` と
+     書いており、実際のスキル・CLAUDE.md・SKILL_FLOW（いずれも **Q3d**）と食い違っていた。
+     同表の `Step 3, verification` も実体名 `Step 3a` に統一。
+     （`2026-08-ac-readiness-gate.md` で一度起きたのと同型の drift）
+  2. **readiness ゲートが起点より先に走る（`run-exec-plan` Step 0b）**: R2 の判定材料を
+     「AC 行＋起点」に変えたのに、起点を読むのは Step 1b（AC ごと・後）。Step 0b は全 AC を
+     まとめて検査するため、1行だけで NOT READY を出して**ループが始まらない**。
+     → Step 0b に「表を先に読む」を明記（`n/a`／表なしは AC 行のみで判定）。
+  3. **同じ問題が `start-feature`**: Step 1b（readiness）が Step 2（起点の読み込み）より前。
+     → Step 1b に同じ but 人間パス向けの注記を追加。
+  4. **`doc-review` が他ゲートと違う判定を返す**: §2 は「他の3地点と一致する判定を出す」と
+     述べつつ、Step 2 で US を推測的にしか読まず spec は読まない。R2 を1行だけで判定するため
+     構造的に厳しい verdict になる → Step 2 の収集コマンド・プロンプトの
+     `### AC sources` ブロック・§2 本文に、起点を渡して R2 をそれに対して判定する旨を追加。
+  5. **`red-first.md` と新ルールの衝突**: expected red 表の「Per-AC verification inside the loop」
+     行が「処理中の AC にとっての緑の代替」と読めたが、Step 3 に追加した規則は
+     「処理中の AC 自身の expected red は緑扱いにしない」。単一ソース側を修正し、
+     「他の AC に属する赤のみ」と明記。
+  6. **`create-exec-plan` 内の順序不一致**: 「What this skill does」が sources→readiness→process、
+     「Steps」が process→sources→readiness の順で書かれていた → Steps 側（正しい順序）に統一。
+  あわせて、インタビュー表が Q3c 行と Q4 行の間に置かれた引用注記でテーブルとして分断されて
+  いた（Q4 が表の外にレンダリングされる）ため、Q4 を表内に戻し注記を表の後ろへ移動。
+  これは本 PR 以前からの書式不具合。
+  検証: 全 md の相対リンク解決（0 件の破損）、run-exec-plan の Step 名参照の突き合わせ、
+  表分断の機械検出（0 件）、13 項目の存在確認。

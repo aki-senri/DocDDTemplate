@@ -228,7 +228,8 @@ creation stays what it was: failing tests, uncovered ACs, uncovered `[E2E]` ACs.
 
 **Do not fill in a missing table here.** Reconstructing sources after the implementation exists
 means inferring them from the code, which is the one reading `ac-sources.md` forbids. Report the
-absence and, if the plan is still active, have them written at the plan, not at the gate.
+absence; if the plan is still active, the rows are written at the plan from the US and spec — the
+`create-exec-plan` path — never from the diff in front of you.
 
 ### ⑥ exec-plan progress update
 

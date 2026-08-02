@@ -97,6 +97,12 @@ Check **every** unchecked AC in the plan — not just the first — against the 
 [`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md). Follow that file;
 do not re-derive the criteria here.
 
+`R2` is judged against the AC line **together with its sources**, so read the plan's `## Sources`
+rows and open what they name before running the gate — the per-AC read in Step 1b comes too late to
+inform a gate that must clear the whole set up front. Judging the one-liners alone would halt the
+loop on ACs whose detail is correctly recorded in the US, which is not what NOT READY means. When a
+row is `n/a` or the plan has no table, `R2` falls back to the AC line, as `ac-readiness.md` states.
+
 | Verdict | Action |
 |---------|--------|
 | All READY | Start the loop |

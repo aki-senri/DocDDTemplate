@@ -168,9 +168,9 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 
 | Call site | When | Action |
 |-----------|------|--------|
-| `create-exec-plan` (Q2b) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec |
+| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec |
 | `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction → **HALT** (a) |
-| `run-exec-plan` (Step 3, verification) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
+| `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
 | `start-feature` (Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict in conversation rather than halting |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
 | `docode-review` | Optional independent review | Judge the diff against the sources, not only against the AC line (advisory) |
