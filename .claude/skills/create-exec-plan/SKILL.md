@@ -6,7 +6,8 @@ description: |
   Any plan that implements requirements or functionality — refactoring included — carries at least
   one [E2E] acceptance criterion alongside the functional ones, so a plan cannot be completed by
   turning fragments green without the through-flow working. Documentation-only plans record
-  "E2E: n/a" instead.
+  "E2E: n/a" instead. Every criterion is checked for testability (AC readiness) before the plan
+  file is finalized, so ambiguity is caught while it is still cheap to rewrite.
 disable-model-invocation: true
 ---
 
@@ -24,9 +25,10 @@ disable-model-invocation: true
 ## What this skill does
 
 1. Collect plan details via an interview
-2. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
+2. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
+3. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
    alongside the functional ones
-3. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
+4. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
 
 ---
 
@@ -40,7 +42,32 @@ The agent asks the following questions **one at a time, in order**.
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
+| Q3c | *(not asked — run by the agent)* Check every criterion from Q3 / Q3b against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
+
+---
+
+## AC readiness
+
+Before the plan file is written, every criterion is checked against the five testability checks in
+[`ac-readiness.md`](ac-readiness.md) — the single source shared with `start-feature`,
+`run-exec-plan` and `doc-review`. Read that file and apply it; do not re-derive the criteria here.
+
+This is the point in the flow where a thin AC is cheapest to fix: the user is present, nothing has
+been implemented, and the plan is not yet a frozen target. That is why the check lives here rather
+than only in `run-exec-plan` — by the time the autonomous loop meets a NOT READY criterion, its only
+option is to halt.
+
+| Verdict | Action here |
+|---------|-------------|
+| READY | Write the criterion as answered |
+| ⚠️ (R3 or R4 unmet for a stated reason) | Write it, and record the reason in `## Decision Log` |
+| NOT READY | **Rewrite the criterion with the user** — name the failing check (`R2`) and quote the phrase that fails it, propose a rewrite, confirm it. Do not finalize a plan containing a NOT READY criterion |
+
+Rewriting an AC is a decision about *what to build*, so it is made with the user, not on their
+behalf. If the user declines to rewrite, record their decision and the failing check in the
+Decision Log — a later `run-exec-plan` will still halt on it (this is intended; see the call-site
+table in `ac-readiness.md`).
 
 ---
 
@@ -153,10 +180,12 @@ completed:
 
 1. Complete the Q1–Q4 interview (including Q3b — read the spec's `## E2E シナリオ` section first
    if a spec exists, so the E2E criteria can be derived rather than asked from scratch)
-2. Confirm today's date in `YYYY-MM-DD` format
-3. Create the `exec-plans/active/` directory if it doesn't exist
-4. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
-5. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
+2. Run the readiness check (Q3c) over every criterion using [`ac-readiness.md`](ac-readiness.md);
+   rewrite the NOT READY ones with the user and note any ⚠️ reasons for the Decision Log
+3. Confirm today's date in `YYYY-MM-DD` format
+4. Create the `exec-plans/active/` directory if it doesn't exist
+5. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
+6. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
    - Add a link to the newly created plan file in the priority tasks section
 
 ---
@@ -171,6 +200,8 @@ completed:
       when no spec exists). For a documentation-only plan: `E2E: n/a (documentation-only)` is
       recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
+- [ ] **Every criterion was checked against [`ac-readiness.md`](ac-readiness.md)**, and the plan
+      contains no NOT READY criterion (any ⚠️ has its reason recorded in the Decision Log)
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 
 Final report output by the agent:
@@ -181,6 +212,11 @@ Final report output by the agent:
 File     : exec-plans/active/YYYY-MM-{name}.md
 機能 AC  : AC-001, AC-002, ...
 E2E AC   : AC-NNN [E2E] ← E2E-001 (or "derived from US-XXX ゴール像")
+
+=== AC readiness ===
+AC-001  READY
+AC-002  ⚠️  R4 — {reason, recorded in the Decision Log}
+(NOT READY は残さない — 残る場合はプランを確定していない)
 
 Note: 機能 AC がすべて完了しても、[E2E] の AC が緑になるまでこのプランは完了しない。
 

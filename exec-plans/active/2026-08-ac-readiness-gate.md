@@ -15,8 +15,8 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 
 ## Acceptance Criteria
 
-- [ ] AC-001: AC readiness 基準を単一ソース `.claude/skills/create-exec-plan/ac-readiness.md` として新設する。5観点（①観測可能な単一結果 ②given-when-then で書ける ③成功指標が具体 ④どの E2E シナリオのどのステップに効くか名指しできる ⑤what であって how でない）、判定（READY / ⚠️ / NOT READY）、`[E2E]` AC への適用差、documentation-only の免除範囲、および呼び出し地点ごとの措置表を定義する
-- [ ] AC-002: `create-exec-plan` のインタビューに readiness チェック（Q3d）を追加し、Steps・Completion criteria・最終報告書式に「全 AC が READY（⚠️ は理由を Decision Log に記録）でなければプランを確定しない」を組み込む
+- [x] AC-001: AC readiness 基準を単一ソース `.claude/skills/create-exec-plan/ac-readiness.md` として新設する。5観点（①観測可能な単一結果 ②given-when-then で書ける ③成功指標が具体 ④どの E2E シナリオのどのステップに効くか名指しできる ⑤what であって how でない）、判定（READY / ⚠️ / NOT READY）、`[E2E]` AC への適用差、documentation-only の免除範囲、および呼び出し地点ごとの措置表を定義する
+- [x] AC-002: `create-exec-plan` のインタビューに readiness チェック（Q3c）を追加し、Steps・Completion criteria・最終報告書式に「全 AC が READY（⚠️ は理由を Decision Log に記録）でなければプランを確定しない」を組み込む
 - [ ] AC-003: `run-exec-plan` の Step 0 に "AC readiness gate" を追加し、ループ開始前に全未チェック AC を検査する。NOT READY があれば**ループを開始せず**停止条件 (a) で HALT し、判定結果を Decision Log に記録する。停止条件表・What this skill does・Completion criteria を追従させる
 - [ ] AC-004: `start-feature` に readiness 確認ステップを追加し、手動パスでも同じ基準で検査する。人が同席するパスのため NOT READY は「提示して人が判断」とし、AC-001 の措置表と一致させる
 - [ ] AC-005: `doc-review` の「2. Acceptance criteria quality」を `ac-readiness.md` の5観点を参照する形に揃え、レビュー観点が独自定義へドリフトしないようにする（optional スキルのため判定は助言のまま）
@@ -30,8 +30,8 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 
 ## Task Breakdown
 
-- [ ] AC-001 — `.claude/skills/create-exec-plan/ac-readiness.md` を新規作成
-- [ ] AC-002 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー表・Steps・Completion criteria・報告書式を改修
+- [x] AC-001 — `.claude/skills/create-exec-plan/ac-readiness.md` を新規作成
+- [x] AC-002 — `.claude/skills/create-exec-plan/SKILL.md` のインタビュー表・Steps・Completion criteria・報告書式を改修
 - [ ] AC-003 — `.claude/skills/run-exec-plan/SKILL.md` の Step 0・停止条件表・Completion criteria を改修
 - [ ] AC-004 — `.claude/skills/start-feature/SKILL.md` に readiness 確認ステップを追加
 - [ ] AC-005 — `.claude/skills/doc-review/SKILL.md` §2 を単一ソース参照に変更
@@ -44,6 +44,8 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 
 ### 2026-08-02
 - Plan created
+- AC-001 完了
+- AC-002 完了
 
 ## Decision Log
 
@@ -69,3 +71,17 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
   形骸化した INV になるため置かない。
 - **`docs/07_ai_context/CONTEXT.md` の更新はスキップ**。本リポジトリに `docs/` は存在しない
   （`init-project` が生成する側のテンプレート本体のため）。追跡は GitHub issue #24 / #28 で行う。
+
+- **AC-001 done.** `.claude/skills/create-exec-plan/ac-readiness.md` を新設。5観点（R1 単一の観測可能な
+  結果 / R2 given-when-then / R3 具体的な成功指標 / R4 E2E ステップへのアンカー / R5 what-not-how）に
+  「失敗する条件」を1文ずつ付け、主観的な良し悪しではなくその1文で判定させる形にした。
+  判定は READY / ⚠️（R3・R4 のみ理由付きで許容）/ NOT READY（R1・R2・R5 は免除なし）。
+  `[E2E]` AC への読み替え表、documentation-only での R4 = n/a、4呼び出し地点の措置表、報告書式、
+  NOT READY → READY の書き換え例を収録。
+- **AC-002 done.** `create-exec-plan` に Q3c（エージェントが実行する readiness チェック）と
+  `## AC readiness` 節を追加し、Steps 2 / Completion criteria / 最終報告書式に組み込んだ。
+  NOT READY を含むプランは確定しない。ユーザーが書き換えを拒んだ場合は理由を Decision Log に残し、
+  後続の `run-exec-plan` は依然として HALT する（意図どおり）ことを明記。
+- **Q3d → Q3c に変更**。プラン起票時は Q3d と書いたが、既存のインタビューは Q1/Q2/Q3/Q3b/Q4 で
+  Q3c が空いており、Q3d では番号が飛ぶ。AC-002 の本文も合わせて修正（実装着手前の表記修正であり
+  スコープ変更ではない）。
