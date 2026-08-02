@@ -1,7 +1,7 @@
 ---
-status: active
+status: completed
 created: 2026-08-02
-completed:
+completed: 2026-08-02
 ---
 
 # goal-image-e2e
@@ -48,6 +48,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - PR #29 作成。Copilot レビュー 3 件を受けて修正（重大度の不整合 1・図の可読性 2）
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
+- PR #29 マージ済み（`0e677b3`）。全受け入れ基準を満たしたためプランを completed へ移行
 
 ## Decision Log
 
@@ -313,3 +314,11 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   `create-exec-plan` の Step 5 は CONTEXT.md の優先タスク更新を求めるが、このリポジトリには
   `docs/` が存在しない（`init-project` が生成する側のテンプレート本体のため）。対象ファイルが
   無いため実行不能。追跡は GitHub issue #27 / #28 側で行う。
+
+- **`/complete-exec-plan` 実行（2026-08-02）**。Step 2 の `run-tests` は自動テストが存在しない
+  ため実行不可（本リポジトリはスキル定義のドキュメントのみ・`git diff --name-only` は
+  `.claude/skills/**` と `*.md` のみ＝documentation-only）。`create-exec-plan` の
+  documentation-only 免除に従い、`[E2E]` の AC-005 は Decision Log に記録した再現可能な
+  ウォークスルー（14 項目 PASS）をもって検証済みとして扱う。PR #29 は `0e677b3` でマージ済み。
+- **Step 4（CONTEXT.md の優先タスク更新）はスキップ**。本リポジトリに `docs/07_ai_context/`
+  は存在しない（`init-project` が生成する側のため）。追跡は GitHub issue #27 / #28 で行う。
