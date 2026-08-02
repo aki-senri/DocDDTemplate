@@ -3,7 +3,8 @@ name: doc-review
 description: |
   Launches an independent agent (with no authoring context) to review a requirement
   or design document from a DocDD perspective.
-  Checks AC testability, completeness, ambiguity, and cross-reference integrity.
+  Checks AC testability (using the shared AC readiness criteria), completeness, ambiguity,
+  and cross-reference integrity.
   Optional skill — run after writing docs, before /create-exec-plan.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
@@ -80,6 +81,9 @@ cat docs/01_requirements/user_stories/{referenced-US}.md 2>/dev/null || echo "no
 
 # Project documentation rules
 cat CLAUDE.md
+
+# AC readiness criteria — the shared testability checks (always, when the document has ACs)
+cat .claude/skills/create-exec-plan/ac-readiness.md
 ```
 
 **If related files are not found**, proceed with what is available and note the absence in the review prompt.
@@ -101,6 +105,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 {full content of target document}
 
 ## Related context
+### AC readiness criteria (single source — apply these verbatim in §2)
+{full content of .claude/skills/create-exec-plan/ac-readiness.md, or "not available"}
+
 ### constraints.md (if applicable)
 {content, or "not available"}
 
@@ -119,10 +126,18 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 - Are there any forward references (requirements doc linking to design/implementation)?
 
 ### 2. Acceptance criteria quality (for User Stories and exec-plans)
-- Is each AC specific and verifiable — can it be confirmed pass/fail by a test or manual check?
-- Are ACs free from implementation details (what, not how)?
-- Are happy-path, error-case, and boundary conditions covered?
-- Are any ACs vague, overlapping, or contradictory?
+
+Judge each AC with the **five readiness checks supplied above** (R1 単一の観測可能な結果 / R2
+given-when-then / R3 成功指標が具体 / R4 E2E ステップへのアンカー / R5 what であって how でない),
+including the verdict rule (NOT READY when R1 / R2 / R5 fails). Use those checks as written —
+do not substitute your own notion of a "good" AC, and name the failing check by ID in your findings.
+
+`create-exec-plan`, `start-feature` and `run-exec-plan` apply the same file at their own gates, so a
+verdict here should match theirs. This review is **advisory**: report the verdict, change nothing.
+
+Then, beyond readiness:
+- Are happy-path, error-case, and boundary conditions covered across the AC set?
+- Are any ACs overlapping or contradictory with each other?
 
 ### 2b. Goal image and E2E coverage
 
@@ -175,11 +190,12 @@ Type: {document type}
 ### Structural compliance
 {For each frontmatter check: ✅ Present / ❌ Missing / N/A}
 
-### AC quality (if applicable)
-| AC | Testable? | Clear? | Notes |
-|----|-----------|--------|-------|
-| AC-001 | ✅ | ✅ | — |
-| AC-002 | ⚠️ | ✅ | Vague threshold: "performs well" — specify a measurable value |
+### AC quality (if applicable) — readiness verdicts
+| AC | Verdict | Failing checks | Notes |
+|----|---------|----------------|-------|
+| AC-001 | READY | — | — |
+| AC-002 | ⚠️ | R3 | Vague threshold: "performs well" — specify a measurable value |
+| AC-003 | NOT READY | R2, R5 | 期待結果が「適切に」しか書かれていない／実装手段を指定している |
 
 ### Goal image / E2E coverage
 {For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
