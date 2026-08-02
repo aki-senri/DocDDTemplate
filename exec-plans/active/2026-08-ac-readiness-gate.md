@@ -20,8 +20,8 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - [x] AC-003: `run-exec-plan` の Step 0 に "AC readiness gate" を追加し、ループ開始前に全未チェック AC を検査する。NOT READY があれば**ループを開始せず**停止条件 (a) で HALT し、判定結果を Decision Log に記録する。停止条件表・What this skill does・Completion criteria を追従させる
 - [x] AC-004: `start-feature` に readiness 確認ステップを追加し、手動パスでも同じ基準で検査する。人が同席するパスのため NOT READY は「提示して人が判断」とし、AC-001 の措置表と一致させる
 - [x] AC-005: `doc-review` の「2. Acceptance criteria quality」を `ac-readiness.md` の5観点を参照する形に揃え、レビュー観点が独自定義へドリフトしないようにする（optional スキルのため判定は助言のまま）
-- [x] AC-006: CLAUDE.md（停止条件 (a) の記述・スキル一覧）と `SKILL_FLOW.md`（§1 フロー図の PLAN / SF / DRIVER ノード、§2 呼び出し関係、§3-6 G-C 行、§5 改善提案）、`README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
-- [ ] AC-007: [E2E] 痩せた AC を含むプラン例で `/create-exec-plan` → `/start-feature` → `/run-exec-plan` の3地点をウォークスルーし、(a) 同じ AC が3地点で同じ READY 判定になること、(b) 措置だけが「書き直し／人に確認／HALT」と分かれること、(c) documentation-only 免除が3地点で一致することを確認し、結果を Decision Log に記録する
+- [x] AC-006: `CLAUDE.md` / `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` のいずれにも、readiness ゲート導入**前**のフロー記述が残っていない（＝AC の測定可能性検査が存在しないフロー図・スキル表・停止条件 (a) の旧文面が1件も無い）状態にする<br>※ 起票時は「各ドキュメントを追従させる」と活動形で書いていたが、AC-007 の dogfooding で R1 違反（活動の記述）と判定されたため、単一の観測可能な終状態に書き直した（Decision Log 参照）
+- [x] AC-007: [E2E] 痩せた AC を含むプラン例で `/create-exec-plan` → `/start-feature` → `/run-exec-plan` の3地点をウォークスルーし、(a) 同じ AC が3地点で同じ READY 判定になること、(b) 措置だけが「書き直し／人に確認／HALT」と分かれること、(c) documentation-only 免除が3地点で一致することを確認し、結果を Decision Log に記録する
 
 > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
 > 本プランは documentation-only（変更対象は `.claude/skills/**` と `*.md` のみ）のため、
@@ -36,7 +36,7 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - [x] AC-004 — `.claude/skills/start-feature/SKILL.md` に readiness 確認ステップを追加
 - [x] AC-005 — `.claude/skills/doc-review/SKILL.md` §2 を単一ソース参照に変更
 - [x] AC-006 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
-- [ ] AC-007 — 3地点ウォークスルーを実施し Decision Log に記録
+- [x] AC-007 — 3地点ウォークスルーを実施し Decision Log に記録
 - [ ] `/check-doc-invariants` を実行
 - [ ] `/pre-pr` を実行（PR 作成自体は人間ゲート）
 
@@ -50,6 +50,7 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - AC-004 完了
 - AC-005 完了
 - AC-006 完了
+- AC-007 完了（[E2E]・ウォークスルー14項目 PASS）
 
 ## Decision Log
 
@@ -114,3 +115,44 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - **`pre-pr` には readiness を入れない**。readiness は「実装前に測定可能か」を問うゲートであり、
   実装完了後に回しても是正の余地がない（AC を書き直せば実装もやり直しになる）。PR 前の照合は
   既存の AC カバレッジ／E2E カバレッジが担う。
+
+- **AC-007 done（[E2E]）.** 3地点ウォークスルーを実施。documentation-only プランのため
+  （`git diff --name-only` は `.claude/skills/**` と `*.md` のみ）、`create-exec-plan` の
+  documentation-only 免除に従い、再現可能な検査項目の実行結果をもって検証とする。検査14項目すべて PASS。
+
+  | # | 検査項目 | 結果 |
+  |---|---------|------|
+  | 1 | 単一ソース `ac-readiness.md` が存在し、4地点すべてから到達できる（相対リンクの解決先が正しい） | PASS |
+  | 2 | どの地点も5観点を再定義していない（定義は単一ソースにのみ存在。各スキルは verdict 名と「⚠️ は R3・R4 のみ」の要約だけを持つ） | PASS |
+  | 3 | 痩せた AC 例「エラー処理を改善し、リトライ機構を Repository 層に追加して適切にハンドリングする」が3地点とも NOT READY（R1・R2・R5）になる | PASS |
+  | 4 | 判定は同一で措置だけが分岐する（create=書き直し／start=人に確認／run=HALT）。3ファイルの文言が一致 | PASS |
+  | 5 | `start-feature` の「このまま進む」は後段を清算せず、`run-exec-plan` は依然 HALT する旨が両側に書かれている | PASS |
+  | 6 | documentation-only 免除は R4 のみ・単一ソースにのみ定義され、3地点が独自の免除を作っていない | PASS |
+  | 7 | 停止条件 (a) の記述が `run-exec-plan` と CLAUDE.md で一致（ループ前に検出・ループ中は backstop） | PASS |
+  | 8 | ループ中の曖昧さ判定（Step 1）が backstop として残っている（事前ゲートで置き換えて消していない） | PASS |
+  | 9 | 3スキルの最終報告書式に Readiness 行がある | PASS |
+  | 10 | 3スキルの Completion criteria に readiness 項目がある | PASS |
+  | 11 | `SKILL_FLOW.md` の PLAN / SF / DRIVER / DR ノードが実際のステップ順と一致する | 修正後 PASS（下記） |
+  | 12 | CLAUDE.md の4地点表と `ac-readiness.md` の call-site 表が一致 | PASS |
+  | 13 | `doc-review` の独立エージェント（セッション文脈なし）に基準本文が届く（Step 2 の `cat` ＋ プロンプト埋め込み） | PASS |
+  | 14 | 本プラン自身の AC を新ゲートにかける（dogfooding） | 修正後 PASS（下記） |
+
+- **11 で見つかった不整合**。`SKILL_FLOW.md` の SF ノードで readiness を ② に置いたが、
+  `start-feature` の実順序は baseline → プラン選択 → readiness（Step 1b）であり、
+  「AC を読む前に AC を検査する」図になっていた。② を「Select the exec-plan (AC)」、
+  ③ を readiness に修正。
+
+- **14（dogfooding）で見つかった不整合**。本プランの AC-001〜005 / 007 は READY だったが、
+  **AC-006 が R1（単一の観測可能な結果）で NOT READY** と判定された。「6つのドキュメントを
+  追従させる」は活動の記述であり、どこまでやれば緑かが AC 本文から決まらない。
+  `create-exec-plan` が起票時にやるべきだった措置（＝人と書き直す）を事後に適用し、
+  「readiness ゲート導入前のフロー記述が1件も残っていない状態」という単一の観測可能な終状態へ
+  書き直した。実装内容は変えていない（既に達成済みの状態を、判定可能な言葉で言い直しただけ）。
+  この観点は本テンプレートで頻出する「ドキュメント追従 AC」全般に効くため、基準を緩めるのではなく
+  書き方を正す側で解決した。
+
+- **reconcile プランの扱い**。`promote-spec` が起こす reconcile プランは `create-exec-plan` の
+  インタビューを通らないため Q3c を経ない。この経路は `start-feature` Step 1b と
+  `run-exec-plan` Step 0b が受け止める（`start-feature` 本文に「NOT READY がここで出る典型」として明記）。
+  `promote-spec` 側に readiness を追加しなかったのは、reconcile の AC が既存 spec の AC-ID の
+  再オープンであり、AC 本文の作成地点ではないため。
