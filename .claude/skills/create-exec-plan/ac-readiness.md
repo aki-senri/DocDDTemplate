@@ -80,6 +80,14 @@ human is there, the fix is a conversation; where none is, the only correct move 
 | `run-exec-plan` (Step 0) | Before the autonomous loop starts | Start the loop | Record and start the loop | **Do not start the loop** — HALT with stop condition (a) and record it in the Decision Log |
 | `doc-review` (§2) | Optional independent review | ✅ | ⚠️ | ❌ in the findings table — advisory only; the reviewing agent changes no files |
 
+### Where it is deliberately not applied
+
+| Skill | Why not |
+|-------|---------|
+| `create-requirements` | Its AC 条件 are requirement-level statements, not yet implementation targets. They are checked when they become plan ACs (`create-exec-plan` Q3c), and advisorily by `doc-review` if the US is reviewed |
+| `promote-spec` | A reconcile plan re-opens existing AC-IDs rather than authoring AC text. Those plans are gated at `start-feature` / `run-exec-plan` instead |
+| `pre-pr`, `complete-exec-plan` | Readiness asks whether an AC *can be verified*, which is only actionable before implementation. After the fact, rewriting an AC means redoing the work; the post-implementation gates are AC coverage and E2E coverage |
+
 This is **not** a severity mismatch between gates: the same AC receives the same verdict everywhere.
 A plan that a human waved through at `start-feature` will still halt `run-exec-plan`, and that is the
 intended behavior — the human's "proceed anyway" was a decision about *their own* next step, not a

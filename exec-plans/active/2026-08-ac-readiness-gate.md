@@ -37,8 +37,8 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - [x] AC-005 — `.claude/skills/doc-review/SKILL.md` §2 を単一ソース参照に変更
 - [x] AC-006 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
 - [x] AC-007 — 3地点ウォークスルーを実施し Decision Log に記録
-- [ ] `/check-doc-invariants` を実行
-- [ ] `/pre-pr` を実行（PR 作成自体は人間ゲート）
+- [x] `/check-doc-invariants` を実行
+- [x] `/pre-pr` を実行（PR 作成自体は人間ゲート）
 
 ## Progress Log
 
@@ -51,6 +51,10 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - AC-005 完了
 - AC-006 完了
 - AC-007 完了（[E2E]・ウォークスルー14項目 PASS）
+- `/check-doc-invariants` 実行。DOC-INV-004 が 7 件（既知・本テンプレートに docs/01_requirements が
+  無いため構造的に充足不能）。他は PASS または N/A
+- `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は上記の既知違反のみ、⑤ は test_strategy.md 不在で
+  実行不可（documentation-only のため [E2E] はウォークスルーで検証済み）。PR 作成は人間ゲートのため保留
 
 ## Decision Log
 
@@ -156,3 +160,18 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
   `run-exec-plan` Step 0b が受け止める（`start-feature` 本文に「NOT READY がここで出る典型」として明記）。
   `promote-spec` 側に readiness を追加しなかったのは、reconcile の AC が既存 spec の AC-ID の
   再オープンであり、AC 本文の作成地点ではないため。
+
+- **`/check-doc-invariants` の結果（2026-08-02）**。DOC-INV-001 は exec-plan に Markdown リンクが無く PASS。
+  002 / 003 は `docs/` 不在で N/A。**DOC-INV-004 は AC-001〜007 の 7 件が違反**（本テンプレートには
+  `docs/01_requirements/` が存在せず、`ac_ids:` を持つ US を作れない）。#27 と同じ既知・意図的な逸脱で、
+  要件の追跡は GitHub issue #24 / #28 が代替する。005 は AA 図なしで PASS。006 は `[E2E]` の AC-007 が
+  存在するため PASS。
+- **`/pre-pr` の結果（2026-08-02）**。① invariants: N/A（`docs/04_implementation/invariants.md` 不在）、
+  ② doc-freshness: N/A（`tracks:` を持つドキュメント不在）、③ doc-invariants: 上記の既知 7 件のみ、
+  ④ review_checklist: N/A（ファイル不在）、⑤ run-tests: 実行不可（`docs/05_quality/test_strategy.md` 不在。
+  本リポジトリはスキル定義のドキュメントのみで自動テスト基盤を持たない）。`[E2E]` の AC-007 は
+  documentation-only 免除により再現可能なウォークスルー（14 項目 PASS）で検証済み。⑥ exec-plan: 更新済み。
+  PR 作成は不可逆・外向き操作のため人間ゲートとして保留。
+- **`create-requirements` / `promote-spec` / `pre-pr` に readiness を適用しない理由**を
+  `ac-readiness.md` に「Where it is deliberately not applied」として明記した。適用地点の非対称性は
+  意図的であり、レビュー時に抜け漏れと誤読されないようにするため。
