@@ -42,10 +42,11 @@ test-writing problem. Deciding the expected result is *what to build*: an outer-
 
 A failing run is not automatically evidence. Classify it:
 
-| | The failure is… | What it means | Next |
+| Verdict | The run… | What it means | Next |
 |---|---|---|---|
-| **Valid red** | an assertion about the AC's expected result that did not hold — `expected 401, actual 500`, `expected the input to be preserved, actual empty` | The test measured the AC, and the AC is not satisfied yet | Record it, then implement |
-| **Invalid red** | a compile error, an unresolved symbol/import, a fixture / harness / setup failure, a wrong test command, a syntax error | The test measured **nothing** — it never reached its assertion | Fix the test or the harness and re-run until valid red. **Do not start implementing** |
+| **Valid red** | failed on an assertion about the AC's expected result — `expected 401, actual 500`, `expected the input to be preserved, actual empty` | The test measured the AC, and the AC is not satisfied yet | Record it, then implement |
+| **Invalid red** | failed on a compile error, an unresolved symbol/import, a fixture / harness / setup failure, a wrong test command, a syntax error | The test measured **nothing** — it never reached its assertion | Fix the test or the harness and re-run until valid red. **Do not start implementing** |
+| **Green on the first run** | passed before anything was implemented | One of two things: the AC is already satisfied by existing code, or the test does not actually assert the AC | Decide which — read the test against the AC text. If the AC is genuinely already met, record that and move on; if the test is not asserting the AC, fix the test. **Weakening the test to force a red is never the answer**, and neither is treating the green as done without deciding |
 
 The rule in one sentence: **the red must be attributable to the missing behavior.** A test that
 fails because it cannot run has observed nothing about the AC, and treating it as evidence
@@ -100,7 +101,7 @@ to build* is present.
 | Call site | When it runs | Action when the test cannot be written / red cannot be observed |
 |-----------|--------------|------------------------------------------------------------------|
 | `run-exec-plan` (Step 0c) | Before the loop, for every `[E2E]` AC | **HALT** with stop condition (a) — the through-flow cannot be transcribed from the AC |
-| `run-exec-plan` (Step 2a) | Before implementing each functional AC | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b) |
+| `run-exec-plan` (Step 2a) | Before implementing each functional AC | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
 | `run-tests` | Whenever it is invoked for a red-first run | Classify and report valid / invalid red. Never report an invalid red as "expected red" |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
 | `pre-pr` / `complete-exec-plan` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
@@ -123,7 +124,8 @@ what distinguishes it from a skipped step.
 
 ## Relationship to AC readiness
 
-`ac-readiness.md` `R2` asks whether a test *could* be written from the AC text.
+[`../create-exec-plan/ac-readiness.md`](../create-exec-plan/ac-readiness.md) `R2` asks whether a
+test *could* be written from the AC text.
 Red-first is the same question asked **empirically**, at the last moment before implementation:
 someone actually writes it.
 

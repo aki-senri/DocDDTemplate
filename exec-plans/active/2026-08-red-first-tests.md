@@ -46,10 +46,10 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
       `ONBOARDING.ja.md` / `.claude/skills/init-project/setup-*.md` のいずれにも red-first 導入**前**の
       フロー記述が残っていない状態にする（＝内側ループや開発サイクルを「実装 → テスト」の順で書いた
       図・表・手順、および INV-T01 だけを挙げてテストの時間軸に触れない箇所が1件も無い）
-- [ ] AC-010: red-first を導入した4地点（`run-exec-plan` / `run-tests` / `start-feature` /
-      `pre-pr`＋`complete-exec-plan`）の照合結果が Decision Log に記録され、(a) 同じ「妥当な赤」の
-      定義が単一ソースにのみ存在すること (b) 措置だけが地点ごとに分かれること (c) 既存の停止条件
-      (a)/(c) と矛盾しないこと を含む全項目が PASS である
+- [x] AC-010: red-first を導入した全地点（`run-exec-plan` Step 0c / 2a・`run-tests`・`start-feature`・
+      `pre-pr`・`complete-exec-plan`・`docode-review`）の照合結果が Decision Log に記録され、
+      (a) 同じ「妥当な赤」の定義が単一ソースにのみ存在すること (b) 措置だけが地点ごとに分かれること
+      (c) 既存の停止条件 (a)/(c) と矛盾しないこと を含む全項目が PASS である
 
 > 本プランは documentation-only（変更対象は `.claude/skills/**` と `*.md` のみ）のため
 > `[E2E]` AC を持たない。Decision Log の `E2E: n/a (documentation-only)` を参照。
@@ -65,9 +65,9 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 - [x] AC-007 — `.claude/skills/init-project/{SKILL.md,setup-web.md,setup-windows.md}` に INV-T02 を追加
 - [x] AC-008 — `.claude/skills/docode-review/SKILL.md` に観点を追加
 - [x] AC-009 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
-- [ ] AC-010 — 4地点の照合を実施し Decision Log に記録
-- [ ] `/check-doc-invariants` を実行
-- [ ] `/pre-pr` を実行（PR 作成自体は人間ゲート）
+- [x] AC-010 — 4地点の照合を実施し Decision Log に記録
+- [x] `/check-doc-invariants` を実行
+- [x] `/pre-pr` を実行（PR 作成自体は人間ゲート）
 
 ## Progress Log
 
@@ -82,6 +82,12 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 - AC-007 完了
 - AC-008 完了
 - AC-009 完了
+- AC-010 完了（照合16項目、修正後すべて PASS）
+- `/check-doc-invariants` 実行。DOC-INV-004 が 10 件（既知・本テンプレートに `docs/01_requirements` が
+  無いため構造的に充足不能）。他は PASS または N/A
+- `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は上記の既知違反のみ、⑤ は `test_strategy.md` 不在で
+  実行不可。E2E カバレッジは「プランに `[E2E]` AC が無い」＝ ⚠️ 報告のみ、red-first 証跡は
+  documentation-only のため ➖ n/a。⑥ 更新済み。PR 作成は人間ゲートのため保留
 
 ## Decision Log
 
@@ -167,6 +173,66 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
   両 setup ファイルの「Development cycle」が「3. 実装 → 4. テスト追加」と書いており、AC-009 が述べる
   終状態（red-first 導入前のフロー記述が残っていない）を満たさない。列挙漏れであってスコープ拡張では
   ないため、AC 本文のファイル列挙を拡張し、両ファイルの開発サイクルを red-first 順に修正した。
+- **AC-010 done.** red-first を導入した地点の照合を実施。検査16項目のうち、当初 FAIL が4件あり、
+  いずれも修正して全項目 PASS。
+
+  | # | 検査項目 | 結果 |
+  |---|---------|------|
+  | 1 | 単一ソース `run-tests/red-first.md` が存在し、6地点すべてから相対リンクで到達できる | PASS |
+  | 2 | 「妥当な赤／無効な赤」の**定義**が単一ソースにのみ存在する（各地点は verdict 名と参照のみ） | 修正後 PASS（下記 A） |
+  | 3 | verdict の集合が全地点で一致する（valid red / invalid red / green on first run の3つ） | 修正後 PASS（下記 B） |
+  | 4 | 措置だけが地点ごとに分かれる（HALT / 人に確認 / ⚠️ 報告 / 助言）＝ `ac-readiness.md` と同じ構造 | PASS |
+  | 5 | 停止条件 (a) の説明が `run-exec-plan` と CLAUDE.md で一致（転記不能＝(a)） | PASS |
+  | 6 | 停止条件 (b) の説明が両者で一致（妥当な赤に到達しない＝(b)） | PASS |
+  | 7 | 停止条件 (c) が「凍結後の期待値変更」を含む形で両者一致（INV-T01／INV-T02） | PASS |
+  | 8 | #27 で入れた「`[E2E]` AC にテストが無い＝ HALT」backstop が残っている | PASS |
+  | 9 | E2E テストがループ中ずっと赤である状態の扱いが定義され、赤いベースラインと混同されない | PASS |
+  | 10 | preservation AC（refactoring / reconcile）の免除が単一ソースと `run-exec-plan` の両方で一致 | PASS |
+  | 11 | documentation-only の免除が `create-exec-plan`（`[E2E]` AC を置かない）と矛盾しない | PASS |
+  | 12 | 事後ゲート（pre-pr / complete-exec-plan）が ⚠️ 報告に留まり、両ファイルの文言が一致 | PASS |
+  | 13 | 事後ゲートに「記録が無いとき後から書き足さない」が両方に書かれている | PASS |
+  | 14 | `ac-readiness.md` R2 と red-first の関係が双方向に書かれている（片方向参照でない） | 修正後 PASS（下記 C） |
+  | 15 | INV-T02 が `init-project` の3ファイル（共通表・setup-web・setup-windows）と生成物一覧に入っている | PASS |
+  | 16 | 内側ループを「実装 → テスト」と書いた記述がリポジトリに残っていない（`grep` で確認） | 修正後 PASS（下記 D） |
+
+  - **A（項目2）**: `run-tests` Step 2b の表と `run-exec-plan` Step 0c / 2a が「コンパイルエラー・
+    セットアップ失敗…」と**定義を再掲**していた。`ac-readiness.md` で確立した規約（定義は単一ソース、
+    地点は verdict 名のみ）に反するため、定義を落として参照に置き換えた。CLAUDE.md 停止条件 (b) の
+    括弧書きも同じ理由で削除。ONBOARDING / README の例示（`expected 401, actual 500` は妥当な赤、
+    「コンパイルが通らない」は無効な赤）は**規範ではなく説明**であり、末尾で単一ソースへ誘導しているため
+    そのまま残した（`ac-readiness.md` の R1〜R5 を README が名前だけ挙げているのと同じ扱い）。
+  - **B（項目3）**: `run-tests` が `green on first run` という verdict を持つのに、単一ソースの表は
+    valid / invalid の2値しか定義しておらず、地点が単一ソースに無い判定を作っていた。
+    `red-first.md` に3行目を追加し、call-site 表の Step 2a 行にも「判別できなければ HALT (a)」を追記。
+  - **C（項目14）**: `red-first.md` → `ac-readiness.md` の参照はあったが逆が無く、readiness だけを
+    読む人に「R2 は実装直前に経験的に再検査される」ことが伝わらなかった。`ac-readiness.md` の R2 行に
+    注記を1つ追加（#24 のファイルへの追記だが、規約の相互参照であり内容の変更ではない）。
+  - **D（項目16）**: `init-project/setup-web.md` / `setup-windows.md` の Development cycle が
+    「実装 → テスト追加」の順だった（AC-009 の対象ファイル拡張として修正済み）。
+
+  なお AC-010 本文は起票時「4地点」と書いていたが、実際の適用先は6地点（`run-exec-plan` の
+  Step 0c と 2a を1つと数えても5つ、`docode-review` を含めて6つ）。#24 でも同じ数え違いが起きており、
+  「地点を数える AC は実装後に数が合わなくなる」ことがわかったため、本文を列挙形に書き直した。
+
+- **red-first を新スキルにしなかった判断（再確認）**。AC-010 の照合中、`/draft-tests` のような
+  独立スキルにすれば「テストを書くのは別の担い手」という独立性がより強く出る、という選択肢を再検討した。
+  採らなかった理由は2つ。① スキルは呼ばれなければ効かない。DocDD の必須ゲートは現状ゼロ（SKILL_FLOW §4）で、
+  新スキルは「飛ばせるゲート」を1つ増やすだけになる。ループの**手順**に埋め込めば、driver が回る限り必ず通る。
+  ② 独立性の実体は「担い手が別か」ではなく「実装が存在しない時点で書かれたか」にある。同じエージェントでも、
+  実装前に AC 本文だけを見て書いたテストは実装を写せない。担い手の分離が要るのは事後の判定であり、
+  そこは `docode-review`（実装文脈を持たない独立エージェント）が担う。
+
+- **`/check-doc-invariants` の結果（2026-08-02）**。DOC-INV-001 は本プランに Markdown リンクが無く PASS。
+  002 / 003 は `docs/` 不在で N/A。**DOC-INV-004 は AC-001〜010 の 10 件が違反**（本テンプレートには
+  `docs/01_requirements/` が存在せず `ac_ids:` を持つ US を作れない。#27 / #24 と同じ既知・意図的な逸脱で、
+  要件の追跡は GitHub issue #22 / #28 が代替する）。005 は新規に追加した AA 図が無く PASS
+  （`red-first.md` は表と Mermaid 不要の箇条書きのみ）。006 は `[E2E]` AC 無し ＋ `E2E: n/a` 記録あり＝ ℹ️。
+- **`/pre-pr` の結果（2026-08-02）**。① invariants: N/A（`docs/04_implementation/invariants.md` 不在）、
+  ② doc-freshness: N/A（`tracks:` を持つドキュメント不在）、③ doc-invariants: 上記の既知 10 件のみ、
+  ④ review_checklist: N/A（ファイル不在）、⑤ run-tests: 実行不可（`docs/05_quality/test_strategy.md` 不在。
+  本リポジトリはスキル定義のドキュメントのみで自動テスト基盤を持たない）。E2E カバレッジは
+  「プランに `[E2E]` AC が無い」＝ ⚠️ 報告のみ、**red-first 証跡は ➖ n/a（documentation-only）**。
+  ⑥ exec-plan: 更新済み。PR 作成は不可逆・外向き操作のため人間ゲートとして保留。
 - **G-C 行の状態も更新**。`SKILL_FLOW.md` §3-6 の G-C が「🔄 pending merge of #24」のままだったが、
   #24 は PR #30 でマージ済み。✅ Resolved に更新した（本プランの AC には属さないが、同じ表の
   隣接行を書き換える作業中に気づいた事実誤り。CLAUDE.md「現バージョンの不備修正は main へ直接」に該当）。

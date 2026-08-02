@@ -80,11 +80,11 @@ The caller says so when invoking this skill; when nobody says so, this step does
 In such a run, "it failed" is not yet evidence. Classify it per
 [`red-first.md`](red-first.md) — follow that file; do not re-derive the criteria here:
 
-| Result | Report | Meaning for the caller |
-|--------|--------|------------------------|
-| **Valid red** — the assertion about the AC's expected result did not hold | `✅ valid red` with `expected` / `actual` | The test measures the AC. Proceed to implement |
-| **Invalid red** — compile error, unresolved symbol, harness/setup failure, wrong command | `❌ invalid red` with the failing phase | The test measured nothing. **Do not report this as "expected"** and do not let the caller proceed to implementation |
-| **Green** — the test passed on its first run | `⚠️ green on first run` | Either the AC is already satisfied or the test does not assert it. The caller decides which; this skill does not weaken the test to make it red |
+| Verdict | Report | Meaning for the caller |
+|---------|--------|------------------------|
+| **Valid red** | `✅ valid red` with `expected` / `actual` | The test measures the AC. Proceed to implement |
+| **Invalid red** | `❌ invalid red` with the phase that failed | The test measured nothing. **Do not report this as "expected"** and do not let the caller proceed to implementation |
+| **Green on first run** | `⚠️ green on first run` | Either the AC is already satisfied or the test does not assert it. The caller decides which; this skill does not weaken the test to make it red |
 
 Report the `expected` / `actual` pair verbatim — the caller writes it into the plan's Decision Log,
 where it becomes the frozen expectation.

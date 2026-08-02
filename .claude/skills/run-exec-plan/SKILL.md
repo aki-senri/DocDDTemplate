@@ -118,7 +118,7 @@ observation in the Decision Log; that entry freezes the expectation.
 |-----------|--------|
 | Valid red observed for every `[E2E]` AC | Record it and start the loop |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
-| Red is **invalid** (does not compile, harness/setup error) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
+| Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
 | The plan has **no** `[E2E]` AC (documentation-only, or it predates the requirement) | Nothing to do here — continue |
 
@@ -146,11 +146,11 @@ other tests are green"; do not re-interpret the failing E2E test as a red baseli
 
 1. Transcribe the AC's given / when / then into a test, tagged with the AC-ID. Take them from the
    **AC text**, not from the code that happens to exist.
-2. Run it and classify the failure:
-   - **Valid red** (the assertion about the expected result did not hold) → go to Step 2b.
-   - **Invalid red** (compile error, unresolved symbol, harness/setup failure) → the test measured
-     nothing. Add the **minimal signature** the test names — no behavior — and re-run. This counts
-     against `MAX_REPAIR_ATTEMPTS`; if it is still not valid red, **halt** with (b).
+2. Run it and classify the failure (`run-tests`, red-first run — the criteria are in `red-first.md`):
+   - **Valid red** → go to Step 2b.
+   - **Invalid red** → the test measured nothing. Add the **minimal signature** the test names —
+     no behavior — and re-run. This counts against `MAX_REPAIR_ATTEMPTS`; if it is still not valid
+     red, **halt** with (b).
    - **Green on the first run** → stop and think before proceeding. Either the AC is already
      satisfied (record it, check the box, and move on — do not write code to have written code) or
      the test does not actually assert the AC. Rewriting the test to be *weaker* is never the
@@ -234,7 +234,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
 | (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion) and by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result, and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle) |
-| (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** (it keeps failing to compile or to set up) | Repeated failure signals a real problem the human should see |
+| (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
 | (e) | An INV violation cannot be resolved without expanding scope | Scope expansion is a planning decision, not execution |

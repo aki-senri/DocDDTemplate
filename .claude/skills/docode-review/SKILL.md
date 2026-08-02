@@ -152,7 +152,8 @@ Perform a thorough review covering:
      it was clearly written by reading the code (same helper structure, same edge cases, no case
      the AC mentions but the code omits).
    - Cross-check the plan's `## Decision Log`: each AC should have an `AC-NNN red-first:` entry
-     recorded **before** its `AC-NNN done.` entry (the red observation that froze the expectation).
+     recorded **before** its `AC-NNN done.` entry (the red observation that froze the expectation;
+     the convention is in `.claude/skills/run-tests/red-first.md` if you want the details).
      A missing or out-of-order entry is not proof of a bad test — report it as a 🟡 finding and
      judge the test on its content.
    - Is there any AC the tests do not actually constrain — i.e. would they still pass if that AC's
