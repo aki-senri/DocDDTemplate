@@ -50,6 +50,7 @@ Run the `run-tests` skill and verify the following:
 
 - All tests pass
 - All AC-IDs have corresponding tests (AC coverage)
+- Each AC has a red-first record preceding its `done` record (⚠️ report only — see below)
 - **Every `[E2E]` AC has a test that exists and passed** (E2E coverage) — a plan whose functional
   ACs are all `- [x]` is still not complete while the through-flow is unverified
 - If any condition is not met, put the completion on hold and prompt for action
@@ -64,6 +65,15 @@ Two situations, two outcomes (same split as `run-tests` and `pre-pr`):
 The second case has legitimate causes (the plan predates the E2E requirement, or it is
 documentation-only — see `create-exec-plan`). Report it, record the reason in the decision log,
 and proceed. Do not write the criterion here.
+
+**Red-first evidence (⚠️ report only).** For each AC, check that the decision log contains an
+`AC-NNN red-first:` entry **before** its `AC-NNN done.` entry — the record that the test was written
+from the AC and observed failing before the implementation existed (see
+[`../run-tests/red-first.md`](../run-tests/red-first.md)). Report any AC that lacks one; this does
+**not** hold completion, for the same reason as in `pre-pr`: the evidence is hand-written, so a
+missing entry cannot be told apart from a missed note, and completion is the wrong place to
+reconstruct it. Never add the entry now — at this point nothing about the order can still be
+observed.
 
 ### Step 3: Update and move the file
 
@@ -110,6 +120,8 @@ Guide the user to the next action based on the following.
 - [ ] Ran `run-tests` and all tests pass
 - [ ] All AC-IDs have corresponding tests
 - [ ] Every `[E2E]` AC has a passing test (or its absence was reported / recorded in the decision log)
+- [ ] Red-first evidence was checked per AC and any missing entry was reported (⚠️ — it does not
+      hold completion, and is never written after the fact)
 - [ ] The target file's frontmatter shows `status: completed` and `completed: YYYY-MM-DD`
 - [ ] The file has been moved to `exec-plans/completed/`
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated

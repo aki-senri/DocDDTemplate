@@ -163,6 +163,7 @@ Monorepo structure. FE and BE managed in the same repository.
 | INV-BE-005 | `async void` is prohibited; use `async Task` or `async Task<T>` |
 | INV-BE-006 | Do not return DB entities directly as Controller responses (always convert to DTOs) |
 | INV-T01 | Tests must not be modified to match implementation behavior. Test modifications must always be grounded in a spec (AC-ID) |
+| INV-T02 | A test's expectation is authored from its AC before the implementation that satisfies it, and observed failing (red-first); the red observation is recorded in the plan's decision log |
 
 ### Key coding conventions
 
@@ -217,7 +218,7 @@ The agent only asks the following. The tech stack is already fixed and should no
 | `docs/04_implementation/directory_structure.md` | FE and BE directory structure | 1 |
 | `docs/04_implementation/coding_standards.md` | TypeScript / C# coding conventions | 1 |
 | `docs/04_implementation/dependencies.md` | npm package and NuGet package list | 1 |
-| `docs/04_implementation/invariants.md` | INV-FE-001–004 + INV-BE-001–006 + INV-T01 | 1 |
+| `docs/04_implementation/invariants.md` | INV-FE-001–004 + INV-BE-001–006 + INV-T01 / INV-T02 | 1 |
 | `docs/04_implementation/patterns.md` | Feature-based structure, Repository pattern, DTO conversion | 1 |
 | `docs/05_quality/test_strategy.md` | Test policy, test_command_fe/be, AC-ID tagging convention | 1 |
 | `CONTEXT.md` update | Update FE/BE tech stack and core naming convention sections | 0→1 |
@@ -232,13 +233,14 @@ The agent only asks the following. The tech stack is already fixed and should no
 2. Confirm / define the target API interface in docs/03_design/api_spec.md
    (Decide the FE contract before BE implementation)
         ↓
-3. Implement on feature/{issue-or-task-name} branch
-   ├── BE: Create in order: Controller → Service → Repository
-   └── FE: Create in order: api/ → hooks/ → components/ → pages/
+3. Write the test for the AC FIRST and run it — it must fail (red-first / INV-T02)
+   ├── BE: xUnit — include AC-ID with [Trait("AC", "AC-XXX")]
+   ├── FE: Vitest + RTL — include AC-ID with describe('AC-XXX: ...')
+   └── Record the red observation in the exec-plan decision log (it freezes the expectation)
         ↓
-4. Add tests
-   ├── BE: xUnit (80%+ coverage for Service and Controller) — include AC-ID with [Trait("AC", "AC-XXX")]
-   └── FE: Vitest + RTL (main logic of hooks and components) — include AC-ID with describe('AC-XXX: ...')
+4. Implement on feature/{issue-or-task-name} branch until the tests are green
+   ├── BE: Create in order: Controller → Service → Repository (80%+ coverage for Service and Controller)
+   └── FE: Create in order: api/ → hooks/ → components/ → pages/ (main logic of hooks and components)
         ↓
 5. Self-review with docs/05_quality/review_checklist.md
         ↓

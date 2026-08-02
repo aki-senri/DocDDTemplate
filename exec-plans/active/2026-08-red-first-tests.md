@@ -16,36 +16,36 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 
 ## Acceptance Criteria
 
-- [ ] AC-001: red-first の単一ソース `.claude/skills/run-tests/red-first.md` が存在し、
+- [x] AC-001: red-first の単一ソース `.claude/skills/run-tests/red-first.md` が存在し、
       ①手順（AC 本文からテストを起草 → 実行して赤を観測 → 記録して凍結 → 実装）②「妥当な赤」と
       「無効な赤」の判別基準 ③Decision Log への記録書式 ④凍結後にテストを変更してよい唯一の経路
       ⑤呼び出し地点ごとの措置表 ⑥適用外（documentation-only 等）の6項目すべてを定義した状態にする
-- [ ] AC-002: `run-exec-plan` の内側ループが AC ごとに「テストを先に書いて赤を観測してから実装する」
+- [x] AC-002: `run-exec-plan` の内側ループが AC ごとに「テストを先に書いて赤を観測してから実装する」
       順序になった状態にする（Step 2 が 2a テスト起草＋赤観測 / 2b 実装に分かれ、AC 本文からテストを
       書けない場合は停止条件 (a) で HALT し、Decision Log に赤の観測が `AC-NNN done` より前に記録される）
-- [ ] AC-003: `run-exec-plan` が `[E2E]` AC のテストを**ループ開始前**に赤で置いた状態でループを開始する
+- [x] AC-003: `run-exec-plan` が `[E2E]` AC のテストを**ループ開始前**に赤で置いた状態でループを開始する
       （Step 0c）。あわせて「driver は E2E テストを書いてはならない」という現行記述が
       「実装前に AC 本文から転記する場合に限り書いてよい／転記できない場合は HALT (a)」に置き換わり、
       ループ中の「`[E2E]` AC にテストが無い＝ HALT」backstop が残っている
-- [ ] AC-004: `run-tests` が red-first 検証（赤が期待される実行）を扱えた状態にする。すなわち
+- [x] AC-004: `run-tests` が red-first 検証（赤が期待される実行）を扱えた状態にする。すなわち
       「テストが失敗した」だけでなく「妥当な赤（期待結果に関する失敗）／無効な赤（コンパイル・
       セットアップ・存在しない API による失敗）」を判別して報告し、無効な赤を緑と同じく
       「先へ進んでよい」とは扱わない
-- [ ] AC-005: `start-feature`（手動パス）の実装順ガイドが red-first を規定した状態にする
+- [x] AC-005: `start-feature`（手動パス）の実装順ガイドが red-first を規定した状態にする
       （「安定層から実装する」順序の**前**に「その AC のテストを先に赤で置く」が来ることが本文で読める）
-- [ ] AC-006: `pre-pr` と `complete-exec-plan` が red-first の証跡（各 AC について、赤の観測が
+- [x] AC-006: `pre-pr` と `complete-exec-plan` が red-first の証跡（各 AC について、赤の観測が
       `AC-NNN done` より前に Decision Log へ記録されていること）を確認し、欠落を報告する状態にする
       （証跡欠落は ⚠️ 報告であり PR / 完了をブロックしない。ブロックするのは既存の AC カバレッジ・
       E2E カバレッジのまま）
-- [ ] AC-007: `init-project` が生成する不変条件表に **INV-T02**（テストの期待値は、それを満たす実装より
+- [x] AC-007: `init-project` が生成する不変条件表に **INV-T02**（テストの期待値は、それを満たす実装より
       先に AC から起草され、赤を観測してから凍結される）が含まれ、`SKILL.md` の共通不変条件・
       `setup-web.md` / `setup-windows.md` の各表・生成ファイル一覧の記述が INV-T02 を含む状態にする
-- [ ] AC-008: `docode-review` の独立エージェントが「各テストが対応する AC を表現しているか（実装の写しに
+- [x] AC-008: `docode-review` の独立エージェントが「各テストが対応する AC を表現しているか（実装の写しに
       なっていないか）」を観点として持ち、判定に含めた状態にする
-- [ ] AC-009: `CLAUDE.md` / `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` /
-      `ONBOARDING.ja.md` のいずれにも red-first 導入**前**のフロー記述が残っていない状態にする
-      （＝内側ループを「実装 → テスト」と書いた図・表・手順、および INV-T01 だけを挙げてテストの
-      時間軸に触れない箇所が1件も無い）
+- [x] AC-009: `CLAUDE.md` / `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` /
+      `ONBOARDING.ja.md` / `.claude/skills/init-project/setup-*.md` のいずれにも red-first 導入**前**の
+      フロー記述が残っていない状態にする（＝内側ループや開発サイクルを「実装 → テスト」の順で書いた
+      図・表・手順、および INV-T01 だけを挙げてテストの時間軸に触れない箇所が1件も無い）
 - [ ] AC-010: red-first を導入した4地点（`run-exec-plan` / `run-tests` / `start-feature` /
       `pre-pr`＋`complete-exec-plan`）の照合結果が Decision Log に記録され、(a) 同じ「妥当な赤」の
       定義が単一ソースにのみ存在すること (b) 措置だけが地点ごとに分かれること (c) 既存の停止条件
@@ -56,15 +56,15 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 
 ## Task Breakdown
 
-- [ ] AC-001 — `.claude/skills/run-tests/red-first.md` を新規作成
-- [ ] AC-002 — `.claude/skills/run-exec-plan/SKILL.md` の Step 2 を 2a / 2b に分割
-- [ ] AC-003 — 同 SKILL.md に Step 0c を追加し、E2E テスト起草の禁止規定を書き換え
-- [ ] AC-004 — `.claude/skills/run-tests/SKILL.md` に red-first 検証モードを追加
-- [ ] AC-005 — `.claude/skills/start-feature/SKILL.md` の実装順ガイドを改修
-- [ ] AC-006 — `.claude/skills/pre-pr/SKILL.md` と `.claude/skills/complete-exec-plan/SKILL.md` に証跡確認を追加
-- [ ] AC-007 — `.claude/skills/init-project/{SKILL.md,setup-web.md,setup-windows.md}` に INV-T02 を追加
-- [ ] AC-008 — `.claude/skills/docode-review/SKILL.md` に観点を追加
-- [ ] AC-009 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
+- [x] AC-001 — `.claude/skills/run-tests/red-first.md` を新規作成
+- [x] AC-002 — `.claude/skills/run-exec-plan/SKILL.md` の Step 2 を 2a / 2b に分割
+- [x] AC-003 — 同 SKILL.md に Step 0c を追加し、E2E テスト起草の禁止規定を書き換え
+- [x] AC-004 — `.claude/skills/run-tests/SKILL.md` に red-first 検証モードを追加
+- [x] AC-005 — `.claude/skills/start-feature/SKILL.md` の実装順ガイドを改修
+- [x] AC-006 — `.claude/skills/pre-pr/SKILL.md` と `.claude/skills/complete-exec-plan/SKILL.md` に証跡確認を追加
+- [x] AC-007 — `.claude/skills/init-project/{SKILL.md,setup-web.md,setup-windows.md}` に INV-T02 を追加
+- [x] AC-008 — `.claude/skills/docode-review/SKILL.md` に観点を追加
+- [x] AC-009 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
 - [ ] AC-010 — 4地点の照合を実施し Decision Log に記録
 - [ ] `/check-doc-invariants` を実行
 - [ ] `/pre-pr` を実行（PR 作成自体は人間ゲート）
@@ -73,6 +73,15 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
 
 ### 2026-08-02
 - Plan created
+- AC-001 完了
+- AC-002 完了
+- AC-003 完了
+- AC-004 完了
+- AC-005 完了
+- AC-006 完了
+- AC-007 完了
+- AC-008 完了
+- AC-009 完了
 
 ## Decision Log
 
@@ -102,3 +111,62 @@ INV-T01（実装に合わせたテスト改変の禁止）を**時間軸**で強
   依存するため、欠落は「規約違反」と「記録漏れ」を機械的に区別できない。ブロックにすると
   記録漏れで PR が止まり、回避のために証跡を後から書く動機を生む（＝証跡の信頼性が下がる）。
   実効的なブロックは既存の AC カバレッジ／E2E カバレッジが担う。
+
+- **本プラン自身の red-first: n/a (documentation-only)**。本プランはテスト基盤を持たない
+  documentation-only プランであり、`red-first.md` の「適用外」表の1行目に該当する。
+  したがって各 AC に `red-first` の赤観測記録は置かない（これは新規約の最初の自己適用でもある）。
+
+- **AC-001 done.** `.claude/skills/run-tests/red-first.md` を新設。手順（AC を読む→AC 本文だけから
+  テストを起草→実行して赤を観測→Decision Log に記録して凍結→実装）、妥当な赤と無効な赤の判別、
+  記録書式、凍結後にテストを変更してよい唯一の経路（spec alignment gate / 停止条件 (c)）、
+  6呼び出し地点の措置表、適用外3件（documentation-only / preservation AC / ハーネス作業）、
+  および `ac-readiness.md` との関係（R2 の経験的版）を収録。
+  静的型付け言語では「存在しない API の呼び出し＝コンパイルエラー＝無効な赤」になるため、
+  **振る舞いを持たない最小シグネチャだけ先に置いて赤をアサーションに到達させる**ことを明記した
+  （ここを書かないと、実務で最初に詰まる箇所がそのまま「red-first は無理」の理由になる）。
+- **AC-002 done.** `run-exec-plan` の Step 2 を 2a（テスト起草＋赤の観測）/ 2b（実装）に分割。
+  2a には「初回から緑だった場合」の分岐（AC が既に満たされている／テストが AC を検査していない、の
+  どちらかであり、テストを弱めるのは解ではない）を含めた。Design principle の表・Retry budget・
+  Resume-state convention・Completion criteria・報告書式も追従。
+- **AC-003 done.** Step 0c（ループ開始前に `[E2E]` テストを赤で配置）を追加。
+  **#27 で入れた「driver は E2E テストを書いてはならない」を全面禁止から時点依存の規則へ変更した**。
+  理由: あの禁止の根拠は「E2E テストを書く＝通しフローを決めること」だったが、通しフローは既に
+  `[E2E]` AC 本文（と spec の `E2E-NNN`）で人が決めており、readiness を通った AC なら given/when/then は
+  本文にある。実装が存在しない時点での起草は**転記**であって決定ではなく、実装の写しにもなり得ない。
+  一方、実装後に書くテストは実装に形を合わせられるため、Step 3 の「`[E2E]` AC のテストが無い→HALT」は
+  backstop として残した（＝到達したら Step 0c が飛ばされた証拠）。転記できない場合は HALT (a)。
+- **ループ中ずっと赤い E2E テストの扱い**。Step 0c で赤を置く以上、ループ中の各 `run-tests` は
+  必ず1件以上失敗する。これを「赤いベースライン」と誤認すると自走が止まるため、Step 3 に
+  「Step 0c で記録した失敗**のみ**が残っている状態は、その AC にとっては緑と同じ扱い」を明記し、
+  失敗理由が変わった場合（コンパイルできなくなった等）は測定が止まった合図として修復させる。
+- **AC-004 done.** `run-tests` に Step 2b（red-first 実行の分類）を追加。呼び出し側が
+  「これは red-first 実行だ」と告げた場合のみ適用し、valid red / invalid red / green on first run を
+  報告する。無効な赤を「期待どおり」と報告しないことを明記（ここを曖昧にすると red-first が
+  「とりあえず落ちた」で通ってしまう）。spec alignment gate は実装が存在して初めて意味を持つため
+  red-first 実行には適用しないことも書いた。
+- **AC-005 done.** `start-feature` の実装順ガイド冒頭に red-first を置いた。安定層順は
+  「失敗するテストが置かれた後に何から作るか」の話であり、テストより前には来ない。
+- **AC-006 done.** `pre-pr` ⑤ と `complete-exec-plan` Step 2 に証跡確認（`AC-NNN red-first:` が
+  `AC-NNN done.` より前にあるか）を追加。⚠️ 報告のみでブロックしない。両方に
+  「記録が無い場合に後から書き足さない」を明記した（後から書ける証跡は証跡ではない）。
+- **AC-007 done.** INV-T02 を新設し、`init-project` の SKILL.md（全プラットフォーム共通表）・
+  `setup-windows.md`・`setup-web.md` の不変条件表と生成ファイル一覧に追加。
+  INV-T01 との関係（同じ穴を時間軸で塞ぐ）を共通表に1段落で書き、手順は `red-first.md` を参照させた。
+- **AC-008 done.** `docode-review` の独立エージェント観点に 1c「テストは AC を表現しているか、
+  実装を写しているか」を追加。観点2（Correctness）より前に置いたのは、これが 1b と同じく
+  「実装したエージェント自身には原理的にできない検査」だから。実装の写しの兆候（内部呼び出しの
+  アサート、コードから採った期待値、AC にあってコードに無いケースの欠落）を具体的に列挙し、
+  Decision Log の red-first 記録の有無も突き合わせ対象にした（記録の欠落だけでは断定せず 🟡）。
+- **AC-009 done.** `CLAUDE.md`（内側/外側ゲート表・停止条件 (a)(b)(c)・新節「red-first」・
+  再開状態のファイル化規約・テスト変更の禁止節・スキル一覧2行）、`SKILL_FLOW.md`（§1 の DRIVER /
+  REDFIRST / RT / SF / PREPR / COMPLETE ノードと辺、§2 の共通参照ファイル注記と呼び出し表、
+  §3-6 の G-A 行と G-C 行、§4 のブロッキング注記）、`README`（en/ja: クイックスタート・スキル表2行・
+  新節 red-first）、`ONBOARDING`（en/ja: 責任分担表・人視点フロー・全体の流れ・手動ループ・
+  新節 red-first・invariants.md サンプルへ INV-T02）を追従。
+- **AC-009 の対象ファイルに `init-project/setup-*.md` を追加した**。起票時は6ファイルを列挙していたが、
+  両 setup ファイルの「Development cycle」が「3. 実装 → 4. テスト追加」と書いており、AC-009 が述べる
+  終状態（red-first 導入前のフロー記述が残っていない）を満たさない。列挙漏れであってスコープ拡張では
+  ないため、AC 本文のファイル列挙を拡張し、両ファイルの開発サイクルを red-first 順に修正した。
+- **G-C 行の状態も更新**。`SKILL_FLOW.md` §3-6 の G-C が「🔄 pending merge of #24」のままだったが、
+  #24 は PR #30 でマージ済み。✅ Resolved に更新した（本プランの AC には属さないが、同じ表の
+  隣接行を書き換える作業中に気づいた事実誤り。CLAUDE.md「現バージョンの不備修正は main へ直接」に該当）。

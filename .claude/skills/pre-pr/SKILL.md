@@ -30,6 +30,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ③ check-doc-invariants  → Verify document structural invariants
 ④ review_checklist      → Code review checklist
 ⑤ run-tests             → Run tests and verify against spec, incl. [E2E] AC coverage
+                          and red-first evidence (⚠️ only)
 ⑥ exec-plan update      → Record progress in log
 ```
 
@@ -135,6 +136,29 @@ The second case has legitimate causes (the plan predates the E2E requirement, or
 documentation-only — see `create-exec-plan`), so it is a warning. Report it and direct the user to
 `create-exec-plan`. Do not write the criterion here — defining what to build is an outer gate.
 
+**Red-first evidence check (⚠️ report only):**
+
+For each AC in the plan, look in the plan's `## Decision Log` for an `AC-NNN red-first:` entry
+positioned **before** that AC's `AC-NNN done.` entry — the record that the test was written from the
+AC and observed failing before the implementation existed (see
+[`../run-tests/red-first.md`](../run-tests/red-first.md)).
+
+```
+Red-first evidence:
+  ✅ AC-001 → red 観測あり (done より前)
+  ⚠️ AC-002 → 記録なし（テストが実装の写しでないことを後から確認できない）
+  ➖ AC-003 → n/a（既存テストで保証される preservation AC）
+```
+
+This is a **warning, not a blocker**. The evidence lives in hand-written Decision Log text, so a
+missing entry cannot be distinguished mechanically from a missed note; blocking on it would push
+people to write the entry after the fact, which is exactly the evidence being destroyed. What blocks
+PR creation stays what it was: failing tests, uncovered ACs, uncovered `[E2E]` ACs.
+
+Report missing entries and, when the tests for those ACs were written after their implementation,
+say so plainly rather than back-dating a `red-first` line. `/docode-review` is the check that can
+still judge those tests on their content.
+
 **Test file change verification:**
 
 If test file changes are detected via `git diff --name-only main...HEAD`, verify the following:
@@ -179,6 +203,8 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ⑤ run-tests        : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
   └ E2E coverage   : ✅ {n}/{n} [E2E] AC covered and green  / ❌ {count} uncovered or failing (blocks)
                      / ⚠️ プランに [E2E] AC がありません (does not block)
+  └ Red-first      : ✅ {n}/{n} AC に赤の観測記録あり  / ⚠️ AC-NNN 記録なし (does not block)
+                     / ➖ n/a (documentation-only)
 ⑥ exec-plan        : ✅ Progress updated
 
 ---
@@ -197,6 +223,8 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 - [ ] If tests failed, they were resolved through the spec alignment gate
 - [ ] Every `[E2E]` AC in the plan has a test that exists and passed (or the plan's lack of an
       `[E2E]` AC was reported and referred back to `create-exec-plan`)
+- [ ] Red-first evidence was checked per AC and any missing entry was reported (⚠️ — it does not
+      block PR creation, and a missing entry is never filled in after the fact)
 - [ ] If test files were changed, the reason is recorded in the decision log
 - [ ] The progress log in exec-plan has been updated
 - [ ] Output shows "PR creation status: ✅ No issues"

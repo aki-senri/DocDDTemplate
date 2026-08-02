@@ -3,6 +3,9 @@ name: run-tests
 description: |
   Skill to run tests and verify results against the spec (AC-IDs).
   When tests fail, includes a decision gate to determine whether the test correctly expresses the spec before deciding on action.
+  Also serves the red-first path: for a run where a failure is expected (the test was just written
+  from an AC, before its implementation), it classifies the failure as a valid red (the AC's
+  expectation did not hold) or an invalid red (it never ran), because only the former is evidence.
   Prohibits modifying tests to match implementation behavior.
   Can be called internally by pre-pr, start-feature, and complete-exec-plan, or run standalone.
 # disable-model-invocation is intentionally false: running tests is a read-only, non-destructive
@@ -18,6 +21,8 @@ disable-model-invocation: false
 
 > **When to run**:
 > - After code changes (at any time)
+> - **Right after writing a test from an AC, before implementing it** (red-first — the run whose
+>   expected outcome is a failure; see [`red-first.md`](red-first.md))
 > - During baseline verification in the `start-feature` skill
 > - Called from the `pre-pr` skill
 > - During completion verification in the `complete-exec-plan` skill
@@ -34,6 +39,7 @@ disable-model-invocation: false
 
 1. Read the test command from `test_strategy.md`
 2. Run the tests
+2b. If this is a **red-first run** (a failure is expected): classify valid vs. invalid red
 3. If all pass: verify AC-ID coverage, checking functional and `[E2E]` ACs separately
 4. If failures: determine the course of action through the **spec alignment gate**
 
@@ -63,6 +69,29 @@ Execute commands according to the frontmatter.
 
 - If both `test_command_fe` and `test_command_be` are present, run both
 - Record the results (pass/fail, count, names of failed tests)
+
+### Step 2b: Red-first run — classify the failure
+
+A **red-first run** is one where a failure is the expected outcome: the caller has just written a
+test from an AC, before the implementation that satisfies it exists
+(`run-exec-plan` Step 0c / Step 2a, or a human doing the same by hand).
+The caller says so when invoking this skill; when nobody says so, this step does not apply.
+
+In such a run, "it failed" is not yet evidence. Classify it per
+[`red-first.md`](red-first.md) — follow that file; do not re-derive the criteria here:
+
+| Result | Report | Meaning for the caller |
+|--------|--------|------------------------|
+| **Valid red** — the assertion about the AC's expected result did not hold | `✅ valid red` with `expected` / `actual` | The test measures the AC. Proceed to implement |
+| **Invalid red** — compile error, unresolved symbol, harness/setup failure, wrong command | `❌ invalid red` with the failing phase | The test measured nothing. **Do not report this as "expected"** and do not let the caller proceed to implementation |
+| **Green** — the test passed on its first run | `⚠️ green on first run` | Either the AC is already satisfied or the test does not assert it. The caller decides which; this skill does not weaken the test to make it red |
+
+Report the `expected` / `actual` pair verbatim — the caller writes it into the plan's Decision Log,
+where it becomes the frozen expectation.
+
+The spec alignment gate (Step 4) does **not** apply to a red-first run: there is no implementation
+yet, so "the implementation has a bug" and "the spec changed" are both meaningless. It applies from
+the moment the AC's implementation exists.
 
 ### Step 3: If all pass — AC coverage check
 
@@ -110,6 +139,8 @@ in the same way an uncovered functional AC does; a missing `[E2E]` AC does not.
 ### Step 4: If failures — spec alignment gate
 
 **When tests fail, always go through this gate before modifying tests or implementation.**
+(Except in a red-first run — see Step 2b. There the failure is the expected result, and the
+answer is always "implement".)
 
 For each failed test, present the following information.
 
@@ -134,6 +165,9 @@ For each failed test, present the following information.
        → Confirm the content of the spec (AC-001) and modify the test based on the spec.
        ⚠️  Modifying tests to match implementation behavior is prohibited.
            Always ground test modifications in a spec document (AC-ID).
+       ⚠️  If this test's expectation was frozen by a red-first observation
+           (a `AC-NNN red-first:` entry in the plan's Decision Log), option B requires
+           a spec change — not a second look at the same spec (INV-T02).
   ─────────────────────────────────────────
 ```
 
@@ -179,6 +213,11 @@ describe('AC-001: Login with invalid password', () => {
 Command  : {test_command}
 Result   : ✅ All {n} tests passed / ❌ {n} test(s) failed
 
+[Red-first]  (only for a red-first run — omit otherwise)
+✅ valid red   AC-003 → {test name}  expected: {…}  actual: {…}
+❌ invalid red AC-004 → {test name}  ({compile error | setup failure} — measured nothing)
+⚠️ green on first run AC-005 → {test name}
+
 [AC Coverage]
 ✅ AC-001 → Test exists
 ✅ AC-002 → Test exists
@@ -198,6 +237,9 @@ Overall: ✅ No issues / ❌ Please review the spec alignment gate
 ## Completion criteria
 
 - [ ] Test command was run
+- [ ] If this was a red-first run: each failure was classified as valid red / invalid red / green on
+      first run per [`red-first.md`](red-first.md), and an invalid red was **not** reported as
+      expected
 - [ ] If all passed: AC-ID coverage was verified, functional and `[E2E]` ACs reported separately
 - [ ] Every `[E2E]` AC has a test that exists **and** passed — otherwise processing is on hold
       (or the absence of any `[E2E]` AC in the plan was reported)
