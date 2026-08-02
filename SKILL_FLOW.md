@@ -21,21 +21,21 @@ flowchart TD
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
-        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· Checks AC testability, completeness\n· Checks reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
-        SF["/start-feature\n① Confirm baseline with run-tests\n② Load CONTEXT.md\n③ Load invariants.md\n④ Load exec-plan (AC)\n⑤ Decide branch name\n⑥ Record start in progress log"]
+        SF["/start-feature\n① Confirm baseline with run-tests\n② AC readiness check (R1-R5)\n   NOT READY → ask the user\n③ Load CONTEXT.md\n④ Load invariants.md\n⑤ Load exec-plan (AC)\n⑥ Decide branch name\n⑦ Record start in progress log"]
     end
 
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
-        DRIVER["/run-exec-plan (opt-in)\nAutonomous driver: per AC\nimplement→verify→fix→next\nHalts only on stop conditions"]
+        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nThen per AC: implement→verify→fix→next\nHalts only on stop conditions"]
         CODE["Code change\n(Write / Edit)"]
         HOOK["PostToolUse hook\n⚠ Warning message only\n(does not block)"]
         CDF["/check-doc-freshness\nUpdate docs corresponding to\nchanged files via tracks: field"]
@@ -124,6 +124,14 @@ flowchart TD
 | —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr` — spawns a subagent via the Agent tool (no internal caller) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
+> **Shared reference file (not a skill):** `create-exec-plan` (Q3c), `start-feature` (Step 1b),
+> `run-exec-plan` (Step 0b) and `doc-review` (§2) all apply
+> [`.claude/skills/create-exec-plan/ac-readiness.md`](.claude/skills/create-exec-plan/ac-readiness.md)
+> — the AC readiness (testability) checks R1–R5. It is read, not invoked; the criteria are identical
+> at the four sites and only the action on NOT READY differs (rewrite with the user / ask the user /
+> HALT / advisory). `doc-review` embeds the file's content in the subagent prompt, since an
+> independent agent has no session context to inherit it from.
+
 > **Invocation mode:** Among the callees above, `run-tests` is model-invocable
 > (`disable-model-invocation: false`), so its callers invoke it via the Skill tool; the other
 > *internal-call* callees keep `disable-model-invocation: true` and are executed inline by following
@@ -187,13 +195,14 @@ flowchart TD
 
 B1–B11 above are about **skipping gates**. There is a second axis: passing every gate while the
 goal itself is too thin to steer autonomous implementation toward. That axis is tracked in issue
-#28 (G-A … G-F) rather than here, but its first item is addressed in the flow above and is recorded
-for context (the issue closes on merge, not on this table):
+#28 (G-A … G-F) rather than here; the items already addressed in the flow above are recorded for
+context (an issue closes on merge, not on this table):
 
 | # | Issue | Status |
 |---|-------|--------|
-| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | 🔄 Addressed, pending merge of #27 — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
-| G-C / G-A / G-B / G-D / G-E | AC testability gate, red-first acceptance tests, goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
+| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved (#27, merged) — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
+| G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | 🔄 Addressed, pending merge of #24 — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
+| G-A / G-B / G-D / G-E | Red-first acceptance tests, goal reaching the driver intact, spec re-anchoring, mandatory final goal review | Open — see #28 |
 
 ---
 
@@ -222,8 +231,14 @@ All skills are manually invoked, and hooks do not block execution.
 
 > **Blocking *within* a skill is a different thing.** Once `pre-pr` or `complete-exec-plan` is
 > actually run, an uncovered or failing `[E2E]` AC blocks PR creation / completion — it cannot be
-> waved through the way an advisory warning can. That does not make the skill itself unskippable;
-> it means the E2E check is not optional for anyone who runs the gate.
+> waved through the way an advisory warning can. The same holds for AC readiness inside
+> `run-exec-plan`: a NOT READY criterion stops the loop from starting at all. That does not make the
+> skills themselves unskippable; it means those checks are not optional for anyone who runs the gate.
+>
+> Readiness is also the one check deliberately applied at **three** points on the path
+> (`create-exec-plan` → `start-feature` → `run-exec-plan`), because each is the last moment before a
+> different kind of cost: writing the plan, writing code by hand, and handing the plan to an
+> unattended loop.
 
 > **Spec version promotion** (`/promote-spec`) is a separate, human-gated event that runs at sprint
 > boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the

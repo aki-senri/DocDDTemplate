@@ -244,7 +244,7 @@ tracks:
 - `.claude/hooks/post-tool-notify.py` — コード変更後の通知
 - `.claude/settings.json` — フックの設定
 - `CLAUDE.md` — Claude への行動規範（図ルール・スキル一覧を含む）
-- `.claude/skills/create-exec-plan/` — 実行計画の作成
+- `.claude/skills/create-exec-plan/` — 実行計画の作成（共通の AC readiness 基準 `ac-readiness.md` を含む）
 - `.claude/skills/pre-pr/` — PR 前チェック
 
 **省略可能（あると便利）:**
@@ -336,7 +336,7 @@ flowchart TD
 
 | フェーズ | 人の責任 | AI の責任 |
 |---------|---------|----------|
-| 要件・仕様 | User Story / AC を定義・凍結する | 対話で引き出し、ドラフトを書く |
+| 要件・仕様 | User Story / AC を定義・凍結する。readiness 検査で NOT READY となった AC を書き直す | 対話で引き出し、ドラフトを書き、readiness 検査を実行する（AC を独断で書き換えることはしない） |
 | 実装・検証 | （指示は AC 番号のみ） | 実装→テスト→修正→次 AC を自走、`run-tests` / `check-*` を内部実行 |
 | 仕様変更・テスト期待値 | 変更可否を判断する（外側ゲート） | 変更が必要だと検知したら停止・提示する |
 | レビュー・PR | コードをレビューし PR を承認・マージする | `pre-pr` で総合チェックを実行する |
@@ -353,8 +353,10 @@ flowchart TD
                           （任意・小さな変更ならスキップ。create-exec-plan の前に人間承認が必要）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
                           機能 AC に加えて最低1本の [E2E] AC を置く
-2. /start-feature       → ドキュメント確認・ブランチ作成
-3. /run-exec-plan       → AC を 1 つずつ自走実装（実装→テスト→修正→次 AC）
+                          AC readiness 検査（R1〜R5）＝テストで判定できない AC はここで書き直す
+2. /start-feature       → ドキュメント確認・AC readiness の再検査・ブランチ作成
+3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）
+                          通過後、AC を 1 つずつ自走実装（実装→テスト→修正→次 AC）
                           内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
                           停止条件（a〜e）に当たったときだけ人に確認
 4. /pre-pr              → PR 前の総合チェック

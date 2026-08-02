@@ -20,7 +20,7 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - [x] AC-003: `run-exec-plan` の Step 0 に "AC readiness gate" を追加し、ループ開始前に全未チェック AC を検査する。NOT READY があれば**ループを開始せず**停止条件 (a) で HALT し、判定結果を Decision Log に記録する。停止条件表・What this skill does・Completion criteria を追従させる
 - [x] AC-004: `start-feature` に readiness 確認ステップを追加し、手動パスでも同じ基準で検査する。人が同席するパスのため NOT READY は「提示して人が判断」とし、AC-001 の措置表と一致させる
 - [x] AC-005: `doc-review` の「2. Acceptance criteria quality」を `ac-readiness.md` の5観点を参照する形に揃え、レビュー観点が独自定義へドリフトしないようにする（optional スキルのため判定は助言のまま）
-- [ ] AC-006: CLAUDE.md（停止条件 (a) の記述・スキル一覧）と `SKILL_FLOW.md`（§1 フロー図の PLAN / SF / DRIVER ノード、§2 呼び出し関係、§3-6 G-C 行、§5 改善提案）、`README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
+- [x] AC-006: CLAUDE.md（停止条件 (a) の記述・スキル一覧）と `SKILL_FLOW.md`（§1 フロー図の PLAN / SF / DRIVER ノード、§2 呼び出し関係、§3-6 G-C 行、§5 改善提案）、`README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` を追従させる
 - [ ] AC-007: [E2E] 痩せた AC を含むプラン例で `/create-exec-plan` → `/start-feature` → `/run-exec-plan` の3地点をウォークスルーし、(a) 同じ AC が3地点で同じ READY 判定になること、(b) 措置だけが「書き直し／人に確認／HALT」と分かれること、(c) documentation-only 免除が3地点で一致することを確認し、結果を Decision Log に記録する
 
 > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
@@ -35,7 +35,7 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - [x] AC-003 — `.claude/skills/run-exec-plan/SKILL.md` の Step 0・停止条件表・Completion criteria を改修
 - [x] AC-004 — `.claude/skills/start-feature/SKILL.md` に readiness 確認ステップを追加
 - [x] AC-005 — `.claude/skills/doc-review/SKILL.md` §2 を単一ソース参照に変更
-- [ ] AC-006 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
+- [x] AC-006 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
 - [ ] AC-007 — 3地点ウォークスルーを実施し Decision Log に記録
 - [ ] `/check-doc-invariants` を実行
 - [ ] `/pre-pr` を実行（PR 作成自体は人間ゲート）
@@ -49,6 +49,7 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - AC-003 完了
 - AC-004 完了
 - AC-005 完了
+- AC-006 完了
 
 ## Decision Log
 
@@ -104,3 +105,12 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
   を追加し、プロンプトへ全文を埋め込む形にした（参照だけでは届かない）。出力表を
   「Verdict / Failing checks」に変更し、判定は advisory（ファイル変更なし）である点を明示。
   §2 に残した独自観点は readiness では測れない集合レベルの観点（正常系/異常系/境界の被覆、AC 間の重複・矛盾）のみ。
+
+- **AC-006 done.** CLAUDE.md に「AC readiness（自走前の測定可能性ゲート）」節を新設し4地点の措置表を
+  記載、停止条件 (a) を「ループ前に検出・ループ中は backstop」に更新、スキル一覧3行を追従。
+  `SKILL_FLOW.md` は §1 の PLAN / SF / DRIVER / DR ノード、§2 の共通参照ファイル注記、§3-6 の G-C 行
+  （G-F は #27 マージ済みのため ✅ Resolved に更新）、§4 のブロッキング注記を更新。
+  README（en/ja）・ONBOARDING（en/ja）のフロー・スキル表・責任分担表・最小セット説明も追従。
+- **`pre-pr` には readiness を入れない**。readiness は「実装前に測定可能か」を問うゲートであり、
+  実装完了後に回しても是正の余地がない（AC を書き直せば実装もやり直しになる）。PR 前の照合は
+  既存の AC カバレッジ／E2E カバレッジが担う。

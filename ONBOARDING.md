@@ -244,7 +244,7 @@ If changing the whole skill set is too large, you can adopt just the following m
 - `.claude/hooks/post-tool-notify.py` — Post-code-change notification
 - `.claude/settings.json` — Hook configuration
 - `CLAUDE.md` — Code of conduct for Claude (includes diagram rules and the skill list)
-- `.claude/skills/create-exec-plan/` — Creating exec plans
+- `.claude/skills/create-exec-plan/` — Creating exec plans (includes `ac-readiness.md`, the shared AC testability checks)
 - `.claude/skills/pre-pr/` — Pre-PR checks
 
 **Optional (nice to have):**
@@ -336,7 +336,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 
 | Phase | Human's responsibility | AI's responsibility |
 |-------|------------------------|---------------------|
-| Requirements / spec | Define and freeze User Stories / ACs | Elicit through dialogue and write the draft |
+| Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY | Elicit through dialogue, write the draft, and run the readiness check (it never rewrites an AC on its own) |
 | Implementation / verification | (Instruction is the AC number only) | Autonomously run implement → test → fix → next AC; run `run-tests` / `check-*` internally |
 | Spec change / test expectations | Decide whether the change is allowed (outer gate) | Detect that a change is needed and stop to present it |
 | Review / PR | Review the code and approve/merge the PR | Run the consolidated checks via `pre-pr` |
@@ -353,8 +353,10 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           (optional; skip for small changes. Needs human approval before create-exec-plan)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
                           At least one [E2E] AC in addition to the functional ones
-2. /start-feature       → Confirm docs and create a branch
-3. /run-exec-plan       → Autonomously implement ACs one by one (implement → test → fix → next AC)
+                          AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here
+2. /start-feature       → Confirm docs, re-check AC readiness, and create a branch
+3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written
+                          Then autonomously implement ACs one by one (implement → test → fix → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
                           Checks with the human only when hitting a stop condition (a–e)
 4. /pre-pr              → Consolidated pre-PR checks

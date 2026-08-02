@@ -60,8 +60,8 @@ Claude Code で以下を実行します：
 ```
 /create-requirements ← User Story・ゴール像・AC 条件を定義（任意・推奨）
 /create-spec         ← アプリ仕様と E2E シナリオを起草（任意・小さな変更ならスキップ）
-/create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義）
-/start-feature       ← 実装前の確認・ブランチ作成
+/create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義し AC readiness を検査）
+/start-feature       ← 実装前の確認・AC readiness の再検査・ブランチ作成
 /run-exec-plan       ← AC を1つずつ自走実装（opt-in）
    （手動で進める場合: コードを書く → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
@@ -98,9 +98,9 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
 | `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/`、`status: draft`。人間承認が必要） |
-| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC** を持つ実行計画を新規作成 |
-| `start-feature` | 実装開始前の確認・ブランチ名決定（機能ごとに一度） |
-| `run-exec-plan` | AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
+| `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC** を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査 |
+| `start-feature` | 実装開始前の確認・**AC readiness の再検査**・ブランチ名決定（機能ごとに一度） |
+| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、AC を1つずつ自走実装（実装→テスト→修正→次）。停止条件でのみ HALT（opt-in） |
 | `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新） |
 | `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
 | `promote-spec` | 次バージョン仕様（`spec/<label>` ブランチ）を現ターゲットへ昇格（スプリント境界） |
@@ -120,7 +120,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 
 | スキル | 用途 |
 |-------|------|
-| `doc-review` | 独立エージェントが要件・仕様ドキュメントをレビュー（AC の検証可能性・網羅性・参照方向） |
+| `doc-review` | 独立エージェントが要件・仕様ドキュメントをレビュー（共通の AC readiness 基準による検証可能性・網羅性・参照方向） |
 | `docode-review` | 独立エージェントが変更コードを AC と一般品質に対してレビュー |
 
 > `run-tests` はモデル起動可（呼び出し側は Skill ツールで起動）。他の内部スキルは上位スキルが `SKILL.md` の手順をインライン実行する。CLAUDE.md「検証スキルの呼び出しポリシー」を参照。
