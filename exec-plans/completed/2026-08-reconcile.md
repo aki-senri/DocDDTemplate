@@ -1,7 +1,7 @@
 ---
-status: active
+status: completed
 created: 2026-08-02
-completed:
+completed: 2026-08-02
 ---
 
 # reconcile
@@ -47,6 +47,8 @@ completed:
 
 - PR #30 作成（`2026-08-ac-readiness-gate.md` と合同）。マージ後に `/complete-exec-plan` を実行する
 - PR #30 のレビュー対応（Copilot 3 件のうち 1 件が本プラン分）
+- PR #30 マージ済み（`67d90c6`）。全 AC 充足のため completed へ移行
+
 ## Decision Log
 
 ### 2026-08-02
