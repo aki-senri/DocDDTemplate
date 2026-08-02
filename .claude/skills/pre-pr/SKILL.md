@@ -29,7 +29,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ② check-doc-freshness   → Verify documentation freshness
 ③ check-doc-invariants  → Verify document structural invariants
 ④ review_checklist      → Code review checklist
-⑤ run-tests             → Run tests and verify against spec (incl. [E2E] AC coverage)
+⑤ run-tests             → Run tests and verify against spec, incl. [E2E] AC coverage
 ⑥ exec-plan update      → Record progress in log
 ```
 
@@ -177,7 +177,7 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ③ doc-invariants   : ✅ all passed  / ❌ {count} violation(s) / ⚠️ {count} warning(s)
 ④ review_checklist : ✅ all passed  / ❌ {count} item(s) not addressed
 ⑤ run-tests        : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
-⑤-E2E E2E coverage : ✅ {n}/{n} [E2E] AC covered and green  / ❌ {count} uncovered or failing (blocks)
+  └ E2E coverage   : ✅ {n}/{n} [E2E] AC covered and green  / ❌ {count} uncovered or failing (blocks)
                      / ⚠️ プランに [E2E] AC がありません (does not block)
 ⑥ exec-plan        : ✅ Progress updated
 

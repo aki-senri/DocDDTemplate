@@ -110,11 +110,23 @@ For each `docs/02_spec/**/*.md`:
   (warn if an AC belongs to no scenario)
 
 For each `exec-plans/active/*.md`:
-- At least one AC must be an E2E criterion (`- [ ] AC-NNN: [E2E] ...`)
-- **Exemption**: a plan whose Decision Log records `E2E: n/a (documentation-only)` is skipped.
-  Report it as informational, not a violation
+- At least one AC should be an E2E criterion (`- [ ] AC-NNN: [E2E] ...`)
+- A plan with none is a **warning, not a violation** — it has legitimate causes: the plan predates
+  the E2E requirement, or it is documentation-only. This matches how `run-tests` / `pre-pr` /
+  `complete-exec-plan` treat the same situation (⚠️ report-only, does not block); keeping the doc
+  gate stricter than the test gates would block on something the test gates deliberately let pass
+- **Exemption**: a plan whose Decision Log records `E2E: n/a (documentation-only)` is not even a
+  warning — report it as informational, since the criterion was considered and ruled out
 
-*Violation level*: Warning for the spec AC-coverage item; violation for missing required sections
+*Violation levels*:
+
+| Item | Level |
+|------|-------|
+| US missing `## ゴール像` (or one of its three subsections) | ❌ Violation |
+| Spec missing `## E2E シナリオ` (or it has no `E2E-NNN`) | ❌ Violation |
+| Spec AC belonging to no `E2E-NNN` scenario | ⚠️ Warning |
+| Active plan with no `[E2E]` AC | ⚠️ Warning |
+| Active plan with `E2E: n/a (documentation-only)` recorded | ℹ️ Informational |
 
 ---
 
@@ -193,7 +205,8 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
    `### E2E-NNN:`; collect the `満たす AC` lists and compare against the ACs the spec references
 3. For each `exec-plans/active/*.md`: check for at least one `- [ ] AC-NNN: [E2E]` /
    `- [x] AC-NNN: [E2E]` line. If none, look for `E2E: n/a` in the `## Decision Log` — if present,
-   report as informational rather than a violation
+   report as informational; if absent, report as a **warning** (not a violation), matching how
+   `run-tests` / `pre-pr` / `complete-exec-plan` treat a plan with no `[E2E]` AC
 
 ---
 
@@ -228,9 +241,11 @@ Exec-plans checked: {count}
 ❌ DOC-INV-006 violations (goal image / E2E): {count}
   - docs/01_requirements/user_stories/US-001_foo.md: no ## ゴール像 section
     Fix: Run /create-requirements Q4, or add 完成時にできること / 主要ユーザージャーニー / 非ゴール
-  - exec-plans/active/2026-01-feature.md: no [E2E] AC and no "E2E: n/a" in the Decision Log
-    Fix: Add an [E2E] AC (see create-exec-plan), or record the documentation-only exemption
-  ⚠️ AC-004 in docs/02_spec/app_spec.md belongs to no E2E-NNN scenario
+
+⚠️ DOC-INV-006 warnings: {count}
+  - docs/02_spec/app_spec.md: AC-004 belongs to no E2E-NNN scenario
+  - exec-plans/active/2026-01-feature.md: no [E2E] AC (predates the requirement?)
+    Fix: Add an [E2E] AC (see create-exec-plan), or record E2E: n/a if documentation-only
   ℹ️ exec-plans/active/2026-02-docs.md: documentation-only, E2E exempt
 
 ---

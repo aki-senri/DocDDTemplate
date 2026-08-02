@@ -45,6 +45,7 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
 - `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は DOC-INV-004 が 5 件（既知）、
   ⑤ は `test_strategy.md` 不在で実行不可、⑤-E2E は自動テスト不在で ❌。PR 作成は保留
 - 自己矛盾レビューで 8 件検出。全件対処。AC-006 を追加し、AC-005（E2E）を再オープンして再検証
+- PR #29 作成。Copilot レビュー 3 件を受けて修正（重大度の不整合 1・図の可読性 2）
 - Implementation started. Branch: feat/goal-image-e2e-issue27
   （`start-feature` は AC-001 コミット後に事後実行。Step 0 / Step 2 は実行不可 — Decision Log 参照）
 
@@ -275,6 +276,32 @@ GitHub issue #27 (G-F) の解消。親トラッキングは #28 で、本プラ�
   追加した5項目は 5:リファクタリング非免除 / 6:documentation-only 免除 / 7:E2E-AC 不在の
   3スキル一致 / 8:未カバー時の3スキル一致 / 9:driver の hold 分岐 / 10:CLAUDE.md 追従 /
   11:DOC-INV-006 の3箇所参照 / 12:doc-review / 13:docode-review / 14:SKILL_FLOW の但し書き。
+
+- **PR #29 のレビュー対応（Copilot、3 件）。** いずれも妥当と判断し全件反映した。
+
+  1. **DOC-INV-006 の重大度が他ゲートと不整合だった**（最も重い指摘）。DOC-INV-006 は
+     「active プランに `[E2E]` AC が無ければ違反（documentation-only のみ免除）」としていたが、
+     `run-tests` / `pre-pr` / `complete-exec-plan` は同じ状況を ⚠️ 報告のみ・続行可としており、
+     ドキュメントゲートだけがテストゲートより厳しく、テスト側が意図的に通す状態でブロックする形に
+     なっていた。これは自己矛盾レビューの 2 で統一したはずの論点の見落としで、DOC-INV-006 を
+     後から追加した際に同じ穴を再発させていた。
+     決定: exec-plan の `[E2E]` AC 不在を **warning へ格下げ**し（正当な理由＝要件化以前のプラン
+     ／documentation-only）、重大度の表を明示的に置いた。US の `## ゴール像` 欠落と spec の
+     `## E2E シナリオ` 欠落は violation のまま（これらは免除理由が存在しないため）。
+     Step 7 の手順文にも warning である旨を明記。
+
+  2. `SKILL_FLOW.md` のフロー図で PREPR / COMPLETE ノードの番号が重複していた
+     （`⑤` と `⑤-E2E`、`③` と `③-E2E`）。E2E 検査は run-tests ゲートの一部であり独立した
+     手番ではないため、`⑤ ... incl. [E2E] AC covered and green` の形に畳んだ。
+     `pre-pr` の結果報告書式も同じ疑似手番 `⑤-E2E` を持っていたため `└ E2E coverage` の
+     サブ行に変更（指摘は SKILL_FLOW のみだったが、同じ誤りが波及していたため揃えた）。
+
+  3. `SKILL_FLOW.md` の PLAN ノードが `[E2E]` AC の出所を "from E2E-NNN" のみと書いており、
+     `create-exec-plan` が認めている「仕様を省略した場合は US のゴール像から起こす」経路が
+     図から抜けていた。両方を併記。
+
+  検証: 4 ゲート（run-tests / pre-pr / complete-exec-plan / DOC-INV-006）で「不在＝⚠️続行可」
+  「未カバー＝❌停止」が一致すること、疑似手番が残っていないことを 8 項目で確認し全て PASS。
 
 - **DOC-INV-004（AC traceability）はこのリポジトリでは構造的に充足できない**。
   同 INV は「exec-plan の各 AC-NNN が、`ac_ids:` にその ID を含む US ファイルに対応すること」を
