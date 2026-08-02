@@ -22,12 +22,10 @@ GitHub issue #24 (G-C) の解消。
 - [x] AC-004: `start-feature` に readiness 確認ステップを追加し、手動パスでも同じ基準で検査する。人が同席するパスのため NOT READY は「提示して人が判断」とし、AC-001 の措置表と一致させる
 - [x] AC-005: `doc-review` の「2. Acceptance criteria quality」を `ac-readiness.md` の5観点を参照する形に揃え、レビュー観点が独自定義へドリフトしないようにする（optional スキルのため判定は助言のまま）
 - [x] AC-006: `CLAUDE.md` / `SKILL_FLOW.md` / `README.md` / `README.ja.md` / `ONBOARDING.md` / `ONBOARDING.ja.md` のいずれにも、readiness ゲート導入**前**のフロー記述が残っていない（＝AC の測定可能性検査が存在しないフロー図・スキル表・停止条件 (a) の旧文面が1件も無い）状態にする<br>※ 起票時は「各ドキュメントを追従させる」と活動形で書いていたが、AC-007 の dogfooding で R1 違反（活動の記述）と判定されたため、単一の観測可能な終状態に書き直した（Decision Log 参照）
-- [x] AC-007: [E2E] 痩せた AC を含むプラン例で `/create-exec-plan` → `/start-feature` → `/run-exec-plan` の3地点をウォークスルーし、(a) 同じ AC が3地点で同じ READY 判定になること、(b) 措置だけが「書き直し／人に確認／HALT」と分かれること、(c) documentation-only 免除が3地点で一致することを確認し、結果を Decision Log に記録する
+- [x] AC-007: 痩せた AC を含むプラン例で `/create-exec-plan` → `/start-feature` → `/run-exec-plan` の3ゲートを照合した結果が Decision Log に記録され、(a) 同じ AC が3ゲートで同じ判定になること、(b) 措置だけが「書き直し／人に確認／HALT」と分かれること、(c) documentation-only の扱いが3ゲートで一致することを含む全項目が PASS である<br>※ 起票時は `[E2E]` AC として書いていたが、`2026-08-reconcile.md` の AC-003 で「documentation-only プランは `[E2E]` AC を置かない」と規約を変更したため、通常の機能 AC に書き直した（Decision Log 参照）
 
-> このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
-> 本プランは documentation-only（変更対象は `.claude/skills/**` と `*.md` のみ）のため、
-> AC-007 は `create-exec-plan` の documentation-only 免除に従い、Decision Log に記録した
-> **再現可能なウォークスルー**をもって検証する。
+> 本プランは documentation-only（変更対象は `.claude/skills/**` と `*.md` のみ）のため
+> `[E2E]` AC を持たない。Decision Log の `E2E: n/a (documentation-only)` を参照。
 
 ## Task Breakdown
 
@@ -37,7 +35,7 @@ GitHub issue #24 (G-C) の解消。
 - [x] AC-004 — `.claude/skills/start-feature/SKILL.md` に readiness 確認ステップを追加
 - [x] AC-005 — `.claude/skills/doc-review/SKILL.md` §2 を単一ソース参照に変更
 - [x] AC-006 — `CLAUDE.md` / `SKILL_FLOW.md` / `README*.md` / `ONBOARDING*.md` を追従
-- [x] AC-007 — 3地点ウォークスルーを実施し Decision Log に記録
+- [x] AC-007 — 3ゲート照合を実施し Decision Log に記録
 - [x] `/check-doc-invariants` を実行
 - [x] `/pre-pr` を実行（PR 作成自体は人間ゲート）
 
@@ -51,11 +49,12 @@ GitHub issue #24 (G-C) の解消。
 - AC-004 完了
 - AC-005 完了
 - AC-006 完了
-- AC-007 完了（[E2E]・ウォークスルー14項目 PASS）
+- AC-007 完了（照合14項目 PASS）
 - `/check-doc-invariants` 実行。DOC-INV-004 が 7 件（既知・本テンプレートに docs/01_requirements が
   無いため構造的に充足不能）。他は PASS または N/A
 - `/pre-pr` 実行。①②④ は前提ファイル不在で N/A、③ は上記の既知違反のみ、⑤ は test_strategy.md 不在で
-  実行不可（documentation-only のため [E2E] はウォークスルーで検証済み）。PR 作成は人間ゲートのため保留
+  実行不可。E2E カバレッジは「プランに [E2E] AC が無い」＝ ⚠️ 報告のみでブロックしない
+  （documentation-only。規約変更前は ❌ 保留だった — Decision Log 参照）。PR 作成は人間ゲートのため保留
 
 ## Decision Log
 
@@ -207,3 +206,15 @@ GitHub issue #24 (G-C) の解消。
   ②`create-exec-plan` の免除を削り、doc-only プランには `[E2E]` AC を置かない運用にする）、
   どちらもゲートの意味を変える仕様判断のため人間ゲート。#27 の AC-004 が stale になるため、
   着手する場合は CLAUDE.md の規約どおり reconcile プランで同 AC-ID を再オープンする必要がある。
+
+- **E2E: n/a (documentation-only)**。`2026-08-reconcile.md` の AC-003 で `create-exec-plan` から
+  「documentation-only プランの `[E2E]` AC をウォークスルーで検証してよい」という免除を削除したため、
+  本プランも新規約に従い `[E2E]` AC を持たない形へ是正した。
+  - AC-007 の `[E2E]` マーカーを外し、通常の機能 AC（観測可能な結果＝「照合結果が Decision Log に
+    記録され全項目 PASS」）として書き直した。実施内容・検証結果は変えていない。
+  - プラン冒頭の「`[E2E]` の AC が緑でなければ完了ではない」注記を documentation-only の注記に差し替え。
+  - これにより `/pre-pr` ⑤ の E2E カバレッジは「プランに `[E2E]` AC が無い」＝ ⚠️ 報告のみ（ブロックしない）
+    に変わり、前回 ❌ で保留していた状態が規約どおりに解消される。
+- **AC-007 の書き直しは readiness 観点でも改善**。旧文面「…ウォークスルーし、…を確認し、記録する」は
+  R1（活動の記述）に触れる形だった。新文面は「記録され、全項目が PASS である」という単一の終状態。
+  AC-006 と同じ種類の修正で、dogfooding が2件目を拾った形になる。

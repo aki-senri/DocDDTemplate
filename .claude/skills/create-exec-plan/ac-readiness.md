@@ -67,10 +67,9 @@ reason is already written in the plan's `## Decision Log`. An unmet R3/R4 with n
 NOT READY, and the loop halts. (Same principle as not rewriting the AC itself.)
 
 **Documentation-only plans** (`E2E: n/a (documentation-only)` recorded in the Decision Log — see
-`SKILL.md`) score **R4 as n/a**, not as ⚠️ — there is no through-flow to anchor to. If such a plan
-defines an `[E2E]` AC anyway (`SKILL.md` allows this, verified by a recorded walkthrough), anchor R4
-to that AC instead of scoring it n/a. The other four checks always apply: a documentation change can
-state observably what must be true when it is done.
+`SKILL.md`) score **R4 as n/a**, not as ⚠️ — there is no through-flow to anchor to, and such a plan
+carries no `[E2E]` AC of its own to anchor to either. The other four checks always apply: a
+documentation change can state observably what must be true when it is done.
 
 ---
 

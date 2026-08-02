@@ -163,6 +163,10 @@ something nobody wanted.
   behavior?
 - If the plan has none, is it genuinely documentation-only? (`create-exec-plan` exempts only that
   case, and asks for `E2E: n/a (documentation-only)` in the Decision Log.)
+- The converse is also a finding: a **documentation-only plan that carries an `[E2E]` AC**. Such a
+  plan cannot be completed — `run-tests` / `pre-pr` / `complete-exec-plan` all hold on an `[E2E]` AC
+  with no passing test, and a documentation change has no test to give them. Flag it and suggest
+  restating the criterion as an ordinary functional AC with an observable result.
 
 ### 3. Clarity and completeness
 - For User Stories: is the "As a / I want / So that" structure clear?

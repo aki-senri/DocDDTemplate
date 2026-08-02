@@ -85,7 +85,7 @@ add up.
 | New / changed functionality from requirements | **Required** | the new through-flow works end to end |
 | **Refactoring** of code that realizes functionality | **Required** | the *existing* through-flow still works unchanged |
 | A reconcile plan re-opening AC-IDs (see CLAUDE.md) | **Required** | the through-flow covering the re-opened ACs holds |
-| Nothing functional — documentation, doc restructuring | Not required | — |
+| Nothing functional — documentation, doc restructuring | **Must not** carry one | — (record `E2E: n/a`) |
 
 **Refactoring is not an exception.** It is the case that most needs the criterion: the whole claim
 of a refactor is "behavior is preserved", and without an E2E AC the plan can be completed having
@@ -97,10 +97,14 @@ against `git diff --name-only`. It is not a judgment call about how "code-like" 
 such a plan, record `E2E: n/a (documentation-only)` in the plan's `## Decision Log` so a later
 reader knows the criterion was considered and ruled out, not forgotten.
 
-If a documentation-only plan defines an E2E AC anyway (e.g. a through-walkthrough of a process),
-it may be verified by a **reproducible walkthrough recorded in the Decision Log** instead of an
-automated test. This exemption applies only when the plan is documentation-only — a plan that
-touches functional code always needs a passing test.
+**A documentation-only plan does not define an `[E2E]` AC at all** — not even for a process
+walkthrough that feels end-to-end. The reason is mechanical, not philosophical: `run-tests`,
+`pre-pr`, `complete-exec-plan` and `run-exec-plan` all treat "`[E2E]` AC present, no passing test"
+as a hold, and none of them accepts a walkthrough in place of a test. A plan that writes an `[E2E]`
+AC it cannot cover with a test is a plan that cannot be completed. Verification work that is worth
+tracking still belongs in the plan — as an ordinary functional AC whose result is observable
+("…の照合結果が Decision Log に記録され、全項目が PASS である"), which the same gates handle without
+a special case.
 
 **Notation** — an E2E AC is an ordinary numbered AC whose description starts with the `[E2E]`
 marker:
@@ -111,7 +115,10 @@ marker:
 
 Keep the `AC-NNN:` numbering continuous with the functional ACs and place the E2E entries last.
 Do **not** invent a separate ID series (`AC-E01:`) — `.claude/hooks/spec-gate.py` parses
-`AC-(\d{3}):`, and a different series would be invisible to the spec gate. The `[E2E]` marker
+`AC-(\d{3}):`, and a different series would be invisible to the spec gate. For the same reason,
+**nothing may sit between the ID and its colon**: `- [ ] AC-003（再オープン: …）: …` does not match,
+so put any annotation after the colon (`- [ ] AC-003: （再オープン: …）…`). This bites reconcile
+plans in particular, where re-opened IDs invite a parenthetical. The `[E2E]` marker
 goes *after* the colon so the gate keeps matching, and `run-tests` / `pre-pr` locate E2E ACs by
 grepping for the marker.
 
@@ -162,6 +169,10 @@ completed:
 
 > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
 
+<!-- documentation-only プランの場合は上の [E2E] AC と注記を置かず、代わりに
+     Decision Log へ `E2E: n/a (documentation-only)` を記録する -->
+
+
 ## Task Breakdown
 {Answer to Q4 in checklist format}
 
@@ -197,8 +208,8 @@ completed:
 - [ ] For any plan implementing requirements or functionality (**refactoring included**):
       **at least one acceptance criterion is an E2E criterion** written as `- [ ] AC-NNN: [E2E] ...`,
       placed after the functional ACs, and traced to the spec's `E2E-NNN` (or to the US goal image
-      when no spec exists). For a documentation-only plan: `E2E: n/a (documentation-only)` is
-      recorded in the Decision Log instead
+      when no spec exists). For a documentation-only plan: **no `[E2E]` AC is present**, and
+      `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
 - [ ] **Every criterion was checked against [`ac-readiness.md`](ac-readiness.md)**, and the plan
       contains no NOT READY criterion (any ⚠️ has its reason recorded in the Decision Log)
