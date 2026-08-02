@@ -101,8 +101,10 @@ cat .claude/skills/create-exec-plan/process-walkthrough.md
 # Start from the document's own call-site table, then widen by grep on BOTH the file name
 # and the rule's IDs — a site can name the rule (R2, INV-T02, DOC-INV-001) without ever
 # naming the file, and that site is the one the table is most likely to have missed.
+# 2>/dev/null || true so a missing range path and a no-match result both yield
+# "nothing found" rather than a non-zero exit under set -e.
 grep -rln "{basename without .md}\|{rule or step IDs it defines}" \
-  .claude/ exec-plans/active/ docs/ *.md 2>/dev/null
+  .claude/ exec-plans/active/ docs/ *.md 2>/dev/null || true
 # then cat each hit that is not this document itself
 
 # Diff, if the document was just changed — it scopes the lap to what actually changed.

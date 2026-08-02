@@ -94,7 +94,10 @@ conclude from memory that nothing consumes the change; that judgement is the one
    added to it:
 
    ```bash
-   grep -rn "ac-readiness\|R2" .claude/ exec-plans/active/ *.md
+   # 2>/dev/null || true: a range path may not exist in a given repo (no docs/, no
+   # exec-plans/active/), and a no-match grep exits 1. Neither is a failure of this
+   # lap — "nothing found" is a result. Without both, the command dies under set -e.
+   grep -rn "ac-readiness\|R2" .claude/ exec-plans/active/ *.md 2>/dev/null || true
    ```
 
    The range is `.claude/**`, `exec-plans/active/**` and the root `*.md`. Enumeration is the cheap
