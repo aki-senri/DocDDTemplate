@@ -99,7 +99,7 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | `init-project` | Project initialization (Phase 0 → Phase 1). Run once at adoption |
 | `create-requirements` | Define User Stories, the **goal image** (what the user can do when done / primary journey / non-goals), acceptance conditions, and constraints (`docs/01_requirements/`) |
 | `create-spec` | Draft the application spec — *what* the app does — plus **E2E scenarios** (`E2E-001 → AC-001, AC-003` cross-cutting traceability) from approved requirements (`docs/02_spec/`, `status: draft`; needs human approval) |
-| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC**, each checked for **AC readiness** (testability) |
+| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) |
 | `start-feature` | Pre-implementation review, AC readiness re-check, and branch name decision (once per feature) |
 | `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), then autonomously implement ACs one by one (implement → test → fix → next); halts only on stop conditions (opt-in) |
 | `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update) |

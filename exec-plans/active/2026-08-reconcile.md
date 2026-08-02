@@ -96,3 +96,11 @@ completed:
   警告している箇所）に「ID とコロンの間に何も置かない。注記はコロンの後ろへ」を1文追記した。
   本プランのどの AC にも属さない変更だが、CLAUDE.md「現バージョンの不備修正は main に直接」に該当し、
   スコープを広げない1文であるため AC を追加せずここに記録する。
+- **サマリ表3件も追従**。`CLAUDE.md` スキル一覧・`README.md` / `README.ja.md` のスキル表が
+  「`create-exec-plan` は最低1本の `[E2E]` AC を定義する」と無条件に書いており、新規約
+  （documentation-only は置かない）と食い違うため但し書きを追加。AC-003 の「規約として明記した状態」に
+  含まれる追従とみなす。
+- **再照合（最終）**: `grep -rn "walkthrough|ウォークスルー" --include=*.md`（exec-plans を除く）の結果は
+  `create-exec-plan` の禁止文2行のみ。免除の記述はリポジトリ内に残っていない。
+  `exec-plans/active/*.md` は2プランとも `[E2E]` AC なし・`E2E: n/a` 記録あり＝ DOC-INV-006 は ℹ️。
+  両プランの AC 行は `AC-(\d{3}):` で解析可能（reconcile: 003/006、ac-readiness-gate: 001〜007）。
