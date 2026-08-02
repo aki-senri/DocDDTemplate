@@ -79,7 +79,9 @@ do not re-derive the criteria here.
 
 | Verdict | Action |
 |---------|--------|
-| All READY (⚠️ allowed with its reason recorded) | Start the loop |
+| All READY | Start the loop |
+| ⚠️ (R3 / R4 unmet) **and the reason is already in the plan's Decision Log** | Start the loop |
+| ⚠️ with no recorded reason | Treat as NOT READY — the driver may not author the reason itself |
 | Any **NOT READY** | **Do not start the loop.** Halt with stop condition (a) |
 
 Record the result in the plan's `## Decision Log` either way — as

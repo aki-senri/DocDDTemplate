@@ -60,9 +60,17 @@ R1 / R2 / R5 decide whether a test can exist at all, so they have no exemption. 
 legitimately unmet — e.g. the threshold lives in a spec that deliberately leaves it qualitative
 this cycle, or the plan is documentation-only and has no through-flow.
 
+**Who may state the ⚠️ reason.** A reason is a claim about the spec, so it comes from a human or
+from a record a human left. `create-exec-plan` and `start-feature` may obtain one in conversation;
+**`run-exec-plan` may not author one** — for the unattended loop, ⚠️ counts as passing only when the
+reason is already written in the plan's `## Decision Log`. An unmet R3/R4 with no recorded reason is
+NOT READY, and the loop halts. (Same principle as not rewriting the AC itself.)
+
 **Documentation-only plans** (`E2E: n/a (documentation-only)` recorded in the Decision Log — see
-`SKILL.md`) score **R4 as n/a**, not as ⚠️. The other four checks still apply: a documentation
-change can state observably what must be true when it is done.
+`SKILL.md`) score **R4 as n/a**, not as ⚠️ — there is no through-flow to anchor to. If such a plan
+defines an `[E2E]` AC anyway (`SKILL.md` allows this, verified by a recorded walkthrough), anchor R4
+to that AC instead of scoring it n/a. The other four checks always apply: a documentation change can
+state observably what must be true when it is done.
 
 ---
 
@@ -75,9 +83,9 @@ human is there, the fix is a conversation; where none is, the only correct move 
 
 | Call site | When it runs | READY | ⚠️ | NOT READY |
 |-----------|--------------|-------|----|-----------|
-| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the plan | Write the plan; record the reason in the Decision Log | Rewrite the AC with the user. **Do not finalize the plan** with a NOT READY criterion |
+| `create-exec-plan` (Q3c) | Before the plan file is finalized | Write the plan | Write the plan; record the reason in the Decision Log | Rewrite the AC with the user. **Do not finalize the plan** with a NOT READY criterion |
 | `start-feature` (Step 1b) | Before manual implementation | Proceed | Report and proceed | Present the failing checks and ask the user to rewrite or to proceed anyway; record the decision in the Progress Log |
-| `run-exec-plan` (Step 0) | Before the autonomous loop starts | Start the loop | Record and start the loop | **Do not start the loop** — HALT with stop condition (a) and record it in the Decision Log |
+| `run-exec-plan` (Step 0b) | Before the autonomous loop starts | Start the loop | Start the loop **only if the reason is already recorded** (see below) | **Do not start the loop** — HALT with stop condition (a) and record it in the Decision Log |
 | `doc-review` (§2) | Optional independent review | ✅ | ⚠️ | ❌ in the findings table — advisory only; the reviewing agent changes no files |
 
 ### Where it is deliberately not applied
@@ -103,7 +111,7 @@ Every call site reports readiness in this shape (the surrounding report differs 
 === AC readiness ===
 
 AC-001  READY
-AC-002  ⚠️  R4 — E2E 未定義（documentation-only。Decision Log に記録済み）
+AC-002  ⚠️  R3 — 閾値が今サイクルの spec で定性のまま（Decision Log に記録済み）
 AC-003  NOT READY  R2 — 期待結果が本文から特定できない（「適切にハンドリングする」）
                    R5 — 実装手段（Repository を新設する）を指定している
 

@@ -10,7 +10,8 @@ completed:
 
 AC の testability（測定可能性）を、ループ内の主観判断から**ループ前の構造検査**へ前倒しする。
 共通の「AC readiness 基準」を単一ソースとして新設し、`create-exec-plan`（起票時）/ `start-feature`（手動パス）/
-`run-exec-plan` Step 0（自走前）の3地点で同じ基準を適用する。GitHub issue #24 (G-C) の解消。
+`run-exec-plan` Step 0b（自走前）の3ゲートで同じ基準を適用する（加えて `doc-review` が同じ基準で助言する）。
+GitHub issue #24 (G-C) の解消。
 親トラッキングは #28 で、本プランはその Ph2（#27 の次）にあたる。
 
 ## Acceptance Criteria
@@ -175,3 +176,34 @@ AC の testability（測定可能性）を、ループ内の主観判断から**
 - **`create-requirements` / `promote-spec` / `pre-pr` に readiness を適用しない理由**を
   `ac-readiness.md` に「Where it is deliberately not applied」として明記した。適用地点の非対称性は
   意図的であり、レビュー時に抜け漏れと誤読されないようにするため。
+
+- **矛盾チェック（テンプレート全体の自己照合、2026-08-02）**。レビュー用スキルが無いため、
+  #24 の変更と #27 で入った E2E ゲート群を手作業で突き合わせた。検出4件のうち自分で入れた3件を修正。
+
+  1. **AC-007 の検査項目 12 は誤って PASS と記録していた（訂正）**。`ac-readiness.md` の call-site 表は
+     `create-exec-plan` を **Q3d**、`run-exec-plan` を **Step 0** と書いており、実際のスキル
+     （Q3c / Step 0b）および CLAUDE.md・SKILL_FLOW の表と食い違っていた。Q3d→Q3c の変更を
+     `SKILL.md` 側にだけ適用し、単一ソース側に反映し忘れたのが原因。単一ソースが参照先の
+     ラベルを誤っていたため、実害は「読者が節を探せない」だが、**単一ソース化の目的そのものを
+     損なう種類の誤り**なので重く扱う。修正済み。項目 12 の判定は PASS → FAIL→修正後 PASS に訂正。
+  2. **`ac-readiness.md` 内の自己矛盾**。判定節は「documentation-only は R4 を n/a とし ⚠️ にしない」と
+     書いているのに、報告書式の例が `⚠️ R4 — E2E 未定義（documentation-only）` になっていた。
+     例を R3 のケースに差し替え、あわせて「documentation-only プランが `[E2E]` AC を定義している場合は
+     n/a ではなくその AC にアンカーする」を明記（本プラン自身がその状態であり、dogfooding の判定と
+     規則が食い違っていた）。
+  3. **⚠️ の理由を誰が言えるかが未定義だった**。⚠️ は「正当な理由が述べられている場合」に通すが、
+     自走ループにはその理由を作る資格がない（AC を書き換えられないのと同じ理由）。
+     `ac-readiness.md` に「run-exec-plan は理由を著述できない。Decision Log に既に記録されている
+     場合のみ ⚠️ を通過とする」を追加し、`run-exec-plan` Step 0b の表も4行に分けた。
+  4. 本プランの Goal & Scope が「3地点」と書いていたが、実装した適用先は4つ（うち doc-review は
+     助言）。「3ゲート＋doc-review（助言）」に修正。
+
+- **未解決の矛盾（#27 由来・人の判断が必要）**: `create-exec-plan` は documentation-only プランの
+  `[E2E]` AC を「Decision Log に記録した再現可能なウォークスルー」で検証してよいとしているが、
+  `run-tests` / `pre-pr` / `complete-exec-plan` / `run-exec-plan` Step 3 は「`[E2E]` AC があるのに
+  テストが無い＝ ❌ 保留/ブロック」としており、ウォークスルーの逃げ道を認めていない。
+  本プランと #27 のプランはどちらも実際にこの状態にあり、`/pre-pr` が ⑤ で ❌ になった。
+  修正方向は2つあり（①4ゲート側に documentation-only 限定のウォークスルー免除を入れる／
+  ②`create-exec-plan` の免除を削り、doc-only プランには `[E2E]` AC を置かない運用にする）、
+  どちらもゲートの意味を変える仕様判断のため人間ゲート。#27 の AC-004 が stale になるため、
+  着手する場合は CLAUDE.md の規約どおり reconcile プランで同 AC-ID を再オープンする必要がある。
