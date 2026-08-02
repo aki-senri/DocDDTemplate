@@ -213,7 +213,7 @@ stay AC coverage and `[E2E]` coverage.
 | AC readiness (`ac-readiness.md`, R1–R5) | Can this criterion be measured at all? |
 | Red-first (`../run-tests/red-first.md`, INV-T02) | Is the measurement independent of the implementation? |
 | `[E2E]` coverage | Do the fragments add up to something the user can do? |
-| Process walkthrough (`process-walkthrough.md`) | Does the process these documents describe actually run? |
+| Process walkthrough (`process-walkthrough.md`) | Does the process these documents describe actually run — including at the sites that consume what changed? |
 | **AC sources** (this file) | Does the implementer receive the **whole** goal — and is the finished result still checked against it? |
 
 Readiness `R4` and this file are adjacent but distinct: R4 asks *whether* an AC anchors to an E2E

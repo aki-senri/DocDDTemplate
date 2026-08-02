@@ -361,8 +361,9 @@ flowchart TD
                           （documentation-only プランは置かず E2E: n/a を記録）
                           AC readiness 検査（R1〜R5）＝テストで判定できない AC はここで書き直す
                           ## Sources ＝ 各 AC がどの US bullet・どの spec 節を凝縮したかを記録
-                          DocDD のプロセス（ループ・ゲート・再開）を変えるプランは
-                          「1周辿る」検証 AC を置く（記述の突き合わせだけでは足りない）
+                          DocDD のプロセス（ループ・ゲート・再開・他が参照する規約）を変えるプランは
+                          周回を辿る検証 AC を置く（記述の突き合わせだけでは足りない）
+                          前向き6周に加え、変更を参照する既存地点を辿る「依存の逆流」1周
 2. /start-feature       → ドキュメント確認（## Sources が指す US / spec を含む）・
                           AC readiness の再検査・ブランチ作成
 3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）

@@ -88,9 +88,28 @@ cat CLAUDE.md
 # AC readiness criteria — the shared testability checks (always, when the document has ACs)
 cat .claude/skills/create-exec-plan/ac-readiness.md
 
-# Process walkthrough laps — only when the document describes a process
-# (a loop, a resumable run, a stop condition, a gate, an exemption)
+# Process walkthrough laps — when the document describes a process (a loop, a resumable
+# run, a stop condition, a gate, an exemption) OR states a rule other documents consume.
+# Keep this condition identical to §2c's: a rule document has no loop of its own, and
+# collecting on the narrower condition would leave §2c telling the reviewer to apply a
+# single source it was never handed.
 cat .claude/skills/create-exec-plan/process-walkthrough.md
+
+# Referrers — only when the document states a rule other documents consume.
+# §2c's dependency-backflow lap judges whether each consuming site has what the rule now
+# requires, so the reviewer needs the consumers themselves, not just this document.
+# Start from the document's own call-site table, then widen by grep on BOTH the file name
+# and the rule's IDs — a site can name the rule (R2, INV-T02, DOC-INV-001) without ever
+# naming the file, and that site is the one the table is most likely to have missed.
+# 2>/dev/null || true so a missing range path and a no-match result both yield
+# "nothing found" rather than a non-zero exit under set -e.
+grep -rln "{basename without .md}\|{rule or step IDs it defines}" \
+  .claude/ exec-plans/active/ docs/ *.md 2>/dev/null || true
+# then cat each hit that is not this document itself
+
+# Diff, if the document was just changed — it scopes the lap to what actually changed.
+# Omit for a document being reviewed before any edit; §2c says what to do in that case.
+git diff main...HEAD -- {target document path} 2>/dev/null
 ```
 
 **If related files are not found**, proceed with what is available and note the absence in the review prompt.
@@ -117,6 +136,17 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 
 ### Process walkthrough laps (single source — apply these in §2c; include only for a process document)
 {full content of .claude/skills/create-exec-plan/process-walkthrough.md, or "not applicable"}
+
+### Referrers — the sites that consume this document's rule (needed for §2c dependency backflow)
+{the annotated path list: for each hit, its path and whether it appears in the document's own
+ call-site table. Paste full content for any the reviewer would otherwise be unable to open.
+ Or "none — nothing outside this document names it" / "not applicable — this document states no
+ rule others consume".
+ That lap cannot be performed on the document alone: judging whether a consuming site has what the
+ rule requires means reading that site from the top of its own skill.}
+
+### Diff (if this document was just changed)
+{output of: git diff main...HEAD -- {target}, or "none — reviewing the document as it stands"}
 
 ### constraints.md (if applicable)
 {content, or "not available"}
@@ -186,11 +216,14 @@ something nobody wanted.
   with no passing test, and a documentation change has no test to give them. Flag it and suggest
   restating the criterion as an ordinary functional AC with an observable result.
 
-### 2c. Process documents: does it survive one lap?
+### 2c. Process documents: does it survive its laps?
 
-Applies only when the document under review **describes a process** — a loop, a resumable run, a
-stop condition, a gate, or an exemption (scope table in
-`.claude/skills/create-exec-plan/process-walkthrough.md`). For ordinary requirement or spec
+Applies when the document under review **describes a process** — a loop, a resumable run, a stop
+condition, a gate, an exemption, **or a rule that other documents consume** (a single source with
+call sites, including a step or ID that others point at). The last clause matters: a rule document
+has no loop of its own, and skipping this section for it would skip the dependency-backflow lap
+exactly where it applies. Scope table in
+`.claude/skills/create-exec-plan/process-walkthrough.md`. For ordinary requirement or spec
 documents, skip this section.
 
 Do not check only that the steps read consistently. Walk the process and name the state after each
@@ -198,11 +231,22 @@ step, at least for these laps:
 
 - **second iteration** — the state the first pass leaves behind is the next pass's input;
 - **resume** — a fresh session starting from the files alone, mid-process;
-- **exemption** — the `n/a` path, and whether every downstream gate knows about it.
+- **exemption** — the `n/a` path, and whether every downstream gate knows about it;
+- **dependency backflow** — if this document states a rule other documents consume, walk the sites
+  that consume it, using the referrer list supplied above. For each, ask whether the material this
+  document now requires is in hand *at the point that site runs* — not whether the site's wording
+  still matches. A site can be textually correct and still be judging with what it does not have.
+  Report a referrer that the list contains but the document's own call-site table omits.
+
+  **Scope note.** Unlike `docode-review`, this review may run with no diff — a document reviewed
+  before anything changed. When a diff was supplied, scope the lap to what it altered. When none
+  was, you cannot know which requirement is *new*, so ask the question in its standing form: does
+  each consumer have what this document requires of it today? Say which of the two you performed.
 
 Report a finding when a state is unreachable or inescapable, when two rules answer the same state
-differently, when a gate fires on the state that means success, or when the process's own output
-violates its own entry condition. Advisory, like the rest of this review.
+differently, when a gate fires on the state that means success, when the process's own output
+violates its own entry condition, or when a consumer decides without the material it now needs.
+Advisory, like the rest of this review.
 
 ### 3. Clarity and completeness
 - For User Stories: is the "As a / I want / So that" structure clear?
@@ -246,6 +290,8 @@ Type: {document type}
 {Second iteration: ✅ / ❌ <state where it breaks>}
 {Resume from files alone: ✅ / ❌ <entry check that rejects the left-behind state>}
 {Exemption path: ✅ / ❌ <downstream gate unaware of the exemption>}
+{Dependency backflow: referrers examined <list them> — ✅ / ❌ <site that judges without the
+ material the rule now requires> / N/A <this document states no rule others consume>}
 
 ### Findings
 

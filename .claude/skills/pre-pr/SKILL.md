@@ -37,6 +37,17 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ⑥ exec-plan update      → Record progress in log
 ```
 
+> **Changes made with no exec-plan.** ⑤ (red-first evidence), ⑤b, ⑤c, ⑤d and ⑥ all read or write a
+> plan file. A change made under the `exec-plans/.spec-override` exception has none — its evidence
+> lives in the branch's commit messages instead. Note that CLAUDE.md has the override file **deleted
+> once implementation completes**, which is before this skill runs: do not expect to find it. Check
+> `git log main..HEAD` for the evidence before reporting ⚠️ for any of the five. Evidence recorded
+> outside a plan file is a `➖`, not a missing record, and ⑥ has nothing to update. With no plan and
+> no such record anywhere, the ⚠️ stands.
+>
+> This does **not** relax ⑤'s blocking parts. Failing tests, uncovered ACs and uncovered `[E2E]` ACs
+> block a plan-less change exactly as they block any other.
+
 ---
 
 ## Steps
@@ -193,10 +204,24 @@ the plan's `## Decision Log` for a walkthrough record naming its laps.
 
 ```
 Process walkthrough:
-  ✅ AC-008 → 6周（happy / 2周目 / 再開 / 免除 / ゲート境界 / 成功時）、検出 2 件 → 修正済み
+  ✅ AC-008 → 7周（happy / 2周目 / 再開 / 免除 / ゲート境界 / 成功時 / 依存の逆流）、検出 2 件 → 修正済み
+  ✅ AC-004 → 依存の逆流のみ（改称のため 1〜6周は適用外と明記）、列挙あり、検出 1 件 → 修正済み
   ⚠️ 記録なし（プロセスを変更しているが、記述の突き合わせしか行われていない可能性）
-  ➖ n/a（状態遷移を伴わない変更）
+  ⚠️ 依存の逆流の記録に参照元の列挙がない（何も見つからなかったのか、どこも見なかったのかを判別できない）
+  ➖ n/a（状態遷移を伴わず、変更した箇所を指す記述も他に無い）
 ```
+
+A lap-7-only record is **not** an under-specified one: the scope table in the single source admits a
+rename as lap 7's own case, and the record format for it requires saying which laps do not apply and
+why. Read for that sentence rather than for a lap count.
+
+**When the change has no plan at all**, see the note under the ①–⑥ overview above — it governs ⑤,
+⑤b, ⑤c, ⑤d and ⑥ alike, and is stated once there rather than repeated per check.
+
+The lap-7 line is the one worth reading closely. `process-walkthrough.md` requires that lap to record
+**both halves of its enumeration** — the call-site table it started from and the grep it widened
+with — plus the referrers they returned, precisely because "依存の逆流: PASS" alone is not
+falsifiable. Report the enumeration's absence separately from the record's absence.
 
 **Warning, not a blocker**, for the same reason as the red-first evidence check: the record is
 hand-written, so a missing line cannot be told apart mechanically from an unrecorded-but-done check.
@@ -289,8 +314,11 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
                      / ⚠️ プランに [E2E] AC がありません (does not block)
   └ Red-first      : ✅ {n}/{n} AC に赤の観測記録あり  / ⚠️ AC-NNN 記録なし (does not block)
                      / ➖ n/a (documentation-only)
-⑤b walkthrough     : ✅ {n} 周の記録あり  / ⚠️ プロセス変更だが記録なし (does not block)
-                     / ➖ n/a (状態遷移なし)
+⑤b walkthrough     : ✅ {n} 周の記録あり（依存の逆流に参照元の列挙あり）
+                     / ✅ 依存の逆流のみの記録あり（改称のため 1〜6周 適用外と明記）
+                     / ⚠️ プロセス変更だが記録なし / ⚠️ 依存の逆流に列挙なし (does not block)
+                     / ➖ n/a (状態遷移を伴わず、変更箇所を指す記述も他に無い)
+                     / ➖ n/a (プラン無しの変更 — 記録は commit message)
 ⑤c AC sources      : ✅ {n}/{n} AC に起点行あり  / ⚠️ ## Sources なし (does not block)
   └ 再アンカー     : ✅ {n}/{n} AC に記録あり  / ⚠️ AC-NNN 記録なし (does not block)
                      / ➖ n/a (起点なし)

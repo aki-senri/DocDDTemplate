@@ -105,6 +105,30 @@ inherits no session context, so a path it cannot read is a path it will ignore: 
 sections into the prompt rather than referencing them. If a plan has no `## Sources` table, or every
 row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all there is.
 
+**If the diff changes a documented process** — a skill definition, `CLAUDE.md`, a hook, or any rule
+other rules consume — also collect the **referrers**, for review point 1d's dependency-backflow lap:
+
+```bash
+# Start from the changed single source's own call-site table — it is the curated list.
+# Then widen by grep on BOTH the file name and the rule/step IDs it defines, since the
+# table is hand-maintained and a site can name the rule without ever naming the file.
+# 2>/dev/null || true so a missing range path (no docs/, no exec-plans/active/) and a
+# no-match result both yield "nothing found" rather than a non-zero exit under set -e.
+grep -rln "{changed single source basename without .md}\|{rule or step IDs: R2, INV-T02, Q3d, ⑤c}" \
+  .claude/ exec-plans/active/ docs/ *.md 2>/dev/null || true
+# then cat each hit — including the ones the diff did NOT touch, which are the point
+```
+
+Pass the result into the prompt under `## Referrers`. What is **required** is the annotated path
+list — each referrer, and whether the diff touched it. Full contents are optional, for files the
+reviewer could not otherwise reach.
+
+The list is the part that matters because of what the subagent lacks: not file access, but the
+reading of the diff that says **which rule other sites depend on**. That reading is the one the
+caller has already done by getting here. A referrer nobody hands over is one nobody thinks to open,
+and the sites nobody thought to open are the entire point of that lap. Marking which the diff
+touched is what lets the reviewer tell a followed dependency from a missed one.
+
 **If the working tree is not clean** (uncommitted changes exist):
 - Remind the user to commit or stash all changes before running this skill, OR
 - Include `git diff --cached` and `git diff` output in the review context in addition to `git diff main...HEAD`
@@ -149,6 +173,14 @@ Review the following changes objectively.
 ## AC sources (the US bullets / spec sections each AC condenses)
 {for each row of the plan's ## Sources table: the AC-ID, the section's path, and the section text.
  Or "None — the plan has no ## Sources table" / "n/a — {reason recorded in the plan}"}
+
+## Referrers — sites that name what this diff changed (for review point 1d, dependency backflow)
+{for each file the grep in Step 1 returned: its path and whether the diff touched it. Include full
+ content only where the reviewer could not otherwise open it. Or "none — nothing outside the diff
+ names what it changed" / "not applicable — the diff changes no documented process".
+ Open these yourself and read them from the top. You may add referrers you find, but do not treat an
+ empty or missing list as evidence that no site depends on the change — report that as a gap in the
+ review context instead.}
 
 ## Review instructions
 
@@ -204,9 +236,21 @@ Perform a thorough review covering:
      state after each step, at least: the **second iteration** (the state the first pass leaves is
      the next pass's input), a **resume** from the files alone mid-process, and the **exemption**
      path (does every downstream gate know about it?).
+   - **Dependency backflow** — the lap that needs the diff, so it belongs here more than anywhere:
+     for each rule, single source, record format or step label the diff changed, walk the sites that
+     name it **from the top of each one's own file**, using the referrer contents supplied under
+     `## Referrers` above. The point of the lap is the sites the diff did **not** touch. Ask whether
+     the material the changed rule now requires is in hand at the moment that site runs, and whether
+     a site that hands work onward (a subagent prompt, a handoff) actually passes it. A site can be
+     textually unchanged, still agree with the rule, and be judging with what it does not have.
+     If no referrers were supplied, say so rather than assuming there are none.
    - Report: a state that cannot be entered or left, two rules answering the same state differently,
-     a gate that fires on the state meaning success, or an entry condition the process's own output
-     violates.
+     a gate that fires on the state meaning success, an entry condition the process's own output
+     violates, a consumer left deciding without the material the change made necessary, or a pointer
+     (`Q3d`, `Step 0b`, `⑤c`) that no longer resolves at its target. **Exclude `## Decision Log` and
+     `## Progress Log` entries** — those are append-only history and record what was true when
+     written; "correcting" them destroys the record of the correction. Checked-off ACs describing
+     completed work are history too. Unchecked ACs and Task Breakdown entries are in scope.
    - The convention and its laps are in `.claude/skills/create-exec-plan/process-walkthrough.md`.
 
 2. **Correctness**
@@ -245,6 +289,8 @@ Branch diff: main...HEAD
 {Second iteration: ✅ / ❌ <state where it breaks>}
 {Resume from files alone: ✅ / ❌ <entry check that rejects the left-behind state>}
 {Exemption path: ✅ / ❌ <downstream gate unaware of the exemption>}
+{Dependency backflow: grep pattern used, referrers found <list them, marking which the diff touched>
+ — ✅ / ❌ <untouched site now judging without the material the change requires>}
 
 ### Tests vs. ACs (independence)
 {For each AC: ✅ the test asserts what the AC states / ⚠️ partially / ❌ the test mirrors the
