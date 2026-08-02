@@ -21,7 +21,7 @@ flowchart TD
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
-        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption / dependency backflow\n  (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
@@ -63,7 +63,7 @@ flowchart TD
     IMPL --> PREPR
     IMPL -.->|optional, manual path\n(no run-exec-plan)| DCR
     DRIVER ==>|mandatory once every AC is - [x]\n(Step 4a)| DCR
-    DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks one lap\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
+    DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
         PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
@@ -141,7 +141,10 @@ flowchart TD
 > plan to carry a walkthrough AC, the implementer records the laps, `doc-review` (§2c) and
 > `docode-review` walk them against the diff, and `pre-pr` (⑤b) checks the record exists (⚠️ only).
 > It exists because comparing call-site descriptions cannot see a process that deadlocks: the
-> descriptions agree and the states do not.
+> descriptions agree and the states do not. The laps run in two directions — six forward through
+> what the change added, and one (**dependency backflow**) inward from every existing site that
+> consumes what changed, since a single-source edit alters those sites' input requirements without
+> editing a character of them.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)

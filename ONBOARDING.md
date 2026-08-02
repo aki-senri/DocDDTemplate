@@ -361,8 +361,11 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           (documentation-only plans carry none — record E2E: n/a)
                           AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here
                           ## Sources: per AC, which US bullets and which spec section it condenses
-                          A plan that changes a DocDD process (a loop, a gate, a resumable run)
+                          A plan that changes a DocDD process (a loop, a gate, a resumable run,
+                          or a rule other rules consume)
                           carries a process-walkthrough AC — walk the laps, don't just match descriptions
+                          Six laps forward, plus "dependency backflow": the existing sites that
+                          consume what changed, walked from the top of each one
 2. /start-feature       → Confirm docs (incl. the US / spec sections in ## Sources),
                           re-check AC readiness, and create a branch
 3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written

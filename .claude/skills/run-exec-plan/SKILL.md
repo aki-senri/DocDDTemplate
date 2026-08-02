@@ -332,6 +332,17 @@ This step reads documents and compares them with behavior. It never edits the sp
 looks wrong, that is a spec change — outer gate, stop condition (a).
 
 **Step 3b — on green:**
+- **If this AC requires a process walkthrough** (a plan that changes a loop, a gate, a resumable
+  run, an exemption, or a rule other rules consume — `create-exec-plan` Q3e placed the AC), walk the
+  laps now and record them, per
+  [`../create-exec-plan/process-walkthrough.md`](../create-exec-plan/process-walkthrough.md). On
+  this path the driver **is** the implementer CLAUDE.md's 措置表 assigns that duty to, and an
+  unrecorded walkthrough counts as not performed. A lap finding the plan cannot fix without widening
+  its scope is stop condition (e). **If a lap finding was fixed here, return to Step 3** before
+  checking the box — a lap fix edits process documents after Step 3's verification already ran, and
+  it is the one part of Step 3b that can dirty the tree. That re-entry does **not** count against
+  `MAX_REPAIR_ATTEMPTS`: it is a document edit, not a test repair, and counting it would halt with
+  (b) on a lap that worked.
 - Change the AC's `- [ ]` to `- [x]` in the plan.
 - Append a Decision Log entry **including the re-anchor result** (see "Resume-state convention" below).
 - Return to Step 1 **without asking the user**.
@@ -353,9 +364,12 @@ work. `docode-review` exists precisely to catch what a self-reviewer cannot: run
 `Skill` tool (`docode-review` is model-invocable), **before** reporting completion or handing off
 to `pre-pr`.
 
-- Collect context exactly as `docode-review`'s own Step 1 describes (diff, this plan's `## Sources`
-  and the sections they name) and launch it. Do not skip its independent-subagent design by
-  reviewing the diff yourself instead — that would defeat the reason this step exists.
+- Collect context exactly as `docode-review`'s own Step 1 describes — read that step rather than
+  this summary, which is illustrative and will fall behind it. At minimum it covers the diff, this
+  plan's `## Sources` and the sections they name, and — when the plan changed a documented process —
+  the **referrers** its dependency-backflow lap needs. Then launch it. Do not skip its
+  independent-subagent design by reviewing the diff yourself instead — that would defeat the reason
+  this step exists.
 - Append the verdict to this plan's `## Decision Log`:
   ```markdown
   ### YYYY-MM-DD

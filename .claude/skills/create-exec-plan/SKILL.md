@@ -47,7 +47,7 @@ The agent asks the following questions **one at a time, in order**.
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
-| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
+| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
 | Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
@@ -125,10 +125,18 @@ described identically everywhere and still deadlock — a resumed run rejected b
 check, a gate that fires at the moment the run succeeds. Those states are only visible by walking
 the process one lap.
 
+The same reflex has a second failure, which the AC must also cover: a change to a rule that other
+gates consume leaves those gates *textually correct* — they still say "apply this rule", and they
+do — while the material the rule now requires is not in hand when they run. Comparing descriptions
+finds nothing, and neither does walking forward from the change, because those gates are not on the
+path the change created. The AC must therefore require lap 7 by name.
+
 | Plan changes… | Verification AC to write |
 |---------------|--------------------------|
-| A process in the scope of `process-walkthrough.md` | An AC requiring the walkthrough — naming the laps (happy / second iteration / resume / exemption / gate boundary / success moment) and requiring the findings and their fixes in the Decision Log |
-| Only descriptions with no state transitions | The ordinary cross-site consistency AC is enough |
+| A process in the scope of `process-walkthrough.md` | An AC requiring the walkthrough — naming the laps (happy / second iteration / resume / exemption / gate boundary / success moment / dependency backflow) and requiring the findings and their fixes in the Decision Log |
+| A **single source, a record format, or a step's inputs** that other sites consume | The same AC. Lap 7 (dependency backflow) is the one that matters most here, and the one the plan is most likely to skip: the sites it visits are ones this plan never intended to edit |
+| **Only a rename or renumbering** of a step, question or ID others point at | An AC requiring **lap 7 alone**, and saying why laps 1–6 do not apply (a rename carries no state transitions). Use the lap-7-only record variant in `process-walkthrough.md` — writing a 7-lap AC here produces a criterion that its own correct execution cannot satisfy |
+| Only descriptions with no state transitions, and nothing points at what changed | The ordinary cross-site consistency AC is enough |
 
 The walkthrough AC **replaces nothing**: readiness still applies to it (it is an ordinary AC and
 must state a single observable outcome), and a plan that also implements functionality still carries
