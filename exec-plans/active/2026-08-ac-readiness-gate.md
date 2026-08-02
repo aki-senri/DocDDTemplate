@@ -138,7 +138,7 @@ GitHub issue #24 (G-C) の解消。
   | 9 | 3スキルの最終報告書式に Readiness 行がある | PASS |
   | 10 | 3スキルの Completion criteria に readiness 項目がある | PASS |
   | 11 | `SKILL_FLOW.md` の PLAN / SF / DRIVER / DR ノードが実際のステップ順と一致する | 修正後 PASS（下記） |
-  | 12 | CLAUDE.md の4地点表と `ac-readiness.md` の call-site 表が一致 | PASS |
+  | 12 | CLAUDE.md の4地点表と `ac-readiness.md` の call-site 表が一致 | **当初 PASS と記録したのは誤り** → FAIL、修正後 PASS（後述の矛盾チェック 1） |
   | 13 | `doc-review` の独立エージェント（セッション文脈なし）に基準本文が届く（Step 2 の `cat` ＋ プロンプト埋め込み） | PASS |
   | 14 | 本プラン自身の AC を新ゲートにかける（dogfooding） | 修正後 PASS（下記） |
 
