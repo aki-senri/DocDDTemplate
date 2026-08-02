@@ -128,9 +128,17 @@ human is.
 
 For **every unchecked `[E2E]` AC** in the plan, write its test now — before any AC is implemented —
 following [`../run-tests/red-first.md`](../run-tests/red-first.md). Read its row in the plan's
-`## Sources` first and open the spec's `### E2E-NNN` scenario it names: 前提, 完了条件 and the
-journey are written there in full, and the AC line is their one-line condensation. Transcribe the
-through-flow from the AC text **and that scenario**, run it, and confirm **valid red**. Record the
+`## Sources` first and open **whatever that row names** — 前提, 完了条件 and the journey are written
+there in full, and the AC line is their one-line condensation:
+
+| The `[E2E]` AC's source row names… | What to open |
+|-----------------------------------|--------------|
+| A spec `E2E-NNN` | `docs/02_spec/**` の `### E2E-NNN` シナリオ |
+| `n/a（spec 未作成…）` with a US section — `/create-spec` was skipped for a small change | the US `## ゴール像` の主要ユーザージャーニー, which is what `create-exec-plan` derived the AC from |
+| `n/a` for both, or the plan has no `## Sources` | Nothing to open — transcribe from the AC line alone and say so in the report |
+
+Transcribe the through-flow from the AC text **and that material**, run it, and confirm
+**valid red**. Record the
 observation in the Decision Log; that entry freezes the expectation.
 
 | Situation | Action |
@@ -138,7 +146,7 @@ observation in the Decision Log; that entry freezes the expectation.
 | Valid red observed for every `[E2E]` AC | Record it and start the loop |
 | An earlier session already placed it (a recorded `red-first` entry, AC still `- [ ]`) | Re-run it, confirm the same red, and start the loop — do not rewrite the test |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
-| The `E2E-NNN` scenario **contradicts** the `[E2E]` AC line (different 完了条件) | **HALT** with (a) — which one is the target is a spec judgement (`ac-sources.md`) |
+| The source scenario or journey **contradicts** the `[E2E]` AC line (different 完了条件) | **HALT** with (a) — which one is the target is a spec judgement (`ac-sources.md`) |
 | Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
 | The plan has **no** `[E2E]` AC (documentation-only, or it predates the requirement) | Nothing to do here — continue |
@@ -176,7 +184,8 @@ frozen spec material only, and reading the code would undo what Step 2a exists f
 | **Refinement** — the same outcome with concrete preconditions, boundaries or expected values | Use it. Step 2a transcribes at *that* granularity, not the one-liner's |
 | **A separate outcome** the AC line does not cover | **HALT** with (a). Either the AC bundles several results (`R1`) or a criterion was never written; both are a human's call |
 | **A contradiction** — the same outcome, a different expected value | **HALT** with (a). Do not pick a side, and do not edit the AC or the spec to agree |
-| The row says `n/a（理由）` | Nothing to read. The AC line is the whole goal — go to Step 2a |
+| **One column** is `n/a（理由）` (typically spec, when `/create-spec` was skipped) | Read the other one. A partial `n/a` is not an exemption — the goal simply lives one layer up |
+| **Both columns** are `n/a（理由）` | Nothing to read. The AC line is the whole goal — go to Step 2a |
 | The plan has **no** `## Sources` table (it predates the convention) | Continue, and say so in the run's report. Do not reconstruct sources by reading the code — that is the one reading this step forbids |
 
 Reading is execution; resolving a disagreement between two frozen documents is governance. That is
@@ -289,10 +298,13 @@ down, and the transcription may have condensed something. `create-spec` records
 `AC → spec → code` traceability precisely so it can be read back here — without this step it is
 traceability on paper only.
 
-Open the spec section named in this AC's `## Sources` row and ask **"does the behavior now
-implemented do what this section describes for this AC?"** — not "did the tests pass" (already
-known) and not "does the code look right". Take the verdict from the table in
-[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md); the loop's actions are:
+Open what this AC's `## Sources` row names — the spec section, or the US bullets when the spec
+column is `n/a` because `/create-spec` was skipped (the selection table is in
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md); "no spec section" is not
+the same as "no re-anchor"). Ask **"does the behavior now
+implemented do what this material describes for this AC?"** — not "did the tests pass" (already
+known) and not "does the code look right". Take the verdict from the table in that file; the loop's
+actions are:
 
 | Verdict | Action in the loop |
 |---------|--------------------|
@@ -301,7 +313,7 @@ known) and not "does the code look right". Take the verdict from the table in
 | **spec が述べる振る舞いに対応するテストが無い** | Measurement gap. Add a **new** test for it red-first (Step 2a's procedure), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS`. Never edit or weaken a frozen test to cover the gap — that is (c) |
 | **spec が AC 行と矛盾** | **Halt** with (a). Change neither side |
 | **The missing behavior is a separate outcome, not part of this AC** | **Halt** with (a) — same row as Step 1b's "separate outcome" |
-| **起点なし（`n/a`）**, or the plan has no `## Sources` table | Nothing to anchor to. Record `spec 再アンカー: n/a（{理由}）` and go to Step 3b |
+| **起点なし** — both columns `n/a`, or the plan has no `## Sources` table | Nothing to anchor to. Record `spec 再アンカー: n/a（{理由}）` and go to Step 3b |
 
 **Scope the comparison to this AC.** A spec section — and an `E2E-NNN` scenario in particular —
 usually names several ACs (`満たす AC: AC-001, AC-003, AC-005`). Behavior it attributes to an AC

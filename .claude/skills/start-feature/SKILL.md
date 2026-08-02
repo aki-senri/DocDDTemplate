@@ -61,7 +61,9 @@ Check every unchecked AC of the selected plan against the five checks in
 `R2` is judged against the AC line **together with its sources**, so open the plan's `## Sources`
 rows for the ACs being checked before applying it. Step 2 loads that material in full for
 implementation; the gate needs it one step earlier, because a one-liner judged in isolation fails R2
-for detail that is properly recorded in the US.
+for detail that is properly recorded in the US. When a row is `n/a` or the plan has no `## Sources`
+table, `R2` falls back to the AC line, as `ac-readiness.md` states — an older plan must not collect
+NOT READY verdicts merely for predating the convention.
 
 | Verdict | Action |
 |---------|--------|

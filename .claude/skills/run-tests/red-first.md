@@ -25,7 +25,7 @@ That observation is what makes the later green mean something.
 
 | # | Step | What must be true when it is done |
 |---|------|-----------------------------------|
-| 1 | Read the AC **and its sources** — the US bullets and spec section named in the plan's `## Sources`, plus its E2E anchor. **Do not read or write implementation code for it yet** | The intended given / when / then come from frozen spec material, not from existing code |
+| 1 | Read the AC **and its sources** — whatever its `## Sources` row names (US bullets, spec section, `E2E-NNN`, or the US goal image when `/create-spec` was skipped; a row may legitimately be `n/a`). **Do not read or write implementation code for it yet** | The intended given / when / then come from frozen spec material, not from existing code |
 | 2 | Write the test **from that material**, tagged with the AC-ID | Its assertion is the AC's expected result, transcribed |
 | 3 | Run it and observe **valid red** (below) | The failure is attributable to the missing behavior |
 | 4 | Record the observation in the plan's `## Decision Log` | The expectation is now **frozen** (see below) |

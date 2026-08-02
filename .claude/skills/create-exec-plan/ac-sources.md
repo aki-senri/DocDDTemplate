@@ -128,10 +128,19 @@ again and compare it against the behavior now implemented.
 
 **Procedure**
 
-1. Open the spec section named in the AC's `## Sources` row.
-2. Ask **"does the behavior now implemented do what this section describes for this AC?"** — not
+1. Open what the AC's `## Sources` row names, taking the **most specific** entry available:
+
+   | The row has… | Re-anchor against |
+   |--------------|-------------------|
+   | A spec section | that section |
+   | `n/a` for spec but a US section — `/create-spec` was skipped | the US `AC-NNN` bullets (and, for a `[E2E]` AC, the `## ゴール像` 主要ユーザージャーニー). They are the frozen goal for such a plan |
+   | `n/a` in **both** columns, or no `## Sources` table | nothing — record the `n/a` line and proceed |
+
+   Skipping `/create-spec` is a documented path for small changes (`SKILL.md`), so "no spec section"
+   must not mean "no re-anchor". It means the goal lives one layer up.
+2. Ask **"does the behavior now implemented do what this material describes for this AC?"** — not
    "did the tests pass" (that is already known) and not "does the code look right".
-3. Take the verdict from this table:
+3. Take the verdict from this table (read "spec" as "whichever source step 1 selected"):
 
 | Verdict | Meaning | Action |
 |---------|---------|--------|
@@ -139,7 +148,7 @@ again and compare it against the behavior now implemented.
 | **spec の振る舞いを満たしていない** | An implementation gap the transcribed tests did not catch | Fix the implementation and re-verify. Counts against `MAX_REPAIR_ATTEMPTS` |
 | **spec が述べる振る舞いに対応するテストが無い** | A measurement gap, not a frozen-expectation problem | Add a **new** test for it red-first (never edit a frozen one), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS` |
 | **spec が AC 行と矛盾** | A spec judgement | **HALT** with (a). Do not "fix" either side |
-| **起点なし（`n/a`）** | Nothing to anchor to | Record `spec 再アンカー: n/a（起点なし）` and proceed |
+| **起点なし（両列とも `n/a`、または表が無い）** | Nothing to anchor to | Record `spec 再アンカー: n/a（起点なし）` and proceed |
 
 The third row is the one to read carefully: adding a test is allowed because the frozen expectation
 is untouched — `red-first.md` freezes *an expectation*, not *the set of tests*. Weakening or
