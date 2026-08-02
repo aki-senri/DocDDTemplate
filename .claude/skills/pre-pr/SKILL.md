@@ -29,7 +29,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ② check-doc-freshness   → Verify documentation freshness
 ③ check-doc-invariants  → Verify document structural invariants
 ④ review_checklist      → Code review checklist
-⑤ run-tests             → Run tests and verify against spec
+⑤ run-tests             → Run tests and verify against spec, incl. [E2E] AC coverage
 ⑥ exec-plan update      → Record progress in log
 ```
 
@@ -89,7 +89,7 @@ Run the `check-doc-invariants` skill.
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
 2. Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
    DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
-   DOC-INV-005 (diagram rules)
+   DOC-INV-005 (diagram rules), DOC-INV-006 (goal image / E2E traceability)
 3. If no violations: display "✅ doc-invariants: all passed"
 
 ---
@@ -110,7 +110,30 @@ Run the `run-tests` skill.
 
 1. All tests must pass
 2. Every AC-ID must have a corresponding test (coverage check)
-3. If there are changes to test files, confirm the changes are grounded in a spec (AC-ID)
+3. **Every `[E2E]` AC must have a test that exists and passed** (E2E coverage check)
+4. If there are changes to test files, confirm the changes are grounded in a spec (AC-ID)
+
+**Why E2E coverage is checked separately.** Steps 1–2 can both be ✅ while the feature does not
+work when used end to end: each functional AC is green in isolation, and nothing verifies that
+they add up. The `[E2E]` ACs (see `create-exec-plan`) are the criteria that cover the through-flow,
+so they are checked as their own gate rather than folded into the per-AC count.
+
+```
+E2E acceptance criteria:
+  ✅ AC-005 [E2E] → LoginJourneyE2ETest: SignIn_To_Dashboard_EndToEnd  (passed)
+  ❌ AC-006 [E2E] → No test created
+```
+
+Two situations, two outcomes (same split as `run-tests`):
+
+| Situation | Outcome |
+|-----------|---------|
+| The plan **has** a `[E2E]` AC, but its test is missing / did not run / failed | ❌ **blocks PR creation** — same weight as a failing test |
+| The plan has **no** `[E2E]` AC at all | ⚠️ **report only, does not block** |
+
+The second case has legitimate causes (the plan predates the E2E requirement, or it is
+documentation-only — see `create-exec-plan`), so it is a warning. Report it and direct the user to
+`create-exec-plan`. Do not write the criterion here — defining what to build is an outer gate.
 
 **Test file change verification:**
 
@@ -128,6 +151,9 @@ If test file changes are detected via `git diff --name-only main...HEAD`, verify
 
 - If tests fail: resolve through the `run-tests` spec alignment gate before re-running
 - If AC-IDs are uncovered: add tests before re-running
+- If a `[E2E]` AC is uncovered or its test did not pass: the through-flow is not verified — add or
+  fix the E2E test before re-running. Do not proceed to PR on functional ACs alone
+  (a plan with no `[E2E]` AC at all is a ⚠️ and does not block — see the table above)
 
 ---
 
@@ -151,6 +177,8 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ③ doc-invariants   : ✅ all passed  / ❌ {count} violation(s) / ⚠️ {count} warning(s)
 ④ review_checklist : ✅ all passed  / ❌ {count} item(s) not addressed
 ⑤ run-tests        : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
+  └ E2E coverage   : ✅ {n}/{n} [E2E] AC covered and green  / ❌ {count} uncovered or failing (blocks)
+                     / ⚠️ プランに [E2E] AC がありません (does not block)
 ⑥ exec-plan        : ✅ Progress updated
 
 ---
@@ -167,6 +195,8 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 - [ ] All checks ① through ⑥ are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation
 - [ ] If tests failed, they were resolved through the spec alignment gate
+- [ ] Every `[E2E]` AC in the plan has a test that exists and passed (or the plan's lack of an
+      `[E2E]` AC was reported and referred back to `create-exec-plan`)
 - [ ] If test files were changed, the reason is recorded in the decision log
 - [ ] The progress log in exec-plan has been updated
 - [ ] Output shows "PR creation status: ✅ No issues"

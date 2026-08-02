@@ -50,7 +50,20 @@ Run the `run-tests` skill and verify the following:
 
 - All tests pass
 - All AC-IDs have corresponding tests (AC coverage)
-- If either condition is not met, put the completion on hold and prompt for action
+- **Every `[E2E]` AC has a test that exists and passed** (E2E coverage) — a plan whose functional
+  ACs are all `- [x]` is still not complete while the through-flow is unverified
+- If any condition is not met, put the completion on hold and prompt for action
+
+Two situations, two outcomes (same split as `run-tests` and `pre-pr`):
+
+| Situation | Outcome |
+|-----------|---------|
+| The plan **has** a `[E2E]` AC, but its test is missing / did not run / failed | ❌ **hold the completion** |
+| The plan has **no** `[E2E]` AC at all | ⚠️ **report only, completion may proceed** |
+
+The second case has legitimate causes (the plan predates the E2E requirement, or it is
+documentation-only — see `create-exec-plan`). Report it, record the reason in the decision log,
+and proceed. Do not write the criterion here.
 
 ### Step 3: Update and move the file
 
@@ -96,6 +109,7 @@ Guide the user to the next action based on the following.
 
 - [ ] Ran `run-tests` and all tests pass
 - [ ] All AC-IDs have corresponding tests
+- [ ] Every `[E2E]` AC has a passing test (or its absence was reported / recorded in the decision log)
 - [ ] The target file's frontmatter shows `status: completed` and `completed: YYYY-MM-DD`
 - [ ] The file has been moved to `exec-plans/completed/`
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated

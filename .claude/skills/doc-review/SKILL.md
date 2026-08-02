@@ -124,6 +124,31 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 - Are happy-path, error-case, and boundary conditions covered?
 - Are any ACs vague, overlapping, or contradictory?
 
+### 2b. Goal image and E2E coverage
+
+Requirements state obligations; they do not state what the finished thing is. Check that the layer
+which does is present and sharp — a document can pass every criterion above and still describe
+something nobody wanted.
+
+**For User Stories** — the `## ゴール像` section:
+- Is it present at all? (required — see `create-requirements`)
+- 完成時にできること: does it say what the *user can do*, or does it just restate the feature name?
+- 主要ユーザージャーニー: is it a through-flow (Mermaid), or a list of disconnected capabilities?
+- 非ゴール: is it stated, and does it actually exclude something a reader might otherwise assume?
+
+**For application specs** — the `## E2E シナリオ` section:
+- Is it present, with at least one `E2E-NNN` carrying 前提 / 完了条件 / 満たす AC?
+- Is each 完了条件 an observable end state, not a restatement of the steps?
+- Does the `E2E-NNN → AC-xxx` table cover every AC? Flag any AC belonging to no scenario — it means
+  either the goal image is missing a path or the AC is not needed for the finished thing.
+
+**For exec-plans** — the `[E2E]` acceptance criterion:
+- Does the plan have one, and is it traced to an `E2E-NNN` (or to the US goal image)?
+- If the plan is a refactoring plan, does the E2E AC state *behavior preservation* rather than new
+  behavior?
+- If the plan has none, is it genuinely documentation-only? (`create-exec-plan` exempts only that
+  case, and asks for `E2E: n/a (documentation-only)` in the Decision Log.)
+
 ### 3. Clarity and completeness
 - For User Stories: is the "As a / I want / So that" structure clear?
   Is the "So that" (the why) meaningful and not circular?
@@ -155,6 +180,11 @@ Type: {document type}
 |----|-----------|--------|-------|
 | AC-001 | ✅ | ✅ | — |
 | AC-002 | ⚠️ | ✅ | Vague threshold: "performs well" — specify a measurable value |
+
+### Goal image / E2E coverage
+{For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
+{For spec: E2E シナリオ present? Any AC belonging to no E2E-NNN?}
+{For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
 
 ### Findings
 

@@ -347,10 +347,12 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 ### Overall flow
 
 ```
-0. /create-requirements → Define User Stories / AC conditions (optional, recommended)
-0.5 /create-spec        → Draft the application spec (docs/02_spec/) from approved requirements
+0. /create-requirements → Define User Stories / goal image / AC conditions (optional, recommended)
+                          Goal image = what the user can do when done / primary journey / non-goals (required)
+0.5 /create-spec        → Draft the application spec (docs/02_spec/) and E2E scenarios from approved requirements
                           (optional; skip for small changes. Needs human approval before create-exec-plan)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
+                          At least one [E2E] AC in addition to the functional ones
 2. /start-feature       → Confirm docs and create a branch
 3. /run-exec-plan       → Autonomously implement ACs one by one (implement → test → fix → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
@@ -367,8 +369,8 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 
 | Skill | Purpose | Output |
 |-------|---------|--------|
-| `/create-requirements` | Define **what to build** (User Story + AC conditions) | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
-| `/create-spec` | Draft **what the app does** (purpose, features, behavior, scope) from approved requirements | `docs/02_spec/app_spec.md` (`status: draft`) |
+| `/create-requirements` | Define **what to build** and **what it looks like when done** (User Story + goal image + AC conditions) | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
+| `/create-spec` | Draft **what the app does** (purpose, features, behavior, scope) and **what works end to end** (E2E scenarios) from approved requirements | `docs/02_spec/app_spec.md` (`status: draft`) |
 | `/create-exec-plan` | Plan **how to build** (task breakdown + progress tracking) | `exec-plans/active/YYYY-MM-{name}.md` |
 
 `/create-requirements` is optional, but running it first when developing as a team or when "what to build" is vague makes the AC definitions in `/create-exec-plan` clearer. When `/create-requirements` finishes, it guides you with "Next step: run `/create-exec-plan`. Recommended ACs: AC-001, AC-002, ...".

@@ -34,7 +34,7 @@ disable-model-invocation: false
 
 1. Read the test command from `test_strategy.md`
 2. Run the tests
-3. If all pass: verify AC-ID coverage
+3. If all pass: verify AC-ID coverage, checking functional and `[E2E]` ACs separately
 4. If failures: determine the course of action through the **spec alignment gate**
 
 ---
@@ -69,17 +69,43 @@ Execute commands according to the frontmatter.
 If all tests pass, verify AC-ID coverage.
 
 1. Load execution plans in `exec-plans/active/` and list the AC-XXX items in `## Acceptance Criteria`
-2. Read test files and verify that a test exists for each AC-ID
+2. Split them into **functional ACs** and **E2E ACs** — an E2E AC is one whose description starts
+   with the `[E2E]` marker (`- [ ] AC-005: [E2E] ...`)
+3. Read test files and verify that a test exists for each AC-ID, and report the two groups separately
 
 ```
 Acceptance criteria coverage:
   ✅ AC-001 → AuthServiceTest: Login_WithInvalidPassword_Returns401
   ✅ AC-002 → AuthServiceTest: Session_Expired_RequiresReauth
   ❌ AC-003 → No test created
+
+E2E acceptance criteria coverage:
+  ✅ AC-005 [E2E] → LoginJourneyE2ETest: SignIn_To_Dashboard_EndToEnd  (green)
+  ❌ AC-006 [E2E] → No test created
 ```
 
 - If any AC-IDs are uncovered, issue a warning and prompt to create tests
 - If called from `pre-pr` or `complete-exec-plan`, put processing on hold if there are uncovered AC-IDs
+
+E2E acceptance criteria are checked separately, because a per-AC coverage check cannot see the
+failure mode they exist for: every functional AC green while the through-flow does not work. So
+for each `[E2E]` AC verify **both** that a test exists **and** that it is among the tests that
+just passed — an E2E AC with no test, or with a test that did not actually run, is uncovered.
+
+**Two different situations, two different outcomes.** Keep them apart:
+
+| Situation | Outcome |
+|-----------|---------|
+| The plan **has** a `[E2E]` AC, but its test is missing, or did not run, or failed | ❌ **hold** — same weight as a failing test |
+| The plan has **no** `[E2E]` AC at all | ⚠️ **report only, do not hold** |
+
+The second case is a warning rather than a hold because it has legitimate causes: the plan predates
+the E2E requirement, or it is documentation-only (see `create-exec-plan`). Report it as
+`⚠️ このプランに [E2E] AC がありません` and direct the user to `create-exec-plan` — **do not invent
+the criterion here.** Deciding what to build is an outer gate.
+
+When called from `pre-pr` or `complete-exec-plan`, an uncovered `[E2E]` AC puts processing on hold
+in the same way an uncovered functional AC does; a missing `[E2E]` AC does not.
 
 ### Step 4: If failures — spec alignment gate
 
@@ -158,6 +184,11 @@ Result   : ✅ All {n} tests passed / ❌ {n} test(s) failed
 ✅ AC-002 → Test exists
 ❌ AC-003 → No test created
 
+[E2E AC Coverage]
+✅ AC-005 [E2E] → Test exists and passed
+❌ AC-006 [E2E] → No test created  (hold)
+(or: ⚠️ このプランに [E2E] AC がありません — create-exec-plan で追加してください)
+
 ---
 Overall: ✅ No issues / ❌ Please review the spec alignment gate
 ```
@@ -167,6 +198,8 @@ Overall: ✅ No issues / ❌ Please review the spec alignment gate
 ## Completion criteria
 
 - [ ] Test command was run
-- [ ] If all passed: AC-ID coverage was verified
+- [ ] If all passed: AC-ID coverage was verified, functional and `[E2E]` ACs reported separately
+- [ ] Every `[E2E]` AC has a test that exists **and** passed — otherwise processing is on hold
+      (or the absence of any `[E2E]` AC in the plan was reported)
 - [ ] If failures: determined "fix implementation" or "fix test based on spec" through the spec alignment gate
 - [ ] Output the result report

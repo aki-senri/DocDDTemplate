@@ -99,6 +99,12 @@ Run the verification skills. Note the two invocation modes (they differ by
      change is an outer-gate action — **halt** with stop-condition (c). Never edit a test's
      expectation to match implementation behavior (INV-T01).
    - **Still red after `MAX_REPAIR_ATTEMPTS`** -> **halt** with stop-condition (b).
+   - **Green, but `run-tests` returns a hold on an uncovered `[E2E]` AC**: the tests that ran do
+     not include one for the through-flow, so "green" does not mean the E2E criterion is met.
+     **Halt** with stop-condition (a) — writing the E2E test means deciding what the through-flow
+     is, which is an outer-gate judgement. Do not check the `[E2E]` AC's box on the strength of the
+     functional tests, and do not author the E2E test to unblock yourself.
+     (A plan with **no** `[E2E]` AC at all is only a ⚠️ from `run-tests` — continue the loop.)
 2. `check-invariants` (follow inline)
    - Violation resolvable within the current AC's scope -> fix and re-run Step 3. This counts
      against `MAX_REPAIR_ATTEMPTS` (same budget as test repair); if exhausted, **halt** with
@@ -125,7 +131,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | The next AC is missing, ambiguous, or under-specified | Deciding *what to build* is outer-gate (spec-first principle) |
+| (a) | The next AC is missing, ambiguous, or under-specified — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle) |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass | Test changes must be grounded in a spec change (INV-T01) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |

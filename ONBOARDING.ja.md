@@ -347,10 +347,12 @@ flowchart TD
 ### 全体の流れ
 
 ```
-0. /create-requirements → User Story・AC 条件を定義（任意・推奨）
-0.5 /create-spec        → 承認済み要件からアプリ仕様（docs/02_spec/）を起草
+0. /create-requirements → User Story・ゴール像・AC 条件を定義（任意・推奨）
+                          ゴール像＝完成時にできること／主要ユーザージャーニー／非ゴール（必須）
+0.5 /create-spec        → 承認済み要件からアプリ仕様（docs/02_spec/）と E2E シナリオを起草
                           （任意・小さな変更ならスキップ。create-exec-plan の前に人間承認が必要）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
+                          機能 AC に加えて最低1本の [E2E] AC を置く
 2. /start-feature       → ドキュメント確認・ブランチ作成
 3. /run-exec-plan       → AC を 1 つずつ自走実装（実装→テスト→修正→次 AC）
                           内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
@@ -367,8 +369,8 @@ flowchart TD
 
 | スキル | 目的 | 生成物 |
 |-------|------|-------|
-| `/create-requirements` | **何を作るか**を定義する（User Story + AC 条件） | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
-| `/create-spec` | **アプリが何をするか**（目的・機能・振る舞い・スコープ）を承認済み要件から起草する | `docs/02_spec/app_spec.md`（`status: draft`） |
+| `/create-requirements` | **何を作るか**と**完成したらどうなるか**を定義する（User Story + ゴール像 + AC 条件） | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
+| `/create-spec` | **アプリが何をするか**（目的・機能・振る舞い・スコープ）と**通しで何ができるか**（E2E シナリオ）を承認済み要件から起草する | `docs/02_spec/app_spec.md`（`status: draft`） |
 | `/create-exec-plan` | **どう作るか**を計画する（タスク分解 + 進捗管理） | `exec-plans/active/YYYY-MM-{name}.md` |
 
 `/create-requirements` は任意ですが、チームで開発する場合や「何を作るか」が曖昧なときに先に実行しておくと、`/create-exec-plan` の AC 定義がより明確になります。`/create-requirements` が完了すると、「次のステップ: `/create-exec-plan` を実行してください。推奨 AC: AC-001, AC-002, ...」と案内されます。
