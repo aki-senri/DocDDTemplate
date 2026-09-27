@@ -1,9 +1,12 @@
 ---
 name: check-doc-invariants
 description: |
-  Checks structural invariants of documents in docs/**/*.md and exec-plans/.
+  Checks structural invariants of documents in docs/**/*.md and exec-plans/, and runs the
+  mechanical checks (DOC-INV-007〜011) over those plus the convention documents themselves
+  (.claude/skills/**/*.md and the root *.md).
   Verifies reference directions, frontmatter completeness, lifecycle consistency,
-  AC traceability, and goal image / E2E traceability.
+  AC traceability, goal image / E2E traceability, link resolution, table integrity,
+  label references, Mermaid quoting and shell-snippet robustness.
   Called from pre-pr and gc, or run standalone.
 disable-model-invocation: true
 ---
@@ -27,8 +30,10 @@ disable-model-invocation: true
 
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
 2. Parse frontmatter and extract cross-links from each file
-3. Check each document against the five built-in invariants below
-4. Report violations with fix instructions
+3. Check each document against DOC-INV-001〜006 below (read by a reader, not a script)
+4. Run `.claude/scripts/check_doc_lint.py` for DOC-INV-007〜011 — the mechanical checks, over a
+   **wider range** that includes the convention documents themselves
+5. Report violations with fix instructions
 
 ---
 
@@ -145,6 +150,47 @@ For each `exec-plans/active/*.md`:
 
 ---
 
+### DOC-INV-007〜011: Mechanical checks (script-backed)
+
+Five defect types are decidable without judgement, and each one has escaped every prose gate in
+this repository at least once — an unquoted Mermaid label reached `main` and broke a diagram
+completely, and nobody knew until a reader opened it in a browser. They are implemented once, in
+[`../../scripts/check_doc_lint.py`](../../scripts/check_doc_lint.py), and this skill is the only
+site that invokes it: `pre-pr` and `gc` reach it by running this skill, so there is no second copy
+to drift.
+
+| ID | Check | Detects | Level |
+|----|-------|---------|-------|
+| DOC-INV-007 | C1 relative link resolution | A relative Markdown link that resolves to no file | ❌ Violation |
+| DOC-INV-008 | C2 table column consistency | A row whose column count differs from its header (a table split in half renders as prose) | ❌ Violation |
+| DOC-INV-009 | C3 label reference existence | A label reference (`Q3d`, `Step 0b`, `§2c`, `⑤c`, `DOC-INV-NNN`, `INV-TNN`) absent from the file named just before it | ❌ Violation |
+| DOC-INV-010 | C4 Mermaid label quoting | An unquoted Mermaid label containing `(`, `)`, `[`, `]`, `{` or `}` — one is enough to stop the parser, and the renderer reports only the first | ❌ Violation |
+| DOC-INV-011 | C5 shell-snippet robustness | A multi-path `grep` in a `bash` fence without both `2>/dev/null` and `\|\| true`, which dies under `set -e` on a missing path or a no-match | ⚠️ Warning |
+
+DOC-INV-011 is a warning rather than a violation because a snippet may legitimately want the
+non-zero exit; the other four have no such case, so they block.
+
+**Range — wider than DOC-INV-001〜006.** These five also read `.claude/skills/**/*.md` and the root
+`*.md`, not only `docs/**` and `exec-plans/**`. That is where the escapes happened: the convention
+documents are the ones carrying the cross-references, tables and diagrams, and nothing was checking
+them. A range that does not exist in a given repository (no `docs/`, no `exec-plans/active/`) is
+skipped rather than failing.
+
+**What these checks deliberately do not decide.** Each exclusion exists because the check would
+otherwise report something that is not a defect:
+
+| Not checked | Why |
+|-------------|-----|
+| `## Decision Log` / `## Progress Log` (for DOC-INV-007 / 009 only) | Append-only history quotes values that have since changed; "correcting" it would destroy the record of what was corrected (`../create-exec-plan/process-walkthrough.md` states this for lap 7) |
+| An unchecked `- [ ]` item in a plan (same two) | It describes a state that does not exist *yet*. An AC reading "define DOC-INV-007" names a label that is supposed to be missing until implemented. Once the box is `- [x]`, the same line is in scope |
+| A bare circled number (`③` without a letter) | Used as often for a local figure's boxes as for another skill's step; the two are indistinguishable mechanically. `⑤c` (with a letter) is only ever a pointer, so it is checked |
+| A label whose file is named *after* it on the line | `(Step 1b / Step 3a), while at ` + "`pre-pr` ⑤c" + ` …` — the Steps belong to the skill named earlier, not to `pre-pr` |
+| Links and labels inside fenced code blocks, and placeholders (`{name}`, `US-XXX`, `AC-NNN`) | Templates and examples, not live references |
+| Whether a consumer has the material it needs at the point it decides | That is process-walkthrough lap 7 step 3 — it requires reading each skill from the top. The script makes step 2 (enumeration) cheap; it does not replace step 3 |
+| A site that *should* consume a rule and never names it | A grep returns referrers only. The call-site table in each single source is what covers this |
+
+---
+
 ## Steps
 
 ### Step 1: Collect all documents
@@ -230,6 +276,27 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
 
 ---
 
+### Step 8: Check DOC-INV-007〜011 (mechanical checks)
+
+Run the single script entity once, from the repository root:
+
+```bash
+python3 .claude/scripts/check_doc_lint.py
+```
+
+- Exit code `1` means at least one DOC-INV-007〜010 violation: **blocking**
+- Exit code `0` with ⚠️ lines means only DOC-INV-011 warnings: report, do not block
+- `--mermaid-parser` additionally runs Mermaid's own parser (needs `node` + `mermaid` + `jsdom`).
+  It is opt-in so the checks never require a Node toolchain; when those are unavailable the run
+  reports ⚠️ skipped and the exit code is unchanged
+- `--only C1,C4` restricts the run; `--root <path>` checks another checkout
+
+Do not restate the checks inline anywhere else, and do not add a second call site: the reason this
+is one script called from one skill is that a duplicated list is what went stale before
+(`pre-pr` ③ and `gc` ③ both enumerated DOC-INV-001〜006 by hand).
+
+---
+
 ## Result report format
 
 ```
@@ -270,6 +337,8 @@ Exec-plans checked: {count}
     Fix: Restate AC-004 as an ordinary functional AC — the test gates will hold on it otherwise
   ℹ️ exec-plans/active/2026-02-docs.md: documentation-only, E2E exempt
 
+{the output of .claude/scripts/check_doc_lint.py, verbatim — DOC-INV-007〜011}
+
 ---
 Overall: ✅ All passed / ❌ {count} violation(s) / ⚠️ {count} warning(s)
 ```
@@ -280,5 +349,7 @@ Overall: ✅ All passed / ❌ {count} violation(s) / ⚠️ {count} warning(s)
 
 - [ ] All `docs/**/*.md` and `exec-plans/**/*.md` collected
 - [ ] DOC-INV-001 through DOC-INV-006 checked
+- [ ] DOC-INV-007 through DOC-INV-011 checked by running `.claude/scripts/check_doc_lint.py`
+      (its wider range covers `.claude/skills/**/*.md` and the root `*.md` as well)
 - [ ] All violations reported with specific file paths, line numbers, and fix instructions
 - [ ] Result report output

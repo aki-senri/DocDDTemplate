@@ -136,6 +136,8 @@ Run skills in Claude Code chat by typing `/skill-name`.
 project-root/
 ├── .claude/
 │   ├── settings.json          # Hook configuration (auto-reminders on code changes)
+│   ├── hooks/                 # spec-gate.py (spec-first gate), post-tool-notify.py
+│   ├── scripts/               # check_doc_lint.py (DOC-INV-007〜011; run by check-doc-invariants)
 │   └── skills/                # Skill definitions
 │       ├── init-project/
 │       ├── create-requirements/
