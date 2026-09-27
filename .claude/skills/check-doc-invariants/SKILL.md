@@ -305,11 +305,14 @@ Run the single script entity once, from the repository root:
 python3 .claude/scripts/check_doc_lint.py
 ```
 
-- Exit code `1` means at least one DOC-INV-007〜010 violation: **blocking**
-- Exit code `0` with ⚠️ lines means only DOC-INV-011 warnings: report, do not block
+- Exit code `1` means at least one ❌ violation (DOC-INV-007〜010): **blocking**
+- Exit code `0` means no ❌. Any ⚠️ lines present are report-only — DOC-INV-011 warnings, and with
+  `--mermaid-parser` a DOC-INV-010 warning when the parser could not run (see below). The exit code
+  is what decides blocking; the invariant a ⚠️ is filed under does not
 - `--mermaid-parser` additionally runs Mermaid's own parser (needs `node` + `mermaid` + `jsdom`).
-  It is opt-in so the checks never require a Node toolchain; when those are unavailable the run
-  reports ⚠️ skipped and the exit code is unchanged
+  It is opt-in so the checks never require a Node toolchain; when those are unavailable, or the
+  parser run itself fails, the finding is a **⚠️ under DOC-INV-010** and the exit code is unchanged
+  — a check that could not run is not a passing check, and not a violation either
 - `--only C1,C4` restricts the run; `--root <path>` checks another checkout
 
 Do not restate the checks inline anywhere else, and do not add a second call site: the reason this

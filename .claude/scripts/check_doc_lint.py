@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -169,9 +168,11 @@ def check_links(path: Path, text: str, repo_root: Path) -> list[Finding]:
             ]
             if any(candidate.exists() for candidate in candidates):
                 continue
-            # A link that points outside the repository cannot be verified from here.
-            resolved = os.path.normpath(Path(path).parent / bare)
-            if not str(resolved).startswith(str(repo_root.resolve()) if repo_root.is_absolute() else str(repo_root)):
+            # A link that points outside the repository cannot be verified from here. Compare
+            # resolved paths rather than string prefixes: "/tmp/repo2/x" starts with "/tmp/repo"
+            # without being inside it, which would turn an unverifiable link into a violation.
+            resolved = (Path(path).parent / bare).resolve()
+            if not resolved.is_relative_to(Path(repo_root).resolve()):
                 continue
             findings.append(
                 Finding("C1", "error", Path(path), line.number, f"link target does not exist: {target}")

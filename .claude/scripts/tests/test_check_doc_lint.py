@@ -158,6 +158,22 @@ class TestAC002Links(TempRepo):
 
         self.assertEqual(lint.check_links(target, target.read_text(encoding="utf-8"), self.root), [])
 
+    def test_link_escaping_to_a_prefix_sharing_sibling_is_skipped(self):
+        """リポジトリ外は検証不能として skip する。文字列の前方一致で判定すると、
+        名前の先頭を共有する兄弟ディレクトリ（`repo` と `repo2`）を「内側」と誤判定する
+        （PR #40 Copilot 指摘 r4116315395）。"""
+        repo = self.root / "repo"
+        sibling = self.root / "repo2"
+        sibling.mkdir(parents=True, exist_ok=True)
+        target = write(repo, "docs/a.md", "see [outside](../../repo2/missing.md)\n")
+
+        self.assertEqual(lint.check_links(target, target.read_text(encoding="utf-8"), repo), [])
+
+    def test_link_escaping_above_the_repository_is_skipped(self):
+        target = write(self.root, "docs/a.md", "see [outside](../../elsewhere/missing.md)\n")
+
+        self.assertEqual(lint.check_links(target, target.read_text(encoding="utf-8"), self.root), [])
+
     def test_plan_files_are_out_of_range(self):
         """plan は作業ノートであり参照文書ではない（AC-002 改訂。理由は Decision Log）。"""
         target = write(self.root, "exec-plans/active/2026-09-x.md", """\
