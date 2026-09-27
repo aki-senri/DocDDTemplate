@@ -170,19 +170,40 @@ to drift.
 DOC-INV-011 is a warning rather than a violation because a snippet may legitimately want the
 non-zero exit; the other four have no such case, so they block.
 
-**Range — wider than DOC-INV-001〜006.** These five also read `.claude/skills/**/*.md` and the root
-`*.md`, not only `docs/**` and `exec-plans/**`. That is where the escapes happened: the convention
-documents are the ones carrying the cross-references, tables and diagrams, and nothing was checking
-them. A range that does not exist in a given repository (no `docs/`, no `exec-plans/active/`) is
-skipped rather than failing.
+**Range — wider than DOC-INV-001〜006 in one direction, narrower in another.** These five also read
+`.claude/skills/**/*.md` and the root `*.md`, not only `docs/**` and `exec-plans/**`. That is where
+the escapes happened: the convention documents are the ones carrying the cross-references, tables
+and diagrams, and nothing was checking them. A range that does not exist in a given repository (no
+`docs/`, no `exec-plans/active/`) is skipped rather than failing.
+
+In the other direction, the two **pointer** checks — DOC-INV-007 (links) and DOC-INV-009 (label
+references), which ask whether a reference resolves *right now* — skip `exec-plans/**`:
+
+| Check | `docs/**` | `.claude/**`, root `*.md` | `exec-plans/**` |
+|-------|:---------:|:-------------------------:|:---------------:|
+| DOC-INV-007 · DOC-INV-009 (pointers) | ✅ | ✅ | — |
+| DOC-INV-008 · DOC-INV-010 · DOC-INV-011 (structure) | ✅ | ✅ | ✅ |
+
+A plan is a working note, not a reference document. This repository's own convention already says so:
+a completed plan is archived and *not referenced* — which is why a reconcile record goes to the
+**active** plan rather than the completed one (CLAUDE.md「現バージョン修正による stale の扱い」). A
+stale pointer inside a plan therefore has almost no downstream consumer. Against that, a ❌ there
+would block the PR of the very work the plan describes, and it would fire hardest at the start,
+because an unchecked AC names what it is *about to* create and can only point at something that does
+not exist yet. **Letting archived material drift is the cheaper trade: what is worth managing
+mechanically is the material still in use.** Pointer drift inside a plan is left to the readers who
+can judge it — process-walkthrough lap 7, `/doc-review`, `/docode-review`.
+
+The structural three still cover plans, because they are not about pointers: a split `## Sources`
+table breaks "a row for every AC" silently, and a broken diagram or an unguarded snippet is broken in
+every state rather than only against today's tree.
 
 **What these checks deliberately do not decide.** Each exclusion exists because the check would
 otherwise report something that is not a defect:
 
 | Not checked | Why |
 |-------------|-----|
-| `## Decision Log` / `## Progress Log` (for DOC-INV-007 / 009 only) | Append-only history quotes values that have since changed; "correcting" it would destroy the record of what was corrected (`../create-exec-plan/process-walkthrough.md` states this for lap 7) |
-| An unchecked `- [ ]` item in a plan (same two) | It describes a state that does not exist *yet*. An AC reading "define DOC-INV-007" names a label that is supposed to be missing until implemented. Once the box is `- [x]`, the same line is in scope |
+| Anything under `exec-plans/**`, for DOC-INV-007 / 009 only | See the range note above — a plan is a working note, and its pointers are judged by the advisory readers rather than a blocking gate |
 | A bare circled number (`③` without a letter) | Used as often for a local figure's boxes as for another skill's step; the two are indistinguishable mechanically. `⑤c` (with a letter) is only ever a pointer, so it is checked |
 | A label whose file is named *after* it on the line | `(Step 1b / Step 3a), while at ` + "`pre-pr` ⑤c" + ` …` — the Steps belong to the skill named earlier, not to `pre-pr` |
 | Links and labels inside fenced code blocks, and placeholders (`{name}`, `US-XXX`, `AC-NNN`) | Templates and examples, not live references |

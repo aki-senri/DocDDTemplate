@@ -15,10 +15,10 @@ Implements DOC-INV-007 through DOC-INV-011 (see
 | C5    | DOC-INV-011  | A multi-path `grep` in a `bash` fence without both    | ⚠️    |
 |       |              | `2>/dev/null` and `\\|\\| true`                         |       |
 
-What it deliberately does not check is listed in the skill: the history in a plan's
-`## Decision Log` / `## Progress Log`, whether a consumer has the material it needs at the point
-it decides (process-walkthrough lap 7 step 3), and sites that *should* consume a rule but never
-name it. Those stay with the human or the driver.
+What it deliberately does not check is listed in the skill: pointers inside `exec-plans/**` (a plan
+is a working note, and an archived one is not a reference document), whether a consumer has the
+material it needs at the point it decides (process-walkthrough lap 7 step 3), and sites that
+*should* consume a rule but never name it. Those stay with the human or the driver.
 
 Standard library only, so it runs wherever `python3` does.
 """
@@ -53,21 +53,26 @@ FIX_HINTS = {
     "C5": "Append 2>/dev/null || true — a missing path or a no-match exits non-zero under set -e.",
 }
 
-# C1 and C3 are the *pointer* checks: they ask whether a reference resolves right now. Two kinds of
-# line answer "no" for reasons that are not defects, so both are out of scope for these two checks
-# (and only these two — a broken table or diagram is broken in every state, so C2 / C4 / C5 run
-# everywhere):
+# DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
+# a reference resolves right now. They skip `exec-plans/**` entirely.
 #
-#   1. `## Decision Log` / `## Progress Log` — append-only history. It quotes values that have since
-#      changed, and correcting it would destroy the record of what was corrected
-#      (process-walkthrough.md lap 7 states this exclusion).
-#   2. An unchecked `- [ ]` item in a plan — it describes a state that does not exist yet. An AC
-#      reading "define DOC-INV-007" names a label that is *supposed* to be missing until it is
-#      implemented; flagging it would make every plan red from the moment it is written. Once the box
-#      is `- [x]` the same line is in scope, which is where drift actually matters.
-POINTER_CHECKS = ("C1", "C3")
-HISTORY_SECTIONS = ("decision log", "progress log")
-UNCHECKED_ITEM_RE = re.compile(r"^\s*[-*]\s*\[\s\]")
+# A plan is a working note, not a reference document. CLAUDE.md already treats it that way — a
+# completed plan is archived and "参照されない", which is why reconcile records go to the active plan
+# instead — so a stale pointer inside one has almost no downstream consumer. Against that, a ❌ on a
+# plan would block the PR of the very work the plan describes, and it would fire hardest at the
+# start: an unchecked AC names what it is *about to* create, so it can only point at something that
+# does not exist yet. Letting archived material drift is the cheaper trade; drift inside a plan is
+# left to the readers who can judge it — process-walkthrough lap 7, `/doc-review`, `/docode-review`.
+#
+# The structural checks still cover plans, because they are not about pointers: a split `## Sources`
+# table (DOC-INV-008) silently breaks "a row for every AC", and a broken diagram (DOC-INV-010) or an
+# unguarded snippet (DOC-INV-011) is broken in every state, not only against today's tree.
+POINTER_CHECK_EXCLUDED_DIRS = ("exec-plans",)
+
+
+def pointer_checks_apply(path) -> bool:
+    """Whether the pointer checks (DOC-INV-007 / 009) judge this file at all."""
+    return not any(part in POINTER_CHECK_EXCLUDED_DIRS for part in Path(path).parts)
 
 
 @dataclass
@@ -87,53 +92,36 @@ class Line:
     number: int
     text: str
     fence: str | None  # the fence's language when inside one, else None
-    section: str  # the nearest `## ` heading, lowercased
 
 
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})\s*([^\s`]*)")
-HEADING_RE = re.compile(r"^##\s+(.+?)\s*$")
 
 
 def scan_lines(text: str) -> list[Line]:
-    """Annotate every line with the fence it sits in and the section it belongs to."""
+    """Annotate every line with the fence it sits in, if any."""
     lines: list[Line] = []
     marker: str | None = None  # the opening fence's run of backticks/tildes
     lang = ""
-    section = ""
     for number, raw in enumerate(text.splitlines(), start=1):
         match = FENCE_RE.match(raw)
         if marker is None:
             if match:
                 marker, lang = match.group(1), match.group(2).lower()
-                lines.append(Line(number, raw, lang, section))
+                lines.append(Line(number, raw, lang))
                 continue
-            heading = HEADING_RE.match(raw)
-            if heading:
-                section = heading.group(1).lower()
-            lines.append(Line(number, raw, None, section))
+            lines.append(Line(number, raw, None))
         else:
             inside = lang
             # A closing fence uses the same character, at least as many times, and nothing else.
             if match and match.group(1)[0] == marker[0] and len(match.group(1)) >= len(marker) and not match.group(2):
                 marker, lang = None, ""
-            lines.append(Line(number, raw, inside, section))
+            lines.append(Line(number, raw, inside))
     return lines
 
 
-def body_lines(lines: list[Line], check: str, path: Path | None = None) -> list[Line]:
-    """Lines outside fenced blocks, minus the ones a pointer check must not judge (see above)."""
-    in_plan = path is not None and "exec-plans" in Path(path).parts
-    out = []
-    for line in lines:
-        if line.fence is not None:
-            continue
-        if check in POINTER_CHECKS:
-            if line.section in HISTORY_SECTIONS:
-                continue
-            if in_plan and UNCHECKED_ITEM_RE.match(line.text):
-                continue
-        out.append(line)
-    return out
+def body_lines(lines: list[Line]) -> list[Line]:
+    """Lines outside fenced blocks — a fence holds templates and examples, not live markup."""
+    return [line for line in lines if line.fence is None]
 
 
 def fenced_lines(lines: list[Line], languages: tuple[str, ...]) -> list[Line]:
@@ -158,10 +146,15 @@ SKIP_SCHEMES = ("http://", "https://", "mailto:", "ftp://", "tel:")
 
 
 def check_links(path: Path, text: str, repo_root: Path) -> list[Finding]:
-    """C1 / DOC-INV-007 — every relative Markdown link resolves to a file in the tree."""
+    """C1 / DOC-INV-007 — every relative Markdown link resolves to a file in the tree.
+
+    Plans are out of range (see `pointer_checks_apply`).
+    """
+    if not pointer_checks_apply(path):
+        return []
     findings: list[Finding] = []
     repo_root = Path(repo_root)
-    for line in body_lines(scan_lines(text), "C1", Path(path)):
+    for line in body_lines(scan_lines(text)):
         for target in LINK_RE.findall(strip_inline_code(line.text)):
             if target.startswith("#") or target.lower().startswith(SKIP_SCHEMES):
                 continue
@@ -216,7 +209,7 @@ DELIMITER_RE = re.compile(r"^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$")
 def check_tables(path: Path, text: str) -> list[Finding]:
     """C2 / DOC-INV-008 — a table's rows all carry the header's column count."""
     findings: list[Finding] = []
-    lines = body_lines(scan_lines(text), "C2")
+    lines = body_lines(scan_lines(text))
     index = 0
     while index < len(lines):
         header = lines[index]
@@ -293,10 +286,15 @@ def _label_variants(label: str) -> list[str]:
 
 
 def check_labels(path: Path, text: str, repo_root: Path) -> list[Finding]:
-    """C3 / DOC-INV-009 — a label reference exists in the file the same line names."""
+    """C3 / DOC-INV-009 — a label reference exists in the file named just before it.
+
+    Plans are out of range (see `pointer_checks_apply`).
+    """
+    if not pointer_checks_apply(path):
+        return []
     findings: list[Finding] = []
     cache: dict[Path, str] = {}
-    for line in body_lines(scan_lines(text), "C3", Path(path)):
+    for line in body_lines(scan_lines(text)):
         targets = _targets(Path(path), line.text, Path(repo_root))
         if not targets:
             continue

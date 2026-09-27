@@ -158,24 +158,24 @@ class TestAC002Links(TempRepo):
 
         self.assertEqual(lint.check_links(target, target.read_text(encoding="utf-8"), self.root), [])
 
-    def test_decision_log_and_progress_log_sections_are_skipped(self):
+    def test_plan_files_are_out_of_range(self):
+        """plan は作業ノートであり参照文書ではない（AC-002 改訂。理由は Decision Log）。"""
         target = write(self.root, "exec-plans/active/2026-09-x.md", """\
             # plan
 
             body [gone](./missing-body.md)
-
-            ## Progress Log
-
-            - moved [old](./archived-plan.md)
 
             ## Decision Log
 
             - AC-001 done. 参照: [old spec](./deleted-spec.md)
             """)
 
-        findings = lint.check_links(target, target.read_text(encoding="utf-8"), self.root)
+        self.assertEqual(lint.check_links(target, target.read_text(encoding="utf-8"), self.root), [])
 
-        self.assertEqual([f.line for f in findings], [3])
+    def test_a_document_outside_exec_plans_is_still_in_range(self):
+        target = write(self.root, "docs/a.md", "body [gone](./missing-body.md)\n")
+
+        self.assertEqual(len(lint.check_links(target, target.read_text(encoding="utf-8"), self.root)), 1)
 
 
 # --------------------------------------------------------------------------- AC-003 (C2)
@@ -304,16 +304,19 @@ class TestAC004LabelReferences(TempRepo):
         self.assertEqual(len(findings), 1)
         self.assertIn("DOC-INV-042", findings[0].message)
 
-    def test_decision_log_history_is_not_a_finding(self):
-        target = write(self.root, "exec-plans/active/2026-09-x.md", """\
-            # plan
+    def test_plan_files_are_out_of_range(self):
+        """未完了・完了・履歴のいずれであっても plan は対象外（AC-004 改訂。理由は Decision Log）。"""
+        for name, body in [
+            ("pending", "- [ ] AC-001: `create-exec-plan` の Q2b を参照する"),
+            ("done", "- [x] AC-001: `create-exec-plan` の Q2b を参照する"),
+            ("history", "## Decision Log\n\n- AC-008 の本文を `create-exec-plan` の Q2b から Q3d に修正"),
+        ]:
+            with self.subTest(name):
+                target = write(self.root, f"exec-plans/active/2026-09-{name}.md", body + "\n")
 
-            ## Decision Log
-
-            - AC-008 の本文を `create-exec-plan` の Q2b から Q3d に修正
-            """)
-
-        self.assertEqual(lint.check_labels(target, target.read_text(encoding="utf-8"), self.root), [])
+                self.assertEqual(
+                    lint.check_labels(target, target.read_text(encoding="utf-8"), self.root), []
+                )
 
     def test_target_named_after_the_label_is_not_used(self):
         """対象が label より後ろにある場合は、その対象に対する参照とは読まない
@@ -338,19 +341,6 @@ class TestAC004LabelReferences(TempRepo):
         findings = lint.check_labels(absent, absent.read_text(encoding="utf-8"), self.root)
         self.assertEqual(len(findings), 1)
         self.assertIn("⑤z", findings[0].message)
-
-    def test_unchecked_plan_item_describes_future_state_and_is_skipped(self):
-        """未完了 AC は「これから作る状態」を述べる。`- [x]` になった同じ行は対象。"""
-        write(self.root, ".claude/skills/check-doc-invariants/SKILL.md", "### DOC-INV-001: reference direction\n")
-        pending = write(self.root, "exec-plans/active/2026-09-x.md", """\
-            - [ ] AC-001: `check-doc-invariants` が DOC-INV-042 を定義する
-            """)
-        done = write(self.root, "exec-plans/active/2026-09-y.md", """\
-            - [x] AC-001: `check-doc-invariants` が DOC-INV-042 を定義する
-            """)
-
-        self.assertEqual(lint.check_labels(pending, pending.read_text(encoding="utf-8"), self.root), [])
-        self.assertEqual(len(lint.check_labels(done, done.read_text(encoding="utf-8"), self.root)), 1)
 
     def test_labels_inside_fenced_code_blocks_are_skipped(self):
         target = write(self.root, "CLAUDE.md", """\
