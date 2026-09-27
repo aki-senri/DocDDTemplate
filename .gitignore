@@ -13,3 +13,7 @@ exec-plans/.spec-override
 # このリポジトリ自身の開発プラン（dogfooding 用・配布テンプレートには含めない）
 exec-plans/active/*.dev.md
 exec-plans/completed/*.dev.md
+
+# Python のバイトコードキャッシュ（.claude/scripts/ 実行時に生成される）
+__pycache__/
+*.pyc

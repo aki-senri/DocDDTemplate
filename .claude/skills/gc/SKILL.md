@@ -62,10 +62,11 @@ Run the `check-invariants` skill against all of `src/**`.
 
 Run the `check-doc-invariants` skill against all documents in the repository.
 
-- Target: all `docs/**/*.md` and `exec-plans/**/*.md`
-- Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
-  DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
-  DOC-INV-005 (diagram rules), DOC-INV-006 (goal image / E2E traceability)
+- Target: all `docs/**/*.md` and `exec-plans/**/*.md`, plus — for the script-backed
+  DOC-INV-007〜011 — `.claude/skills/**/*.md` and the root `*.md`
+- Check every built-in invariant the skill defines: DOC-INV-001 through DOC-INV-011. The list is
+  the skill's, not this file's; that skill runs the script behind DOC-INV-007〜011, this file does
+  not invoke it directly
 - Fix any violations found
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
   record the decision if leaving ASCII art intentionally
@@ -161,6 +162,9 @@ Run the `update-context` skill.
 - DOC-INV-003 violations (lifecycle): {count}
 - DOC-INV-004 violations (AC traceability): {count}
 - DOC-INV-005 warnings (diagram rules): {count}
+- DOC-INV-006 violations (goal image / E2E traceability): {count}
+- DOC-INV-007〜010 violations (links / tables / label references / Mermaid): {count}
+- DOC-INV-011 warnings (shell-snippet robustness): {count}
 
 ### ④ Lifecycle cleanup
 - draft → active: {count}

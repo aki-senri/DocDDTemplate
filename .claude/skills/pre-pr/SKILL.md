@@ -102,10 +102,13 @@ Verify that documents corresponding to changed code files are up to date.
 Run the `check-doc-invariants` skill.
 
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
-2. Check DOC-INV-001 (reference direction), DOC-INV-002 (frontmatter completeness),
-   DOC-INV-003 (lifecycle consistency), DOC-INV-004 (AC traceability),
-   DOC-INV-005 (diagram rules), DOC-INV-006 (goal image / E2E traceability)
-3. If no violations: display "✅ doc-invariants: all passed"
+2. Check every built-in invariant the skill defines — DOC-INV-001 through DOC-INV-011. The list
+   lives in `check-doc-invariants`, not here: DOC-INV-007〜011 are script-backed — that skill
+   runs the script, this one does not — and cover a wider range, including
+   `.claude/skills/**/*.md` and the root `*.md`
+3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️
+   (DOC-INV-005, DOC-INV-011) is reported
+4. If no violations: display "✅ doc-invariants: all passed"
 
 ---
 
