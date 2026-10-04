@@ -1,9 +1,9 @@
 # AC sources — the material an AC condenses, and how it reaches the implementer
 
 > **Single source.** `create-exec-plan` (writing the `## Sources` table), `run-exec-plan`
-> (the readiness gate in Step 0b, Step 1b and the spec re-anchor in Step 3), `start-feature` (Step 2),
-> `pre-pr` (⑤c), `check-doc-invariants` (DOC-INV-012), `docode-review` and `promote-spec` all apply
-> **this** file. Do not restate the table format, the
+> (the readiness gate in Step 0b, Step 1b and the spec re-anchor in Step 3), `start-feature` (Step 1b
+> and Step 2), `pre-pr` (⑤c), `check-doc-invariants` (DOC-INV-012), `doc-review` (§2),
+> `docode-review` and `promote-spec` all apply **this** file. Do not restate the table format, the
 > conflict branches or the re-anchor verdicts inline in a skill — reference this file, so the call
 > sites cannot drift apart.
 
@@ -79,10 +79,21 @@ Rules for the table:
   `AC-(\d{3}):` anywhere in the file and would list a Sources row as if it were an acceptance
   criterion. Write `| AC-001 |`, not `| AC-001: … |`. (Same family of pitfall as the annotation rule
   in `SKILL.md`.)
-- Consecutive rows may use `同上`, but only within one column — a reader must be able to resolve a
-  row without scanning upward past a different file path.
+- Write each source as `` `path` § section ``, with the path from the repository root in backticks.
+  A section is an ID (`§ AC-001`, `§ E2E-001`, `§ TC-001` — defined by a heading, a table row's first
+  cell, or a line `ID:`), a heading name (`§「タグの付与」`, or bare: `§ ゴール像`), or nested headings
+  joined by `／` (`§ ゴール像／主要ユーザージャーニー`). Inside 「…」 a `/` is part of the name, not a
+  nesting separator.
 - Point at a **section**, not just a file. "`app_spec.md`" alone is not a source; the driver would
   have to guess which part applies, which is the guessing this table removes.
+- A cell may name more than one source — the US bullets and a `constraints.md` row, say — separated
+  by `、`. Each must resolve on its own.
+- `同上` works within one column, so a reader can resolve a row without scanning upward past a
+  different file path. `同上 § AC-002` means *the file in the row above, section AC-002*. A bare
+  `同上` repeats the cell above as it stands — under `n/a（理由）` it is `n/a` with the same reason.
+  When the row above names several sources, `同上` refers to the first.
+- In active plans these forms are resolved mechanically by DOC-INV-012
+  (`../check-doc-invariants/SKILL.md`): a missing file blocks the PR, an unmatched section warns.
 
 Referencing `docs/02_spec/` from an exec-plan is a legal upward reference — see DOC-INV-001 in
 `../check-doc-invariants/SKILL.md`, where exec-plans sit at layer 2.5 (below the spec they
@@ -130,7 +141,9 @@ file and merely warns on a section it cannot match.
 | `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against sources nobody can read, and the `n/a` fallback does not apply. **HALT** with stop condition (a) before the loop starts |
 | `run-exec-plan` Step 1b (drafting the test) | **HALT** with (a). Do not draft from the AC line alone |
 | `run-exec-plan` Step 3a (re-anchor) | **HALT** with (a). Do not check the box against nothing |
-| `start-feature` Step 2 | Present the row to the user. Fixing it is theirs: point it at the moved file or section, or replace it with `n/a（理由）` if there is genuinely nothing to read |
+| `start-feature` Step 1b (readiness) and Step 2 | Present the row to the user — at Step 1b already, so one row does not get two verdicts two steps apart. Fixing it is theirs: point it at the moved file or section, or replace it with `n/a（理由）` if there is genuinely nothing to read |
+| `doc-review` §2 (advisory) | Report the row. `R2` for that AC is NOT READY, not judged on the line alone |
+| `docode-review` (advisory) | Hand the row to the reviewer as "cannot be opened", never as `n/a`; the reviewer reports it as a finding |
 
 Repairing the row is a plan edit about *what the AC condenses* — a human's call, like every other
 disagreement between a plan and its sources. The driver does not repair it, even when the move looks
@@ -212,7 +225,8 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 | `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened → that AC is NOT READY → **HALT** (a) |
 | `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) |
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
-| `start-feature` (Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened — in conversation rather than halting |
+| `start-feature` (Step 1b / Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened — in conversation rather than halting |
+| `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened is reported, not judged on the line alone (advisory) |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
 | `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory) |

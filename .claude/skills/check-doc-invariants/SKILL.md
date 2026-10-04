@@ -166,7 +166,7 @@ to drift.
 | DOC-INV-009 | C3 label reference existence | A label reference (`Q3d`, `Step 0b`, `§2c`, `⑤c`, `DOC-INV-NNN`, `INV-TNN`) absent from the file named just before it | ❌ Violation |
 | DOC-INV-010 | C4 Mermaid label quoting | An unquoted Mermaid label containing `(`, `)`, `[`, `]`, `{` or `}` — one is enough to stop the parser, and the renderer reports only the first | ❌ Violation |
 | DOC-INV-011 | C5 shell-snippet robustness | A multi-path `grep` in a `bash` fence without both `2>/dev/null` and `\|\| true`, which dies under `set -e` on a missing path or a no-match | ⚠️ Warning |
-| DOC-INV-012 | C6 AC sources resolution | A file an **active** plan's `## Sources` row names that does not exist — or `同上` with no file above it to inherit. A section (`§`) that cannot be matched, or a row naming a file with no section, is a ⚠️ | ❌ Violation (section: ⚠️) |
+| DOC-INV-012 | C6 AC sources resolution | A file an **active** plan's `## Sources` row names that does not exist — every source in a cell is resolved, and `同上 § …` with no file above it to inherit is one too. A section (`§`) that cannot be matched, or a row naming a file with no section, is a ⚠️. The forms are defined in `../create-exec-plan/ac-sources.md`「Rules for the table」 | ❌ Violation (section: ⚠️) |
 
 DOC-INV-011 is a warning rather than a violation because a snippet may legitimately want the
 non-zero exit; the other checks have no such case, so they block. DOC-INV-012 blocks only on what is

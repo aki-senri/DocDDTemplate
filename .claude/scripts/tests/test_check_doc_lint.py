@@ -846,6 +846,36 @@ class TestSourcesAC001FileResolution(SourcesRepo):
 
         self.assertEqual(self.check(plan), [])
 
+    def test_every_source_in_a_cell_is_resolved(self):
+        """1セルに起点が2つ（US と constraints）あるとき、2つ目の不在も ❌（再チェックで発見: 見逃し）。"""
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001、`docs/01_requirements/gone.md` § TC-001 | n/a（x） |"
+        )
+
+        errors = [f for f in self.check(plan) if f.level == "error"]
+
+        self.assertEqual(len(errors), 1)
+        self.assertIn("docs/01_requirements/gone.md", errors[0].message)
+
+    def test_bare_ditto_under_na_inherits_the_na(self):
+        """素の `同上` は直上のセルをそのまま繰り返す。直上が n/a なら n/a（再チェックで発見: 誤ブロック）。"""
+        plan = self.plan(
+            "| AC-001 | n/a（テンプレート自身の改修） | n/a（同上） |\n"
+            "| AC-002 | 同上 | 同上 |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_bare_ditto_under_a_file_is_not_reported_a_second_time(self):
+        """直上のセルを繰り返すだけなので、直上で出た所見をもう一度出さない。"""
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-009 | n/a（x） |\n"
+            "| AC-002 | 同上 | n/a（x） |"
+        )
+
+        self.assertEqual([f.line for f in self.check(plan)], [self.check(plan)[0].line])
+        self.assertEqual(len(self.check(plan)), 1)
+
     def test_range_row_with_na_is_skipped(self):
         plan = self.plan("| AC-001〜AC-009 | n/a（理由） | n/a（理由） |")
 
@@ -906,6 +936,20 @@ class TestSourcesAC002SectionResolution(SourcesRepo):
         findings = self.check(plan)
 
         self.assertEqual([(f.check, f.level) for f in findings], [("C6", "warn")])
+
+    def test_two_resolving_sources_in_one_cell_report_nothing(self):
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001、`docs/01_requirements/constraints.md` § TC-001 | n/a（x） |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_slash_inside_brackets_is_part_of_the_name(self):
+        """「」で括った名前の中の `/` は入れ子の区切りではない（再チェックで発見: 誤 ⚠️）。"""
+        write(self.root, SPEC_PATH, SPEC_FIXTURE + "\n## 入出力/形式\n\n本文\n")
+        plan = self.plan(f"| AC-001 | n/a（x） | `{SPEC_PATH}` §「入出力/形式」 |")
+
+        self.assertEqual(self.check(plan), [])
 
     def test_missing_file_is_not_also_reported_as_a_missing_section(self):
         plan = self.plan("| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |")
@@ -1010,6 +1054,29 @@ class TestSourcesAC005SingleSourceBranch(unittest.TestCase):
     def test_re_anchor_verdict_table_carries_the_same_row(self):
         use2 = _section(self.text, "### Use 2", ("## ",))
         self.assertIn("起点が開けない", use2)
+
+
+
+class TestSourcesFormatStatedInTheSingleSource(unittest.TestCase):
+    """再チェックで発見（#41 案3）: DOC-INV-012 が施行する書式は ac-sources.md に書かれていなければ
+    ならない。スクリプトにしか無い規則は、表を書く人が読めない。"""
+
+    def setUp(self):
+        text = (REPO_ROOT / ".claude/skills/create-exec-plan/ac-sources.md").read_text(encoding="utf-8")
+        # Compare with whitespace collapsed: Markdown reflows a sentence across lines, and the
+        # test is about what the rules say, not where the lines break.
+        self.rules = " ".join(_section(text, "Rules for the table:", ("Referencing ",)).split())
+
+    def test_states_the_reference_form_and_section_forms(self):
+        self.assertIn("§", self.rules)
+        self.assertIn("／", self.rules)
+        self.assertIn("「", self.rules)
+
+    def test_states_that_a_cell_may_name_several_sources(self):
+        self.assertIn("、", self.rules)
+
+    def test_states_what_a_bare_ditto_means(self):
+        self.assertIn("bare `同上`", self.rules)
 
 
 class TestSourcesAC006ConsumersReferenceTheBranch(unittest.TestCase):

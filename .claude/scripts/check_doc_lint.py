@@ -575,8 +575,10 @@ def check_grep_snippets(path: Path, text: str) -> list[Finding]:
 
 SOURCES_HEADING_RE = re.compile(r"^##\s+Sources\s*$")
 H2_RE = re.compile(r"^##\s")
-BACKTICK_RE = re.compile(r"`([^`]+)`")
-SECTION_PATH_SPLIT_RE = re.compile(r"\s*[／/]\s*")
+#: A backticked token is a *path* when it has a directory separator or a file extension, so a
+#: backticked section ID (`§ \`AC-001\``) is not mistaken for a second source.
+PATH_TOKEN_RE = re.compile(r"`([^`]*?(?:/|\.[A-Za-z0-9]+)[^`]*?)`")
+TRAILING_SEPARATORS = "、,，;；"
 SECTION_ID_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
 HEADING_LINE_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 NAME_SEPARATORS = (" ", "　", ":", "：", "（", "(")
@@ -676,12 +678,36 @@ def _id_defined(text: str, identifier: str) -> bool:
     return False
 
 
+def _section_segments(section: str) -> list[str]:
+    """`ゴール像／主要ユーザージャーニー` → two nested names; `「入出力/形式」` → one name.
+
+    `／` (or `/`) separates nesting levels only outside 「…」: inside the brackets it is part of
+    the heading text.
+    """
+    parts, current, bracketed = [], [], False
+    for char in section:
+        if char == "「":
+            bracketed = True
+        elif char == "」":
+            bracketed = False
+        if char in "／/" and not bracketed:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    parts.append("".join(current))
+    segments = []
+    for part in parts:
+        part = part.strip().strip("`").strip()
+        if part.startswith("「") and part.endswith("」"):
+            part = part[1:-1]
+        if part:
+            segments.append(part)
+    return segments
+
+
 def _section_exists(text: str, section: str) -> bool:
-    segments = [
-        segment[1:-1] if segment.startswith("「") and segment.endswith("」") else segment
-        for segment in (part.strip().strip("`") for part in SECTION_PATH_SPLIT_RE.split(section))
-        if segment
-    ]
+    segments = _section_segments(section)
     if not segments:
         return False
     if len(segments) == 1 and SECTION_ID_RE.match(segments[0]):
@@ -702,64 +728,105 @@ def _section_exists(text: str, section: str) -> bool:
     return descend(0, 0, 0)
 
 
+def _section_of(fragment: str) -> str | None:
+    """The `§` part of one reference, or None when it names no section."""
+    if "§" not in fragment:
+        return None
+    return fragment.split("§", 1)[1].strip().rstrip(TRAILING_SEPARATORS).strip()
+
+
+def _source_refs(cell: str) -> list[tuple[str, str, str | None]]:
+    """The sources one cell names, in order — ("ditto", "同上", §) and/or ("path", path, §).
+
+    A cell may name more than one source (the US bullets and a `constraints.md` row, say), and each
+    is resolved on its own: checking only the first would let a missing second file through.
+    """
+    matches = list(PATH_TOKEN_RE.finditer(cell))
+    head = cell[: matches[0].start()] if matches else cell
+    refs: list[tuple[str, str, str | None]] = []
+    if head.strip().startswith(DITTO):
+        refs.append(("ditto", DITTO, _section_of(head.strip()[len(DITTO) :])))
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(cell)
+        refs.append(("path", match.group(1).strip(), _section_of(cell[match.end() : end])))
+    return refs
+
+
 def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
     """C6 / DOC-INV-012 — what an active plan's `## Sources` table names can be opened.
 
-    ❌ the file a cell names does not exist (or `同上` has no file above it to inherit);
+    ❌ a file a cell names does not exist (or `同上 § …` has no file above it to inherit);
     ⚠️ the file exists but the `§` section cannot be found, or the cell names a file and no section.
     Cells reading `n/a（理由）`, and cells naming neither a path nor `同上`, are not this check's to
     judge: whether every AC has a well-formed row is `pre-pr` ⑤c.
+
+    `同上` follows the column. `同上 § X` means "the file above, section X". A bare `同上` repeats
+    the cell above as it stands — under `n/a` it is `n/a` (the reason carries down), and under a file
+    it adds nothing new to check, so whatever the row above found is not reported a second time.
+    When a cell names several sources, the first is the one a later `同上` inherits.
     """
     if not _in_sources_range(path, repo_root):
         return []
     findings: list[Finding] = []
     previous: dict[int, object] = {}  # column → Path | _UNRESOLVED | None
     cache: dict[Path, str] = {}
+
+    def check_section(row: Line, target: Path, written: str, section: str | None) -> None:
+        if section is None or not section:
+            findings.append(
+                Finding("C6", "warn", Path(path), row.number, f"{written} names a file but no § section")
+            )
+            return
+        if target not in cache:
+            cache[target] = target.read_text(encoding="utf-8")
+        if not _section_exists(cache[target], section):
+            findings.append(Finding("C6", "warn", Path(path), row.number, f"§ {section} not found in {written}"))
+
     for row in _sources_rows(scan_lines(text)):
         for column, cell in enumerate(_cells(row.text)[1:], start=1):
-            if cell.lower().startswith("n/a"):
+            if cell.strip("` ").lower().startswith("n/a"):
                 previous[column] = None
                 continue
-            left, _, section = cell.partition("§")
-            section = section.strip()
-            match = BACKTICK_RE.search(left)
-            if match:
-                written = match.group(1).strip()
-                candidates = [Path(repo_root) / written.lstrip("/"), Path(path).parent / written]
-                target = next((c for c in candidates if c.is_file()), None)
-                if target is None:
-                    findings.append(
-                        Finding("C6", "error", Path(path), row.number, f"source file does not exist: {written}")
-                    )
-                    previous[column] = _UNRESOLVED
-                    continue
-            elif left.strip().startswith(DITTO):
-                inherited = previous.get(column)
-                if inherited is _UNRESOLVED:
-                    continue  # the file above is already reported; one missing file, one finding
-                if inherited is None:
-                    findings.append(
-                        Finding("C6", "error", Path(path), row.number, f"{DITTO} has no source file above it to inherit")
-                    )
-                    previous[column] = _UNRESOLVED
-                    continue
-                target, written = inherited, f"{DITTO}（{Path(inherited).name}）"
-            else:
-                previous[column] = None
+            refs = _source_refs(cell)
+            if not refs:
+                previous[column] = None  # free text: nothing to resolve, and nothing to inherit
                 continue
-
-            previous[column] = target
-            if not section:
-                findings.append(
-                    Finding("C6", "warn", Path(path), row.number, f"{written} names a file but no § section")
-                )
-                continue
-            if target not in cache:
-                cache[target] = target.read_text(encoding="utf-8")
-            if not _section_exists(cache[target], section):
-                findings.append(
-                    Finding("C6", "warn", Path(path), row.number, f"§ {section} not found in {written}")
-                )
+            inherited = previous.get(column)
+            primary: object = None
+            for position, (kind, written, section) in enumerate(refs):
+                if kind == "ditto" and section is None:
+                    resolved = inherited  # a bare 同上: the cell above, as it stands
+                elif kind == "ditto":
+                    if inherited is _UNRESOLVED:
+                        resolved = _UNRESOLVED  # the file above is already reported
+                    elif inherited is None:
+                        findings.append(
+                            Finding(
+                                "C6",
+                                "error",
+                                Path(path),
+                                row.number,
+                                f"{DITTO} § {section} has no source file above it to inherit",
+                            )
+                        )
+                        resolved = _UNRESOLVED
+                    else:
+                        resolved = inherited
+                        check_section(row, Path(inherited), f"{DITTO}（{Path(inherited).name}）", section)
+                else:
+                    candidates = [Path(repo_root) / written.lstrip("/"), Path(path).parent / written]
+                    target = next((c for c in candidates if c.is_file()), None)
+                    if target is None:
+                        findings.append(
+                            Finding("C6", "error", Path(path), row.number, f"source file does not exist: {written}")
+                        )
+                        resolved = _UNRESOLVED
+                    else:
+                        resolved = target
+                        check_section(row, target, written, section)
+                if position == 0:
+                    primary = resolved
+            previous[column] = primary
     return findings
 
 
