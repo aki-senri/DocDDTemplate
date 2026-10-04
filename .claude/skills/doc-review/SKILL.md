@@ -156,7 +156,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 
 ### AC sources (the US bullets / spec sections the plan's ## Sources names — needed to apply R2)
 {for each row: the AC-ID, the section path, and the section text.
- Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so" }
+ Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so"
+ / "{AC-ID}: cannot be opened — {path § section as written}: report it; R2 for this AC is NOT READY,
+ not judged on the line alone" }
 
 ### Project documentation rules (CLAUDE.md excerpt)
 {relevant sections covering doc rules, diagram rules, etc.}

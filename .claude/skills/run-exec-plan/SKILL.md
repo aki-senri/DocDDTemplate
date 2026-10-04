@@ -109,6 +109,10 @@ rows and open what they name before running the gate — the per-AC read in Step
 inform a gate that must clear the whole set up front. Judging the one-liners alone would halt the
 loop on ACs whose detail is correctly recorded in the US, which is not what NOT READY means. When a
 row is `n/a` or the plan has no table, `R2` falls back to the AC line, as `ac-readiness.md` states.
+A row that names something that **cannot be opened** is not `n/a` and gets no fallback: that AC is
+NOT READY, and the run halts with (a) — see
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md)「When a source cannot be
+opened」.
 
 | Verdict | Action |
 |---------|--------|
@@ -191,6 +195,7 @@ frozen spec material only, and reading the code would undo what Step 2a exists f
 | **Refinement** — the same outcome with concrete preconditions, boundaries or expected values | Use it. Step 2a transcribes at *that* granularity, not the one-liner's |
 | **A separate outcome** the AC line does not cover | **HALT** with (a). Either the AC bundles several results (`R1`) or a criterion was never written; both are a human's call |
 | **A contradiction** — the same outcome, a different expected value | **HALT** with (a). Do not pick a side, and do not edit the AC or the spec to agree |
+| The row names a file or section that **cannot be opened** | **HALT** with (a). It is not the `n/a` rows below — do not draft from the AC line alone, and do not guess which file the row meant (`ac-sources.md`「When a source cannot be opened」) |
 | **One column** is `n/a（理由）` (typically spec, when `/create-spec` was skipped) | Read the other one. A partial `n/a` is not an exemption — the goal simply lives one layer up |
 | **Both columns** are `n/a（理由）` | Nothing to read. The AC line is the whole goal — go to Step 2a |
 | The plan has **no** `## Sources` table (it predates the convention) | Continue, and say so in the run's report. Do not reconstruct sources by reading the code — that is the one reading this step forbids |
@@ -320,6 +325,7 @@ actions are:
 | **spec が述べる振る舞いに対応するテストが無い** | Measurement gap. Add a **new** test for it red-first (Step 2a's procedure), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS`. Never edit or weaken a frozen test to cover the gap — that is (c) |
 | **spec が AC 行と矛盾** | **Halt** with (a). Change neither side |
 | **The missing behavior is a separate outcome, not part of this AC** | **Halt** with (a) — same row as Step 1b's "separate outcome" |
+| **起点が開けない** — the row names a file or section that cannot be opened | **Halt** with (a). Not the `n/a` row below |
 | **起点なし** — both columns `n/a`, or the plan has no `## Sources` table | Nothing to anchor to. Record `spec 再アンカー: n/a（{理由}）` and go to Step 3b |
 
 **Scope the comparison to this AC.** A spec section — and an `E2E-NNN` scenario in particular —
@@ -412,7 +418,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
+| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |

@@ -687,5 +687,396 @@ class TestAC011EndToEnd(TempRepo):
         self.assertEqual(code, 0, buffer.getvalue())
 
 
+# =========================================================================== Issue #41
+# AC-IDs below refer to exec-plans/active/2026-10-sources-resolution.dev.md (not the #36 plan).
+
+US_FIXTURE = """\
+---
+status: active
+ac_ids: [AC-001, AC-002]
+---
+
+# US-003 tagging
+
+## ゴール像
+
+### 完成時にできること
+
+- タグで絞り込める
+
+### 主要ユーザージャーニー
+
+1. 付ける 2. 絞る
+
+### 非ゴール
+
+- なし
+
+### AC-001: タグを付ける
+
+- 付けられる
+
+### AC-002: タグで絞る
+
+- 絞れる
+"""
+
+SPEC_FIXTURE = """\
+---
+status: active
+---
+
+# app spec
+
+## Features
+
+### タグの付与（satisfies AC-001）
+
+付与できる。
+
+### 一覧の絞り込み
+
+satisfies AC-002
+
+## E2E シナリオ
+
+### E2E-001: 付けて絞る
+
+一連の流れ。
+"""
+
+CONSTRAINTS_FIXTURE = """\
+# constraints
+
+| ID | 内容 |
+|----|------|
+| TC-001 | Python 3.11 |
+"""
+
+US_PATH = "docs/01_requirements/user_stories/US-003_tagging.md"
+SPEC_PATH = "docs/02_spec/app_spec.md"
+
+
+def sources_plan(rows: str, *, header: str = "## Sources") -> str:
+    return (
+        "# plan\n\n## Acceptance Criteria\n\n- [ ] AC-001: x\n\n"
+        f"{header}\n\n"
+        "| AC | US（検証可能な bullet） | spec（振る舞いの節） |\n"
+        "|----|------------------------|---------------------|\n"
+        f"{rows}\n"
+        "\n## Task Breakdown\n\n- [ ] t\n"
+    )
+
+
+def report_line(testcase: unittest.TestCase, report: str, needle: str) -> str:
+    """The report line mentioning `needle`; fails as an assertion (not StopIteration) when absent."""
+    lines = [l for l in report.splitlines() if needle in l]
+    testcase.assertTrue(lines, f"no report line mentions {needle}")
+    return lines[0]
+
+
+class SourcesRepo(TempRepo):
+    def setUp(self):
+        super().setUp()
+        write(self.root, US_PATH, US_FIXTURE)
+        write(self.root, SPEC_PATH, SPEC_FIXTURE)
+        write(self.root, "docs/01_requirements/constraints.md", CONSTRAINTS_FIXTURE)
+
+    def plan(self, rows: str, rel: str = "exec-plans/active/2026-10-x.md", **kwargs) -> Path:
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(sources_plan(rows, **kwargs), encoding="utf-8")
+        return path
+
+    def check(self, path: Path):
+        return lint.check_sources(path, path.read_text(encoding="utf-8"), self.root)
+
+
+class TestSourcesAC001FileResolution(SourcesRepo):
+    """#41 AC-001: Sources のセルが名指すファイルが存在しなければ ❌（file:line）。
+    同上は同じ列の直前の行のパスを継承し、継承元が無ければ ❌。n/a と、パスも同上も含まないセルは対象外。"""
+
+    def test_resolving_table_reports_nothing(self):
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001 | `{SPEC_PATH}` §「タグの付与」 |\n"
+            f"| AC-002 | 同上 § AC-002 | 同上 § E2E-001 |\n"
+            f"| AC-003 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | n/a（spec 未作成 — 起点は US の該当節） |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_missing_file_is_an_error_on_its_row(self):
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001 | `docs/02_spec/gone.md` §「タグの付与」 |"
+        )
+
+        findings = self.check(plan)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].check, "C6")
+        self.assertEqual(findings[0].level, "error")
+        self.assertIn("docs/02_spec/gone.md", findings[0].message)
+        row_line = plan.read_text(encoding="utf-8").splitlines().index(
+            f"| AC-001 | `{US_PATH}` § AC-001 | `docs/02_spec/gone.md` §「タグの付与」 |"
+        ) + 1
+        self.assertEqual(findings[0].line, row_line)
+
+    def test_ditto_without_anything_above_it_is_an_error(self):
+        plan = self.plan("| AC-001 | 同上 § AC-001 | n/a（spec 未作成） |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([(f.check, f.level) for f in findings], [("C6", "error")])
+
+    def test_ditto_below_a_missing_file_is_reported_once_not_twice(self):
+        plan = self.plan(
+            "| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |\n"
+            "| AC-002 | 同上 § AC-002 | n/a（x） |"
+        )
+
+        errors = [f for f in self.check(plan) if f.level == "error"]
+
+        self.assertEqual(len(errors), 1)
+
+    def test_na_cells_and_cells_naming_no_path_are_skipped(self):
+        plan = self.plan(
+            "| AC-001 | n/a（テンプレート自身の改修） | n/a（同上） |\n"
+            "| AC-002 | 起点は Issue #41 | 本プランの Goal & Scope |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_range_row_with_na_is_skipped(self):
+        plan = self.plan("| AC-001〜AC-009 | n/a（理由） | n/a（理由） |")
+
+        self.assertEqual(self.check(plan), [])
+
+
+class TestSourcesAC002SectionResolution(SourcesRepo):
+    """#41 AC-002: ファイルはあるが § の節が見つからない場合と、§ を持たないセルを ⚠️。"""
+
+    def test_named_section_not_found_is_a_warning(self):
+        plan = self.plan(f"| AC-001 | `{US_PATH}` § AC-001 | `{SPEC_PATH}` §「存在しない節」 |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([(f.check, f.level) for f in findings], [("C6", "warn")])
+        self.assertIn("存在しない節", findings[0].message)
+
+    def test_id_section_not_found_is_a_warning(self):
+        plan = self.plan(f"| AC-001 | `{US_PATH}` § AC-009 | n/a（x） |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([f.level for f in findings], ["warn"])
+        self.assertIn("AC-009", findings[0].message)
+
+    def test_heading_with_trailing_text_matches_the_name(self):
+        plan = self.plan(f"| AC-001 | n/a（x） | `{SPEC_PATH}` §「タグの付与」 |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_bare_name_without_brackets_matches_a_heading(self):
+        plan = self.plan(f"| AC-001 | `{US_PATH}` § ゴール像 | `{SPEC_PATH}` § 一覧の絞り込み |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_nested_path_must_follow_heading_nesting(self):
+        good = self.plan(f"| AC-001 | `{US_PATH}` § ゴール像／主要ユーザージャーニー | n/a（x） |", rel="exec-plans/active/a.md")
+        ascii_slash = self.plan(f"| AC-001 | `{US_PATH}` § ゴール像/主要ユーザージャーニー | n/a（x） |", rel="exec-plans/active/b.md")
+        reversed_path = self.plan(f"| AC-001 | `{US_PATH}` § 主要ユーザージャーニー／ゴール像 | n/a（x） |", rel="exec-plans/active/c.md")
+
+        self.assertEqual(self.check(good), [])
+        self.assertEqual(self.check(ascii_slash), [])
+        self.assertEqual([f.level for f in self.check(reversed_path)], ["warn"])
+
+    def test_id_defined_as_a_table_first_cell_resolves(self):
+        plan = self.plan("| AC-001 | `docs/01_requirements/constraints.md` § TC-001 | n/a（x） |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_backticked_section_id_resolves(self):
+        plan = self.plan(f"| AC-001 | `{US_PATH}` § `AC-001` | n/a（x） |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_cell_naming_a_file_without_a_section_is_a_warning(self):
+        plan = self.plan(f"| AC-001 | `{US_PATH}` | n/a（x） |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([(f.check, f.level) for f in findings], [("C6", "warn")])
+
+    def test_missing_file_is_not_also_reported_as_a_missing_section(self):
+        plan = self.plan("| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |")
+
+        self.assertEqual([f.level for f in self.check(plan)], ["error"])
+
+
+class TestSourcesAC003Range(SourcesRepo):
+    """#41 AC-003: exec-plans/active/** の ## Sources 節の表のみ。completed・docs・.claude・fence 内は対象外。"""
+
+    BROKEN = "| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |"
+
+    def test_completed_plans_are_out_of_range(self):
+        plan = self.plan(self.BROKEN, rel="exec-plans/completed/2026-09-old.md")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_documents_outside_exec_plans_are_out_of_range(self):
+        for rel in ("docs/02_spec/notes.md", ".claude/skills/demo/SKILL.md", "README.md"):
+            with self.subTest(rel):
+                self.assertEqual(self.check(self.plan(self.BROKEN, rel=rel)), [])
+
+    def test_a_table_outside_the_sources_section_is_ignored(self):
+        plan = self.plan(self.BROKEN, header="## Task Notes")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_a_fenced_sources_table_is_ignored(self):
+        path = self.root / "exec-plans/active/2026-10-fenced.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# plan\n\n```markdown\n" + sources_plan(self.BROKEN) + "```\n", encoding="utf-8")
+
+        self.assertEqual(self.check(path), [])
+
+    def test_pointer_checks_still_skip_exec_plans(self):
+        plan = self.plan(self.BROKEN + "\n\nsee [gone](./missing.md)")
+
+        self.assertEqual(lint.check_links(plan, plan.read_text(encoding="utf-8"), self.root), [])
+
+
+class TestSourcesAC004ExitCodeAndReport(SourcesRepo):
+    """#41 AC-004: AC-001 の ❌ で exit 1、AC-002 の ⚠️ のみなら 0。レポートに DOC-INV-012 の行。"""
+
+    def run_main(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = lint.main(["--root", str(self.root)])
+        return code, buffer.getvalue()
+
+    def test_missing_file_exits_one_and_is_reported_under_doc_inv_012(self):
+        self.plan("| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |")
+
+        code, report = self.run_main()
+
+        self.assertEqual(code, 1)
+        line = report_line(self, report, "DOC-INV-012")
+        self.assertIn("❌", line)
+
+    def test_section_mismatch_only_exits_zero_with_a_warning(self):
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-009 | n/a（x） |")
+
+        code, report = self.run_main()
+
+        self.assertEqual(code, 0)
+        line = report_line(self, report, "DOC-INV-012")
+        self.assertIn("⚠️", line)
+
+
+def _section(text: str, start: str, stop_prefixes: tuple[str, ...]) -> str:
+    """The text from the line starting with `start` up to the next line starting with any stop prefix."""
+    lines = text.splitlines()
+    begin = next((i for i, l in enumerate(lines) if l.startswith(start)), None)
+    if begin is None:
+        return ""  # absent section: the caller's assertIn fails as an assertion, not StopIteration
+    end = next(
+        (i for i in range(begin + 1, len(lines)) if lines[i].startswith(stop_prefixes)),
+        len(lines),
+    )
+    return "\n".join(lines[begin:end])
+
+
+class TestSourcesAC005SingleSourceBranch(unittest.TestCase):
+    """#41 AC-005: ac-sources.md に「起点が開けない」分岐が単一ソースとして定義され、
+    n/a とは区別され、再アンカー判定表にも同じ行がある。"""
+
+    def setUp(self):
+        self.text = (REPO_ROOT / ".claude/skills/create-exec-plan/ac-sources.md").read_text(encoding="utf-8")
+
+    def test_defines_the_branch_as_its_own_section(self):
+        self.assertIn("## When a source cannot be opened", self.text)
+
+    def test_branch_halts_the_loop_and_presents_on_the_manual_path(self):
+        section = _section(self.text, "## When a source cannot be opened", ("## ",))
+        self.assertIn("HALT", section)
+        self.assertIn("(a)", section)
+        self.assertIn("start-feature", section)
+
+    def test_branch_is_distinguished_from_the_na_fallback(self):
+        section = _section(self.text, "## When a source cannot be opened", ("## ",))
+        self.assertIn("n/a", section)
+
+    def test_re_anchor_verdict_table_carries_the_same_row(self):
+        use2 = _section(self.text, "### Use 2", ("## ",))
+        self.assertIn("起点が開けない", use2)
+
+
+class TestSourcesAC006ConsumersReferenceTheBranch(unittest.TestCase):
+    """#41 AC-006: run-exec-plan Step 0b・1b と start-feature Step 2 が分岐を参照し、
+    CLAUDE.md の停止条件 (a) にこの場合が含まれる。"""
+
+    def test_run_exec_plan_step_0b(self):
+        text = (REPO_ROOT / ".claude/skills/run-exec-plan/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "#### Step 0b", ("#### ", "### "))
+        self.assertIn("cannot be opened", section)
+
+    def test_run_exec_plan_step_1b(self):
+        text = (REPO_ROOT / ".claude/skills/run-exec-plan/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### Step 1b", ("### ",))
+        self.assertIn("cannot be opened", section)
+
+    def test_start_feature_step_2(self):
+        text = (REPO_ROOT / ".claude/skills/start-feature/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### Step 2", ("### ",))
+        self.assertIn("cannot be opened", section)
+
+    def test_claude_md_stop_condition_a(self):
+        text = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+        row = next(l for l in text.splitlines() if l.startswith("| (a) |"))
+        self.assertIn("開けない", row)
+
+
+class TestSourcesAC007GateDocuments(unittest.TestCase):
+    """#41 AC-007: check-doc-invariants が DOC-INV-012 を定義、pre-pr ⑤c は ③ に委ねる、
+    pre-pr ③ / gc ③ は DOC-INV の上限番号を書かない。"""
+
+    def test_check_doc_invariants_defines_doc_inv_012(self):
+        text = (REPO_ROOT / ".claude/skills/check-doc-invariants/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("DOC-INV-012", text)
+        self.assertIn("DOC-INV-012", text.split("## Completion criteria")[-1])
+
+    def test_pre_pr_5c_delegates_resolution_to_doc_inv_012(self):
+        text = (REPO_ROOT / ".claude/skills/pre-pr/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### ⑤c", ("### ",))
+        self.assertIn("DOC-INV-012", section)
+
+    def test_pre_pr_and_gc_do_not_hardcode_an_upper_bound(self):
+        for rel, start in ((".claude/skills/pre-pr/SKILL.md", "### ③"), (".claude/skills/gc/SKILL.md", "### ③")):
+            with self.subTest(rel):
+                text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+                section = _section(text, start, ("### ",))
+                self.assertNotIn("through DOC-INV-", section)
+
+
+class TestSourcesAC008EndToEnd(SourcesRepo):
+    """#41 AC-008 [E2E]: 1回の実行で active の不在パスが ❌ / exit 1、節不一致のみなら ⚠️ / exit 0、
+    completed は報告されない。"""
+
+    def test_one_run_over_active_and_completed_plans(self):
+        self.plan("| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |", rel="exec-plans/active/2026-10-live.md")
+        self.plan("| AC-001 | `docs/also-gone.md` § AC-001 | n/a（x） |", rel="exec-plans/completed/2026-09-old.md")
+
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = lint.main(["--root", str(self.root)])
+        report = buffer.getvalue()
+
+        self.assertEqual(code, 1)
+        self.assertIn("exec-plans/active/2026-10-live.md:", report)
+        self.assertIn("docs/gone.md", report)
+        self.assertNotIn("also-gone.md", report)
+
+
 if __name__ == "__main__":
     unittest.main()

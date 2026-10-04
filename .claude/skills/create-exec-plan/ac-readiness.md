@@ -33,7 +33,9 @@ not against a general impression of quality.
 
 > **R2 is judged against the same material red-first will transcribe from** — the AC line plus its
 > sources ([`ac-sources.md`](ac-sources.md)), falling back to the line alone when the row is `n/a`
-> or the plan has no `## Sources` table at all.
+> or the plan has no `## Sources` table at all. A row naming something that **cannot be opened** gets
+> no fallback: it is not `n/a` but a broken pointer, so R2 cannot be judged and the AC is NOT READY
+> (`ac-sources.md`「When a source cannot be opened」).
 > Judging it against the one-liner in isolation would fail ACs whose detail is correctly recorded in
 > the US bullets, and would make this check disagree with the empirical one below. What R2 still
 > refuses is detail that exists **nowhere**: a pointer to a section that does not answer 前提 /

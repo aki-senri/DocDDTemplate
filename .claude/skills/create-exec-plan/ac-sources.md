@@ -1,8 +1,9 @@
 # AC sources — the material an AC condenses, and how it reaches the implementer
 
 > **Single source.** `create-exec-plan` (writing the `## Sources` table), `run-exec-plan`
-> (Step 1b and the spec re-anchor in Step 3), `start-feature` (Step 2), `pre-pr` (⑤c),
-> `docode-review` and `promote-spec` all apply **this** file. Do not restate the table format, the
+> (the readiness gate in Step 0b, Step 1b and the spec re-anchor in Step 3), `start-feature` (Step 2),
+> `pre-pr` (⑤c), `check-doc-invariants` (DOC-INV-012), `docode-review` and `promote-spec` all apply
+> **this** file. Do not restate the table format, the
 > conflict branches or the re-anchor verdicts inline in a skill — reference this file, so the call
 > sites cannot drift apart.
 
@@ -108,6 +109,35 @@ catches for R2, detected one step earlier.
 
 ---
 
+## When a source cannot be opened
+
+A row can be well-formed and still name something that is not there: the file was moved or renamed,
+the section was retitled, or the path was mistyped. **That is not `n/a`.** `n/a（理由）` is a recorded
+judgement that there is nothing to read. An unopenable row is the opposite claim — there *is*
+something to read, and nobody can now read it. Falling back to the AC line, as the `n/a` row does,
+would mean drafting the test from an interpretation of the one-liner: the path this file exists to
+close, reopened by a typo.
+
+**What "cannot be opened" means to a reader.** The file does not exist, or the reader cannot identify
+the section the row names. A reader — the driver or a human — can tell a reworded heading from a
+missing one by reading it, so a heading that is merely reworded *can* be opened (say which heading
+was read in the record). The mechanical check cannot make that call, which is why DOC-INV-012 in
+[`../check-doc-invariants/SKILL.md`](../check-doc-invariants/SKILL.md) blocks only on a missing
+file and merely warns on a section it cannot match.
+
+| Call site | Action |
+|-----------|--------|
+| `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against sources nobody can read, and the `n/a` fallback does not apply. **HALT** with stop condition (a) before the loop starts |
+| `run-exec-plan` Step 1b (drafting the test) | **HALT** with (a). Do not draft from the AC line alone |
+| `run-exec-plan` Step 3a (re-anchor) | **HALT** with (a). Do not check the box against nothing |
+| `start-feature` Step 2 | Present the row to the user. Fixing it is theirs: point it at the moved file or section, or replace it with `n/a（理由）` if there is genuinely nothing to read |
+
+Repairing the row is a plan edit about *what the AC condenses* — a human's call, like every other
+disagreement between a plan and its sources. The driver does not repair it, even when the move looks
+obvious: guessing which file a row "meant" is the inference the `## Sources` table exists to replace.
+
+---
+
 ## The two uses
 
 The table is read at two different moments, for two different reasons.
@@ -148,6 +178,7 @@ again and compare it against the behavior now implemented.
 | **spec の振る舞いを満たしていない** | An implementation gap the transcribed tests did not catch | Fix the implementation and re-verify. Counts against `MAX_REPAIR_ATTEMPTS` |
 | **spec が述べる振る舞いに対応するテストが無い** | A measurement gap, not a frozen-expectation problem | Add a **new** test for it red-first (never edit a frozen one), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS` |
 | **spec が AC 行と矛盾** | A spec judgement | **HALT** with (a). Do not "fix" either side |
+| **起点が開けない** | The row names a file or section that cannot be opened (「When a source cannot be opened」 above) | **HALT** with (a). Not the row below — `n/a` is a recorded judgement, this is a broken pointer |
 | **起点なし（両列とも `n/a`、または表が無い）** | Nothing to anchor to | Record `spec 再アンカー: n/a（起点なし）` and proceed |
 
 The third row is the one to read carefully: adding a test is allowed because the frozen expectation
@@ -178,10 +209,12 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 | Call site | When | Action |
 |-----------|------|--------|
 | `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec |
-| `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction → **HALT** (a) |
+| `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened → that AC is NOT READY → **HALT** (a) |
+| `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) |
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
-| `start-feature` (Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict in conversation rather than halting |
+| `start-feature` (Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened — in conversation rather than halting |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
+| `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory) |
 | `promote-spec` (Step 7) | Generating a reconcile plan | Write the table with the **new** spec's sections and `E2E-NNN` as the sources of the re-opened ACs |
 

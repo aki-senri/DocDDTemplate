@@ -137,7 +137,7 @@ project-root/
 ├── .claude/
 │   ├── settings.json          # Hook configuration (auto-reminders on code changes)
 │   ├── hooks/                 # spec-gate.py (spec-first gate), post-tool-notify.py
-│   ├── scripts/               # check_doc_lint.py (DOC-INV-007〜011; run by check-doc-invariants)
+│   ├── scripts/               # check_doc_lint.py (script-backed DOC-INVs; run by check-doc-invariants)
 │   └── skills/                # Skill definitions
 │       ├── init-project/
 │       ├── create-requirements/

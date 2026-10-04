@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_doc_lint.py — mechanical checks for DocDD convention documents.
 
-Implements DOC-INV-007 through DOC-INV-011 (see
+Implements DOC-INV-007 through DOC-INV-012 (see
 `.claude/skills/check-doc-invariants/SKILL.md`, which is the only skill that invokes this file):
 
 | Check | Invariant    | What it detects                                       | Level |
@@ -14,6 +14,8 @@ Implements DOC-INV-007 through DOC-INV-011 (see
 | C4    | DOC-INV-010  | An unquoted Mermaid label containing `()[]{}`         | ❌    |
 | C5    | DOC-INV-011  | A multi-path `grep` in a `bash` fence without both    | ⚠️    |
 |       |              | `2>/dev/null` and `\\|\\| true`                         |       |
+| C6    | DOC-INV-012  | A file an active plan's `## Sources` row names that   | ❌    |
+|       |              | does not exist (⚠️ when only the § section is missing) |       |
 
 What it deliberately does not check is listed in the skill: pointers inside `exec-plans/**` (a plan
 is a working note, and an archived one is not a reference document), whether a consumer has the
@@ -42,6 +44,7 @@ INVARIANTS = {
     "C3": ("DOC-INV-009", "label reference existence"),
     "C4": ("DOC-INV-010", "Mermaid label quoting"),
     "C5": ("DOC-INV-011", "grep robustness in shell snippets"),
+    "C6": ("DOC-INV-012", "AC sources resolution"),
 }
 
 FIX_HINTS = {
@@ -50,6 +53,8 @@ FIX_HINTS = {
     "C3": "Update the label to the one the target file actually defines (it was probably renumbered).",
     "C4": 'Wrap the label in double quotes: |"a (b)"| — an unquoted bracket breaks the whole diagram.',
     "C5": "Append 2>/dev/null || true — a missing path or a no-match exits non-zero under set -e.",
+    "C6": "Point the row at the file and section the AC condenses, or write n/a（理由）. A source that "
+    "cannot be opened halts the loop (ac-sources.md「When a source cannot be opened」).",
 }
 
 # DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
@@ -556,6 +561,208 @@ def check_grep_snippets(path: Path, text: str) -> list[Finding]:
     return findings
 
 
+# --------------------------------------------------------------------------- C6: AC sources
+
+# The one *pointer* check that reads plans. DOC-INV-007 / 009 skip `exec-plans/**` because a plan is a
+# working note whose pointers nobody follows once it is archived. A `## Sources` table is the
+# deliberate exception: it is read *while the work is in flight* (run-exec-plan Step 0b / 1b / 3a,
+# start-feature Step 2), so a row that does not resolve stalls red-first now rather than misleading
+# some later reader of the archive. Completed plans stay out of range — their drift is accepted.
+#
+# Levels follow what can be decided mechanically. A missing file is unambiguous: ❌. A section is
+# matched by heading text, which can drift in wording ("タグの付与" vs "タグ付与"), so a section that
+# cannot be found is ⚠️ — a human or the driver reading the file can still tell whether it is there.
+
+SOURCES_HEADING_RE = re.compile(r"^##\s+Sources\s*$")
+H2_RE = re.compile(r"^##\s")
+BACKTICK_RE = re.compile(r"`([^`]+)`")
+SECTION_PATH_SPLIT_RE = re.compile(r"\s*[／/]\s*")
+SECTION_ID_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
+HEADING_LINE_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+NAME_SEPARATORS = (" ", "　", ":", "：", "（", "(")
+DITTO = "同上"
+_UNRESOLVED = object()  # a file above was already reported as missing; do not report it again
+
+
+def _in_sources_range(path: Path, repo_root: Path) -> bool:
+    try:
+        rel = Path(path).resolve().relative_to(Path(repo_root).resolve())
+    except ValueError:
+        return False
+    return rel.parts[:2] == ("exec-plans", "active")
+
+
+def _cells(row: str) -> list[str]:
+    """A table row's cells, honouring `\\|` escapes and pipes inside `code spans`."""
+    stripped = row.strip()
+    if stripped.startswith("|"):
+        stripped = stripped[1:]
+    if stripped.endswith("|") and not stripped.endswith("\\|"):
+        stripped = stripped[:-1]
+    cells, current, in_code, index = [], [], False, 0
+    while index < len(stripped):
+        char = stripped[index]
+        if char == "\\" and index + 1 < len(stripped):
+            current.append(stripped[index : index + 2])
+            index += 2
+            continue
+        if char == "`":
+            in_code = not in_code
+        if char == "|" and not in_code:
+            cells.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+        index += 1
+    cells.append("".join(current).strip())
+    return cells
+
+
+def _sources_rows(lines: list[Line]) -> list[Line]:
+    """Body rows of the first table under `## Sources`, outside fences, before the next `## `."""
+    body = body_lines(lines)
+    start = next((i for i, line in enumerate(body) if SOURCES_HEADING_RE.match(line.text)), None)
+    if start is None:
+        return []
+    section: list[Line] = []
+    for line in body[start + 1 :]:
+        if H2_RE.match(line.text):
+            break
+        section.append(line)
+    for index, line in enumerate(section[:-1]):
+        following = section[index + 1]
+        if (
+            line.text.strip().startswith("|")
+            and following.number == line.number + 1
+            and DELIMITER_RE.match(following.text)
+        ):
+            rows = []
+            for row in section[index + 2 :]:
+                if not row.text.strip().startswith("|"):
+                    break
+                rows.append(row)
+            return rows
+    return []
+
+
+def _headings(text: str) -> list[tuple[int, str]]:
+    found = []
+    for line in body_lines(scan_lines(text)):
+        match = HEADING_LINE_RE.match(line.text)
+        if match:
+            found.append((len(match.group(1)), match.group(2).strip()))
+    return found
+
+
+def _names_match(heading: str, name: str) -> bool:
+    """`タグの付与（satisfies AC-001）` is the section `タグの付与`; `AC-0011` is not `AC-001`."""
+    if heading == name:
+        return True
+    return heading.startswith(name) and heading[len(name)] in NAME_SEPARATORS
+
+
+def _id_defined(text: str, identifier: str) -> bool:
+    """An ID is defined by a heading, a table row's first cell (constraints), or a line `ID:`."""
+    for level, heading in _headings(text):
+        if _names_match(heading, identifier):
+            return True
+    for line in body_lines(scan_lines(text)):
+        stripped = line.text.strip()
+        if stripped.startswith("|") and _cells(stripped)[0] == identifier:
+            return True
+        bare = re.sub(r"^[-*]\s+(\[[ xX]\]\s+)?", "", stripped)
+        if bare.startswith((identifier + ":", identifier + "：")):
+            return True
+    return False
+
+
+def _section_exists(text: str, section: str) -> bool:
+    segments = [
+        segment[1:-1] if segment.startswith("「") and segment.endswith("」") else segment
+        for segment in (part.strip().strip("`") for part in SECTION_PATH_SPLIT_RE.split(section))
+        if segment
+    ]
+    if not segments:
+        return False
+    if len(segments) == 1 and SECTION_ID_RE.match(segments[0]):
+        return _id_defined(text, segments[0])
+
+    headings = _headings(text)
+
+    def descend(start: int, depth: int, parent_level: int) -> bool:
+        for index in range(start, len(headings)):
+            level, heading = headings[index]
+            if level <= parent_level:
+                return False
+            if _names_match(heading, segments[depth]):
+                if depth == len(segments) - 1 or descend(index + 1, depth + 1, level):
+                    return True
+        return False
+
+    return descend(0, 0, 0)
+
+
+def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
+    """C6 / DOC-INV-012 — what an active plan's `## Sources` table names can be opened.
+
+    ❌ the file a cell names does not exist (or `同上` has no file above it to inherit);
+    ⚠️ the file exists but the `§` section cannot be found, or the cell names a file and no section.
+    Cells reading `n/a（理由）`, and cells naming neither a path nor `同上`, are not this check's to
+    judge: whether every AC has a well-formed row is `pre-pr` ⑤c.
+    """
+    if not _in_sources_range(path, repo_root):
+        return []
+    findings: list[Finding] = []
+    previous: dict[int, object] = {}  # column → Path | _UNRESOLVED | None
+    cache: dict[Path, str] = {}
+    for row in _sources_rows(scan_lines(text)):
+        for column, cell in enumerate(_cells(row.text)[1:], start=1):
+            if cell.lower().startswith("n/a"):
+                previous[column] = None
+                continue
+            left, _, section = cell.partition("§")
+            section = section.strip()
+            match = BACKTICK_RE.search(left)
+            if match:
+                written = match.group(1).strip()
+                candidates = [Path(repo_root) / written.lstrip("/"), Path(path).parent / written]
+                target = next((c for c in candidates if c.is_file()), None)
+                if target is None:
+                    findings.append(
+                        Finding("C6", "error", Path(path), row.number, f"source file does not exist: {written}")
+                    )
+                    previous[column] = _UNRESOLVED
+                    continue
+            elif left.strip().startswith(DITTO):
+                inherited = previous.get(column)
+                if inherited is _UNRESOLVED:
+                    continue  # the file above is already reported; one missing file, one finding
+                if inherited is None:
+                    findings.append(
+                        Finding("C6", "error", Path(path), row.number, f"{DITTO} has no source file above it to inherit")
+                    )
+                    previous[column] = _UNRESOLVED
+                    continue
+                target, written = inherited, f"{DITTO}（{Path(inherited).name}）"
+            else:
+                previous[column] = None
+                continue
+
+            previous[column] = target
+            if not section:
+                findings.append(
+                    Finding("C6", "warn", Path(path), row.number, f"{written} names a file but no § section")
+                )
+                continue
+            if target not in cache:
+                cache[target] = target.read_text(encoding="utf-8")
+            if not _section_exists(cache[target], section):
+                findings.append(
+                    Finding("C6", "warn", Path(path), row.number, f"§ {section} not found in {written}")
+                )
+    return findings
+
+
 # --------------------------------------------------------------------------- driver
 
 RANGES = (".claude/skills/**/*.md", "docs/**/*.md", "exec-plans/**/*.md", "*.md")
@@ -565,6 +772,7 @@ CHECKS = {
     "C3": lambda path, text, root: check_labels(path, text, root),
     "C4": lambda path, text, root: check_mermaid(path, text),
     "C5": lambda path, text, root: check_grep_snippets(path, text),
+    "C6": lambda path, text, root: check_sources(path, text, root),
 }
 
 
@@ -644,7 +852,7 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
             return "" if rel.as_posix() in (".", "") else rel.as_posix()
         return f"{rel.as_posix()}:{finding.line}"
 
-    out = ["=== Document lint results (DOC-INV-007〜011) ===", "", f"Files checked: {checked}", ""]
+    out = ["=== Document lint results (DOC-INV-007〜012) ===", "", f"Files checked: {checked}", ""]
     for check, (invariant, title) in INVARIANTS.items():
         rows = [f for f in findings if f.check == check]
         errors = [f for f in rows if f.level == "error"]
@@ -657,7 +865,7 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
             where = location(finding)
             out.append(f"{prefix}{where}: {finding.message}" if where else f"{prefix}{finding.message}")
         # The hint tells a reader how to clear a violation; a run-wide note has nothing to clear.
-        if errors or (warnings and check == "C5"):
+        if errors or any(f.line for f in warnings):
             out.append(f"    Fix: {FIX_HINTS[check]}")
         out.append("")
 
@@ -675,14 +883,14 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        description="Mechanical checks for DocDD convention documents (DOC-INV-007〜011).",
+        description="Mechanical checks for DocDD convention documents (DOC-INV-007〜012).",
     )
     parser.add_argument("paths", nargs="*", help="files to check (default: the four ranges)")
     parser.add_argument("--root", default=".", help="repository root (default: cwd)")
     parser.add_argument(
         "--only",
         default="",
-        help="comma-separated subset of checks, e.g. C1,C4 (default: all)",
+        help="comma-separated subset of checks, e.g. C1,C6 (default: all)",
     )
     parser.add_argument(
         "--mermaid-parser",

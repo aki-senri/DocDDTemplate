@@ -63,7 +63,10 @@ rows for the ACs being checked before applying it. Step 2 loads that material in
 implementation; the gate needs it one step earlier, because a one-liner judged in isolation fails R2
 for detail that is properly recorded in the US. When a row is `n/a` or the plan has no `## Sources`
 table, `R2` falls back to the AC line, as `ac-readiness.md` states — an older plan must not collect
-NOT READY verdicts merely for predating the convention.
+NOT READY verdicts merely for predating the convention. A row that names something that **cannot be
+opened** is not `n/a` and gets no fallback: present it to the user now, as Step 2 would — judging R2
+on the line alone here and then stopping on the same row two steps later gives two verdicts for one
+row.
 
 | Verdict | Action |
 |---------|--------|
@@ -103,6 +106,7 @@ autonomous driver reads in its Step 1b, per
 |---------------|--------------------|
 | **Refinement** of the AC line | Use it — it is the granularity to implement and test at |
 | A **separate outcome**, or a **contradiction** with the AC line | Present both readings to the user and let them decide. The human is here, so this is a conversation rather than the HALT the unattended loop takes |
+| The row names a file or section that **cannot be opened** | Present the row to the user — it is theirs to repoint or to replace with `n/a（理由）`. Do not proceed on the AC line as if it were `n/a`, and do not guess which file it meant (`ac-sources.md`「When a source cannot be opened」) |
 | The row says `n/a（理由）`, or the plan has no `## Sources` table | Note it and proceed on the AC text. Do not reconstruct sources from existing code |
 
 Also load the following depending on the platform:

@@ -103,7 +103,10 @@ ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No acti
 Then read the plan's `## Sources` table and **open every US / spec section it names**. The subagent
 inherits no session context, so a path it cannot read is a path it will ignore: paste the relevant
 sections into the prompt rather than referencing them. If a plan has no `## Sources` table, or every
-row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all there is.
+row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all there is. A row that
+names something you **cannot open** is neither: pass it as such (template below), never as `n/a` —
+otherwise the reviewer judges that AC against its line alone, which is the fallback
+`../create-exec-plan/ac-sources.md`「When a source cannot be opened」 forbids.
 
 **If the diff changes a documented process** — a skill definition, `CLAUDE.md`, a hook, or any rule
 other rules consume — also collect the **referrers**, for review point 1d's dependency-backflow lap:
@@ -172,7 +175,9 @@ Review the following changes objectively.
 
 ## AC sources (the US bullets / spec sections each AC condenses)
 {for each row of the plan's ## Sources table: the AC-ID, the section's path, and the section text.
- Or "None — the plan has no ## Sources table" / "n/a — {reason recorded in the plan}"}
+ Or "None — the plan has no ## Sources table" / "n/a — {reason recorded in the plan}"
+ / "cannot be opened — {path § section as written}: report this as a finding; do not judge this AC
+ as if the row were n/a"}
 
 ## Referrers — sites that name what this diff changed (for review point 1d, dependency backflow)
 {for each file the grep in Step 1 returned: its path and whether the diff touched it. Include full

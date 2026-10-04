@@ -36,7 +36,7 @@ flowchart TD
 
     subgraph IMPL["Implementation Loop"]
         DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here.\n❌ → HALT (f); ✅/⚠️ → hand off\nHalts only on stop conditions"]
-        SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction → HALT (a)"]
+        SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction /\n  cannot be opened → HALT (a)"]
         REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe given/when/then from\n  the AC line AND its sources\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
         REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC → HALT (a)\n· record it on the AC-NNN done line"]
         CODE["Code change\n(Write / Edit)"]

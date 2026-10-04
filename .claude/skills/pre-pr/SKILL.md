@@ -102,12 +102,11 @@ Verify that documents corresponding to changed code files are up to date.
 Run the `check-doc-invariants` skill.
 
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
-2. Check every built-in invariant the skill defines — DOC-INV-001 through DOC-INV-011. The list
-   lives in `check-doc-invariants`, not here: DOC-INV-007〜011 are script-backed — that skill
-   runs the script, this one does not — and cover a wider range, including
-   `.claude/skills/**/*.md` and the root `*.md`
-3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️
-   (DOC-INV-005, DOC-INV-011) is reported
+2. Check every built-in invariant the skill defines. The list — and each invariant's range —
+   lives in `check-doc-invariants`, not here, so a new invariant needs no edit at this site. The
+   script-backed ones are run by that skill, not by this one, and some reach beyond `docs/**`
+   (the convention documents themselves, and active plans' `## Sources` tables)
+3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️ is reported
 4. If no violations: display "✅ doc-invariants: all passed"
 
 ---
@@ -254,6 +253,11 @@ AC sources / spec re-anchor:
 missing line cannot be distinguished mechanically from an unrecorded-but-performed check, and
 blocking would teach people to add the line afterwards — destroying the evidence. What blocks PR
 creation stays what it was: failing tests, uncovered ACs, uncovered `[E2E]` ACs.
+
+**Whether the rows resolve is not checked here.** That is DOC-INV-012, run at ③ by
+`check-doc-invariants`: a file a row names that does not exist is a ❌ there and already blocks.
+This step stays about what only a reader can judge — whether the table and the re-anchor records
+exist — so the two checks do not overlap.
 
 **Do not fill in a missing table here.** Reconstructing sources after the implementation exists
 means inferring them from the code, which is the one reading `ac-sources.md` forbids. Report the
