@@ -83,15 +83,16 @@ Rules for the table:
   A section is an ID (`§ AC-001`, `§ E2E-001`, `§ TC-001` — defined by a heading, a table row's first
   cell, or a line `ID:`), a heading name (`§「タグの付与」`, or bare: `§ ゴール像`), or nested headings
   joined by `／` (`§ ゴール像／主要ユーザージャーニー`). Inside 「…」 a `/` is part of the name, not a
-  nesting separator.
+  nesting separator. A backticked token after the `§` is part of the section name
+  (`` §「設定（`config.yaml`）」 ``), not a second path; a URL is a link, not a path.
 - Point at a **section**, not just a file. "`app_spec.md`" alone is not a source; the driver would
   have to guess which part applies, which is the guessing this table removes.
 - A cell may name more than one source — the US bullets and a `constraints.md` row, say — separated
   by `、`. Each must resolve on its own.
 - `同上` works within one column, so a reader can resolve a row without scanning upward past a
-  different file path. `同上 § AC-002` means *the file in the row above, section AC-002*. A bare
-  `同上` repeats the cell above as it stands — under `n/a（理由）` it is `n/a` with the same reason.
-  When the row above names several sources, `同上` refers to the first.
+  different file path. It has two forms. `同上 § X` takes the first file of the row above, with
+  section X. A bare `同上` repeats the whole cell above — every source and section it names; under
+  `n/a（理由）` it is `n/a` with the same reason.
 - In active plans these forms are resolved mechanically by DOC-INV-012
   (`../check-doc-invariants/SKILL.md`): a missing file blocks the PR, an unmatched section warns.
 

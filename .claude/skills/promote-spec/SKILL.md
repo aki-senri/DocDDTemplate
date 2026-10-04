@@ -156,6 +156,14 @@ Classify the impact of each changed/removed AC:
 > or (b) deferring promotion so it does not land on an AC under active implementation. Do not
 > promote over an in-flight collision without the user's explicit acknowledgement.
 
+> **Sources that move are a collision this table does not show.** The analysis above is per AC, so
+> a promotion that keeps every AC but moves a spec file or retitles a section raises no in-flight
+> collision — and still breaks the `## Sources` rows of active plans that name it. List them before
+> promoting (`grep -rn "<moved path or old section name>" exec-plans/active/ 2>/dev/null || true`)
+> and have their owners repoint the rows: repairing a row is a human's call
+> (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」). Left alone, DOC-INV-012
+> blocks every PR after the merge, including PRs that have nothing to do with those plans.
+
 > **Precedence when an AC is both in-flight and already completed:** treat it as an in-flight
 > collision (the stricter case) — the active plan owner reconciles it; do **not** also create a
 > separate reconcile plan for it in Step 7.
@@ -374,6 +382,7 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Drift guard checked (branch current with `main`, or user brought it current)
 - [ ] Spec diff classified into NEW / CHANGED / REMOVED at the AC level
 - [ ] Impact analysed against `completed/` and `active/` plans (stale impl + in-flight collisions surfaced)
+- [ ] Active plans whose `## Sources` names a file or section this promotion moves were listed, and their owners asked to repoint the rows
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`

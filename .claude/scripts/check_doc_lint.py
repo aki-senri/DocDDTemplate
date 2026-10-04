@@ -18,7 +18,9 @@ Implements DOC-INV-007 through DOC-INV-012 (see
 |       |              | does not exist (⚠️ when only the § section is missing) |       |
 
 What it deliberately does not check is listed in the skill: pointers inside `exec-plans/**` (a plan
-is a working note, and an archived one is not a reference document), whether a consumer has the
+is a working note, and an archived one is not a reference document) — except an active plan's
+`## Sources` table, which DOC-INV-012 checks because it is read while the work is in flight —
+whether a consumer has the
 material it needs at the point it decides (process-walkthrough lap 7 step 3), and sites that
 *should* consume a rule but never name it. Those stay with the human or the driver.
 
@@ -53,8 +55,9 @@ FIX_HINTS = {
     "C3": "Update the label to the one the target file actually defines (it was probably renumbered).",
     "C4": 'Wrap the label in double quotes: |"a (b)"| — an unquoted bracket breaks the whole diagram.',
     "C5": "Append 2>/dev/null || true — a missing path or a no-match exits non-zero under set -e.",
-    "C6": "Point the row at the file and section the AC condenses, or write n/a（理由）. A source that "
-    "cannot be opened halts the loop (ac-sources.md「When a source cannot be opened」).",
+    "C6": "Present the row to a human — repairing it is theirs, not an agent's: repointing it, or "
+    "deciding there is nothing to read, is a decision about what the AC condenses "
+    "(ac-sources.md「When a source cannot be opened」). Do not guess the moved file or write n/a.",
 }
 
 # DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
@@ -575,10 +578,12 @@ def check_grep_snippets(path: Path, text: str) -> list[Finding]:
 
 SOURCES_HEADING_RE = re.compile(r"^##\s+Sources\s*$")
 H2_RE = re.compile(r"^##\s")
-#: A backticked token is a *path* when it has a directory separator or a file extension, so a
-#: backticked section ID (`§ \`AC-001\``) is not mistaken for a second source.
+#: A backticked token is a *path* when it has a directory separator or a file extension. Only a
+#: token *before* a reference's `§` is considered: one after it is part of the section name
+#: (`§「設定（\`config.yaml\`）」`), and a URL is a link, not a file in this repository.
 PATH_TOKEN_RE = re.compile(r"`([^`]*?(?:/|\.[A-Za-z0-9]+)[^`]*?)`")
-TRAILING_SEPARATORS = "、,，;；"
+REFERENCE_SEPARATORS = "、，,;；"
+_UNREADABLE = object()  # a source file that exists but cannot be read as text
 SECTION_ID_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
 HEADING_LINE_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 NAME_SEPARATORS = (" ", "　", ":", "：", "（", "(")
@@ -652,8 +657,13 @@ def _headings(text: str) -> list[tuple[int, str]]:
     for line in body_lines(scan_lines(text)):
         match = HEADING_LINE_RE.match(line.text)
         if match:
-            found.append((len(match.group(1)), match.group(2).strip()))
+            found.append((len(match.group(1)), _plain(match.group(2))))
     return found
+
+
+def _plain(text: str) -> str:
+    """Heading text without inline-code backticks: `## \`v1.2\` の互換` is the section `v1.2 の互換`."""
+    return text.replace("`", "").strip()
 
 
 def _names_match(heading: str, name: str) -> bool:
@@ -681,16 +691,18 @@ def _id_defined(text: str, identifier: str) -> bool:
 def _section_segments(section: str) -> list[str]:
     """`ゴール像／主要ユーザージャーニー` → two nested names; `「入出力/形式」` → one name.
 
-    `／` (or `/`) separates nesting levels only outside 「…」: inside the brackets it is part of
-    the heading text.
+    `／` (or `/`) separates nesting levels only outside 「…」 and outside inline code: inside them it
+    is part of the heading text.
     """
-    parts, current, bracketed = [], [], False
+    parts, current, bracketed, code = [], [], False, False
     for char in section:
-        if char == "「":
+        if char == "`":
+            code = not code
+        elif not code and char == "「":
             bracketed = True
-        elif char == "」":
+        elif not code and char == "」":
             bracketed = False
-        if char in "／/" and not bracketed:
+        if char in "／/" and not bracketed and not code:
             parts.append("".join(current))
             current = []
         else:
@@ -698,9 +710,10 @@ def _section_segments(section: str) -> list[str]:
     parts.append("".join(current))
     segments = []
     for part in parts:
-        part = part.strip().strip("`").strip()
+        part = part.strip()
         if part.startswith("「") and part.endswith("」"):
             part = part[1:-1]
+        part = _plain(part)
         if part:
             segments.append(part)
     return segments
@@ -728,27 +741,42 @@ def _section_exists(text: str, section: str) -> bool:
     return descend(0, 0, 0)
 
 
-def _section_of(fragment: str) -> str | None:
-    """The `§` part of one reference, or None when it names no section."""
-    if "§" not in fragment:
-        return None
-    return fragment.split("§", 1)[1].strip().rstrip(TRAILING_SEPARATORS).strip()
+def _split_references(cell: str) -> list[str]:
+    """A cell's references, split at `、` (or `,` / `;`) outside 「…」 and inline code."""
+    parts, current, bracketed, code = [], [], False, False
+    for char in cell:
+        if char == "`":
+            code = not code
+        elif not code and char == "「":
+            bracketed = True
+        elif not code and char == "」":
+            bracketed = False
+        if char in REFERENCE_SEPARATORS and not bracketed and not code:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    parts.append("".join(current))
+    return [part for part in parts if part.strip()]
 
 
 def _source_refs(cell: str) -> list[tuple[str, str, str | None]]:
     """The sources one cell names, in order — ("ditto", "同上", §) and/or ("path", path, §).
 
     A cell may name more than one source (the US bullets and a `constraints.md` row, say), and each
-    is resolved on its own: checking only the first would let a missing second file through.
+    is resolved on its own: checking only the first would let a missing second file through. The
+    path of a reference is a backticked token *before* its `§`; anything after the `§` is the
+    section name, backticks included. A section of None means the reference names no `§`.
     """
-    matches = list(PATH_TOKEN_RE.finditer(cell))
-    head = cell[: matches[0].start()] if matches else cell
     refs: list[tuple[str, str, str | None]] = []
-    if head.strip().startswith(DITTO):
-        refs.append(("ditto", DITTO, _section_of(head.strip()[len(DITTO) :])))
-    for index, match in enumerate(matches):
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(cell)
-        refs.append(("path", match.group(1).strip(), _section_of(cell[match.end() : end])))
+    for index, reference in enumerate(_split_references(cell)):
+        head, marker, section = reference.partition("§")
+        section_or_none = section.strip() if marker else None
+        match = PATH_TOKEN_RE.search(head)
+        if match and "://" not in match.group(1):
+            refs.append(("path", match.group(1).strip(), section_or_none))
+        elif index == 0 and head.strip().startswith(DITTO):
+            refs.append(("ditto", DITTO, section_or_none))
     return refs
 
 
@@ -769,7 +797,8 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
         return []
     findings: list[Finding] = []
     previous: dict[int, object] = {}  # column → Path | _UNRESOLVED | None
-    cache: dict[Path, str] = {}
+    cache: dict[Path, object] = {}  # Path → text | _UNREADABLE
+    root = Path(repo_root).resolve()
 
     def check_section(row: Line, target: Path, written: str, section: str | None) -> None:
         if section is None or not section:
@@ -778,7 +807,21 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
             )
             return
         if target not in cache:
-            cache[target] = target.read_text(encoding="utf-8")
+            try:
+                cache[target] = target.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                cache[target] = _UNREADABLE
+        if cache[target] is _UNREADABLE:
+            findings.append(
+                Finding(
+                    "C6",
+                    "warn",
+                    Path(path),
+                    row.number,
+                    f"{written} cannot be read as text — § {section} not checked",
+                )
+            )
+            return
         if not _section_exists(cache[target], section):
             findings.append(Finding("C6", "warn", Path(path), row.number, f"§ {section} not found in {written}"))
 
@@ -814,12 +857,18 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
                         resolved = inherited
                         check_section(row, Path(inherited), f"{DITTO}（{Path(inherited).name}）", section)
                 else:
-                    candidates = [Path(repo_root) / written.lstrip("/"), Path(path).parent / written]
-                    target = next((c for c in candidates if c.is_file()), None)
-                    if target is None:
-                        findings.append(
-                            Finding("C6", "error", Path(path), row.number, f"source file does not exist: {written}")
-                        )
+                    # From the repository root only, as ac-sources.md「Rules for the table」 says —
+                    # a reader opening the row resolves it that way, so the check must too.
+                    target = (root / written.lstrip("/")).resolve()
+                    problem = None
+                    if not target.is_relative_to(root):
+                        problem = f"source path points outside the repository: {written}"
+                    elif target.is_dir():
+                        problem = f"source names a directory, not a file: {written}"
+                    elif not target.is_file():
+                        problem = f"source file does not exist: {written}"
+                    if problem:
+                        findings.append(Finding("C6", "error", Path(path), row.number, problem))
                         resolved = _UNRESOLVED
                     else:
                         resolved = target

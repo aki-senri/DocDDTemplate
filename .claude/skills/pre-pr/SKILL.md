@@ -106,7 +106,11 @@ Run the `check-doc-invariants` skill.
    lives in `check-doc-invariants`, not here, so a new invariant needs no edit at this site. The
    script-backed ones are run by that skill, not by this one, and some reach beyond `docs/**`
    (the convention documents themselves, and active plans' `## Sources` tables)
-3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️ is reported
+3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️ is reported.
+   A DOC-INV-012 finding (an active plan's `## Sources` row that cannot be opened) is **presented to
+   the user, not repaired here** — do not repoint the row to a guessed file and do not replace it
+   with `n/a`; that is a decision about what the AC condenses
+   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
 4. If no violations: display "✅ doc-invariants: all passed"
 
 ---
@@ -345,7 +349,8 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 ## Completion criteria
 
 - [ ] All checks ① through ⑥ (including ⑤b and ⑤c) are complete
-- [ ] All issues have been fixed, or documented as "N/A" with explanation
+- [ ] All issues have been fixed, or documented as "N/A" with explanation — except a DOC-INV-012
+      row, which the user repoints (③); it is neither repaired by the agent nor marked N/A
 - [ ] If tests failed, they were resolved through the spec alignment gate
 - [ ] Every `[E2E]` AC in the plan has a test that exists and passed (or the plan's lack of an
       `[E2E]` AC was reported and referred back to `create-exec-plan`)

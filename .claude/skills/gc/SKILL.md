@@ -68,7 +68,10 @@ Run the `check-doc-invariants` skill against all documents in the repository.
 - Check every built-in invariant the skill defines. The list is the skill's, not this file's, so a
   new invariant needs no edit here; that skill runs the script behind the mechanical ones, this file
   does not invoke it directly
-- Fix any violations found
+- Fix any violations found — **except DOC-INV-012**. A `## Sources` row that cannot be opened is
+  reported to a human, not repaired: repointing it to the file it "probably meant", or writing
+  `n/a` in its place, is a decision about what that AC condenses
+  (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
   record the decision if leaving ASCII art intentionally
 

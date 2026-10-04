@@ -5,6 +5,7 @@ Written from the AC lines before the implementation existed (red-first / INV-T02
 """
 
 import ast
+import re
 import io
 import os
 import sys
@@ -712,6 +713,8 @@ ac_ids: [AC-001, AC-002]
 
 - なし
 
+## 受け入れ条件
+
 ### AC-001: タグを付ける
 
 - 付けられる
@@ -793,8 +796,9 @@ class SourcesRepo(TempRepo):
 
 
 class TestSourcesAC001FileResolution(SourcesRepo):
-    """#41 AC-001: Sources のセルが名指すファイルが存在しなければ ❌（file:line）。
-    同上は同じ列の直前の行のパスを継承し、継承元が無ければ ❌。n/a と、パスも同上も含まないセルは対象外。"""
+    """#41 AC-001: Sources のセルが名指すファイルが存在しなければ ❌（file:line）。1セルの起点はすべて解決する。
+    `同上 § X` は同じ列の直前の行のファイルを継承し、継承するファイルが無ければ ❌。素の `同上` は直上の
+    セルをそのまま繰り返す（n/a の下では n/a）。n/a と、パスも同上も含まないセルは対象外。"""
 
     def test_resolving_table_reports_nothing(self):
         plan = self.plan(
@@ -955,6 +959,136 @@ class TestSourcesAC002SectionResolution(SourcesRepo):
         plan = self.plan("| AC-001 | `docs/gone.md` § AC-001 | n/a（x） |")
 
         self.assertEqual([f.level for f in self.check(plan)], ["error"])
+
+
+
+class TestSourcesReviewFindings(SourcesRepo):
+    """/docode-review（PR #44）の指摘 #2・#3・#8 の再現。AC-001 / AC-002 の範囲内の欠陥。"""
+
+    # --- #2: a backticked token inside a section name, or a URL, is not a source path
+    def test_backticks_inside_a_section_name_are_part_of_the_name(self):
+        write(self.root, SPEC_PATH, SPEC_FIXTURE + "\n## 設定（`config.yaml`）\n\n本文\n")
+        plan = self.plan(f"| AC-001 | n/a（x） | `{SPEC_PATH}` §「設定（`config.yaml`）」 |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_backticked_text_in_a_bare_section_name_matches_the_heading(self):
+        write(self.root, SPEC_PATH, SPEC_FIXTURE + "\n## v1.2 の互換\n\n本文\n")
+        plan = self.plan(f"| AC-001 | n/a（x） | `{SPEC_PATH}` § `v1.2` の互換 |")
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_a_url_is_not_a_source_path(self):
+        plan = self.plan("| AC-001 | `https://github.com/o/r/issues/41` | n/a（x） |")
+
+        self.assertEqual([f for f in self.check(plan) if f.level == "error"], [])
+
+    # --- #3: a source that cannot be read as text is reported, not a crash
+    def test_unreadable_source_is_a_warning_not_a_crash(self):
+        (self.root / "docs/02_spec/spec.pdf").write_bytes(b"\x89PNG\r\n\x1a\n\xff\xfe")
+        plan = self.plan("| AC-001 | n/a（x） | `docs/02_spec/spec.pdf` § 3.2 |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([(f.check, f.level) for f in findings], [("C6", "warn")])
+
+    def test_unreadable_source_does_not_stop_the_other_checks(self):
+        (self.root / "docs/02_spec/spec.pdf").write_bytes(b"\x89PNG\r\n\x1a\n\xff\xfe")
+        self.plan("| AC-001 | n/a（x） | `docs/02_spec/spec.pdf` § 3.2 |")
+        write(self.root, "docs/a.md", "see [gone](./missing.md)\n")
+
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = lint.main(["--root", str(self.root)])
+
+        self.assertEqual(code, 1)
+        self.assertIn("missing.md", buffer.getvalue())
+
+    # --- #8: paths are resolved from the repository root only (ac-sources.md Rules)
+    def test_a_plan_relative_path_is_not_resolved(self):
+        write(self.root, "exec-plans/active/neighbour.md", "# AC-001: x\n")
+        plan = self.plan("| AC-001 | `neighbour.md` § AC-001 | n/a（x） |")
+
+        self.assertEqual([f.level for f in self.check(plan)], ["error"])
+
+    def test_a_path_outside_the_repository_is_an_error_and_is_not_read(self):
+        outside = self.root.parent / f"{self.root.name}-outside.md"
+        outside.write_text("# AC-001: x\n", encoding="utf-8")
+        self.addCleanup(outside.unlink)
+        plan = self.plan(f"| AC-001 | `../{outside.name}` § AC-001 | n/a（x） |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([f.level for f in findings], ["error"])
+        self.assertIn("outside the repository", findings[0].message)
+
+    def test_a_directory_is_reported_as_a_directory(self):
+        plan = self.plan("| AC-001 | `docs/02_spec` § E2E-001 | n/a（x） |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([f.level for f in findings], ["error"])
+        self.assertIn("directory", findings[0].message)
+
+
+
+class TestSourcesReviewFinding6(SourcesRepo):
+    """/docode-review 指摘 #6: 既存テストが AC を拘束していなかった箇所。挙動は既にあるため
+    初回から緑になりうる。拘束していることは、実装を壊したコピーで赤になることで確認する。"""
+
+    def test_id_defined_by_a_line_resolves(self):
+        """AC-002: ID は「行頭 `ID:`」でも定義される（見出しでも表でもない形）。"""
+        write(self.root, "docs/01_requirements/ids.md", "# ids\n\n- AC-007: リスト項目で定義\n\nAC-008: 行で定義\n")
+        plan = self.plan(
+            "| AC-007 | `docs/01_requirements/ids.md` § AC-007 | n/a（x） |\n"
+            "| AC-008 | 同上 § AC-008 | n/a（x） |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_nested_path_does_not_cross_into_a_sibling_section(self):
+        """AC-002: `／` は見出しの入れ子。AC-001 は `## 受け入れ条件` の配下で、`## ゴール像` の配下ではない。"""
+        plan = self.plan(f"| AC-001 | `{US_PATH}` § ゴール像／AC-001 | n/a（x） |")
+
+        self.assertEqual([f.level for f in self.check(plan)], ["warn"])
+
+
+class TestSourcesReviewFinding6Documents(unittest.TestCase):
+    """/docode-review 指摘 #6（文書側）と #2・#7 の規則。既存の弱い assert は凍結のまま残し、
+    規則の中身を述べているかを新しく測る。"""
+
+    def setUp(self):
+        self.ac_sources = (REPO_ROOT / ".claude/skills/create-exec-plan/ac-sources.md").read_text(encoding="utf-8")
+        self.rules = " ".join(_section(self.ac_sources, "Rules for the table:", ("Referencing ",)).split())
+
+    def test_ac005_branch_says_it_is_not_na(self):
+        section = _section(self.ac_sources, "## When a source cannot be opened", ("## ",))
+        self.assertIn("That is not `n/a`", section)
+
+    def test_ac006_step_0b_says_there_is_no_fallback(self):
+        text = (REPO_ROOT / ".claude/skills/run-exec-plan/SKILL.md").read_text(encoding="utf-8")
+        section = " ".join(_section(text, "#### Step 0b", ("#### ", "### ")).split())
+        self.assertIn("gets no fallback", section)
+
+    def test_ac007_pre_pr_and_gc_do_not_enumerate_a_range_either(self):
+        for rel in (".claude/skills/pre-pr/SKILL.md", ".claude/skills/gc/SKILL.md"):
+            with self.subTest(rel):
+                text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+                section = _section(text, "### ③", ("### ",))
+                self.assertIsNone(re.search(r"DOC-INV-0\d\d\s*[〜~-]\s*(DOC-INV-)?0?\d+", section), section)
+
+    def test_ac010_states_the_separator_and_the_nesting_mark(self):
+        self.assertIn("separated by `、`", self.rules)
+        self.assertIn("joined by `／`", self.rules)
+        self.assertIn("Inside 「…」 a `/` is part of the name", self.rules)
+
+    def test_finding2_backticks_after_the_section_mark_are_part_of_the_name(self):
+        self.assertIn("A backticked token after the `§` is part of the section name", self.rules)
+
+    def test_finding7_ditto_with_and_without_a_section_are_stated_separately(self):
+        self.assertIn("`同上 § X` takes the first file of the row above", self.rules)
+        self.assertIn("A bare `同上` repeats the whole cell above", self.rules)
+        self.assertIn("under `n/a（理由）` it is `n/a` with the same reason", self.rules)
 
 
 class TestSourcesAC003Range(SourcesRepo):

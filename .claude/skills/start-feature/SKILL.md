@@ -64,9 +64,9 @@ implementation; the gate needs it one step earlier, because a one-liner judged i
 for detail that is properly recorded in the US. When a row is `n/a` or the plan has no `## Sources`
 table, `R2` falls back to the AC line, as `ac-readiness.md` states — an older plan must not collect
 NOT READY verdicts merely for predating the convention. A row that names something that **cannot be
-opened** is not `n/a` and gets no fallback: present it to the user now, as Step 2 would — judging R2
-on the line alone here and then stopping on the same row two steps later gives two verdicts for one
-row.
+opened** is not `n/a` and gets no fallback: treat that AC as the **NOT READY** row below — present
+it to the user now, as Step 2 would, and record their decision in the Progress Log. Judging R2 on the
+line alone here and then stopping on the same row two steps later gives two verdicts for one row.
 
 | Verdict | Action |
 |---------|--------|

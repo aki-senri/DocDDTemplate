@@ -175,8 +175,9 @@ so an unmatched section is a warning: a reader can still tell a reworded heading
 and that is the line `../create-exec-plan/ac-sources.md`「When a source cannot be opened」 draws for
 the run itself (an unopenable row halts the loop; `n/a` does not).
 
-**Range — wider than DOC-INV-001〜006 in one direction, narrower in another.** These five also read
-`.claude/skills/**/*.md` and the root `*.md`, not only `docs/**` and `exec-plans/**`. That is where
+**Range — wider than DOC-INV-001〜006 in one direction, narrower in another.** DOC-INV-007〜011 also
+read `.claude/skills/**/*.md` and the root `*.md`, not only `docs/**` and `exec-plans/**`
+(DOC-INV-012 reads only active plans' `## Sources` tables — see below). That is where
 the escapes happened: the convention documents are the ones carrying the cross-references, tables
 and diagrams, and nothing was checking them. A range that does not exist in a given repository (no
 `docs/`, no `exec-plans/active/`) is skipped rather than failing.
@@ -209,6 +210,11 @@ way. A `## Sources` table is not archive material: it is read *while the work is
 `run-exec-plan` Step 0b / 1b / 3a and `start-feature` Step 2 open what it names — so a row that does
 not resolve stalls red-first now. It is therefore checked in `exec-plans/active/**` only. Completed
 plans stay out: their drift is accepted, like every other pointer in a plan.
+
+A DOC-INV-012 finding is **reported, never repaired by whoever runs this check** — `pre-pr`, `gc` or
+a driver. Repointing a row, or deciding there is nothing to read after all, is a decision about what
+the AC condenses, and it belongs to a human (`../create-exec-plan/ac-sources.md`「When a source cannot
+be opened」). The fix hint the script prints says the same.
 
 **What these checks deliberately do not decide.** Each exclusion exists because the check would
 otherwise report something that is not a defect:

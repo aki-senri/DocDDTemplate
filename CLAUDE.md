@@ -126,7 +126,8 @@ driver はテスト起草の前にそれを読み（入口）、AC を `- [x]` �
 | `/run-exec-plan`（Step 0b） | ループ開始前 | readiness（R2）のために全未完了 AC の起点を開く。開けない行はその AC を NOT READY とし **HALT (a)**（`n/a` のフォールバックは適用しない） |
 | `/run-exec-plan`（Step 1b） | 対象 AC のテスト起草前 | 起点を読む。詳細化なら使う。別の成果・矛盾・開けない場合は **HALT (a)** |
 | `/run-exec-plan`（Step 3a） | AC を `- [x]` にする前 | spec 該当節と照合。実装の穴は修正、測定の穴は追加テストを red-first で、矛盾・開けない場合は HALT (a) |
-| `/start-feature`（Step 2） | 手動実装の準備 | 起点を読み込み、食い違いと開けない行は人に提示して判断を仰ぐ |
+| `/start-feature`（Step 1b / Step 2） | 手動実装の準備 | 起点を読み込み、食い違いと開けない行は人に提示して判断を仰ぐ（Step 1b では開けない行を NOT READY として扱う） |
+| `/doc-review`（§2） | 任意レビュー | 起点を読み込んで R2 を判定する。開けない行は AC 行だけで判定せず報告する（助言） |
 | `/pre-pr`（⑤c） | PR 前 | `## Sources` と再アンカー記録の有無を **⚠️ 報告のみ**。ブロックしない |
 | `/check-doc-invariants`（DOC-INV-012） | PR 前（`/pre-pr` ③ 経由）・`/gc` | active なプランの行が名指すファイルの不在を **❌**、節が見つからない行を ⚠️。完了済みプランは対象外 |
 | `/docode-review` | 自走完了時は必須（`run-exec-plan` Step 4a）・手動時は任意 | 差分を AC 行だけでなく起点に照らして判定（助言） |
@@ -263,6 +264,7 @@ DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除�
 | **完了済み**（`exec-plans/completed/` にある） | ① reconcile プランに同じ AC-ID を再オープンする（`active/` 内の最新の `*-reconcile.md` に追記、なければ当月の `exec-plans/active/YYYY-MM-reconcile.md` を作成）。② その **reconcile プラン側** の Decision Log に「AC-XXX は `<commit>` の不備修正で stale」と記録する（完了済みプランは archive 済みで参照されないため、そこには書かない） |
 
 - 未処理の reconcile は必ず `exec-plans/active/` に置く（spec-gate・pre-pr・gc が走査する唯一の場所）。
+- **起点のファイル・節を動かす修正**（ファイルの移動・節の改題）は、AC を変えなくても、それを名指す active プランの `## Sources` を壊す。修正の前に該当プランを洗い出し、行の更新を各プランの担当（人）に依頼する。放置すると DOC-INV-012 が以後の PR を ❌ で止める（そのプランと無関係な PR も含む）。`/promote-spec` の昇格でも同じ（同スキル Step 4）。
 - 専用の「Spec Drift Log」節は作らない（走査されず archive されて陳腐化するため）。
 - reconcile プランは無限に追記せず、サイクルごとに閉じて新規を起こす（全 AC が `- [x]` にならず complete できなくなるのを防ぐ）。両者は `active/` に併存し、扱い（同 AC-ID 再オープン＋Decision Log 記録）は同一。命名は次のとおり。
 
