@@ -110,6 +110,7 @@ autonomous driver reads in its Step 1b, per
 | A **separate outcome**, or a **contradiction** with the AC line | Present both readings to the user and let them decide. The human is here, so this is a conversation rather than the HALT the unattended loop takes |
 | The row names a file or section that **cannot be opened** | Present the row to the user — it is theirs to repoint or to replace with `n/a（理由）`. Do not proceed on the AC line as if it were `n/a`, and do not guess which file it meant (`ac-sources.md`「When a source cannot be opened」) |
 | The row says `n/a（理由）`, or the plan has no `## Sources` table | Note it and proceed on the AC text. Do not reconstruct sources from existing code |
+| A `[E2E]` AC's `E2E-NNN` states an outcome **no AC in its `満たす AC` backs**, or contradicts them — the complement check in [`../create-exec-plan/e2e-interaction.md`](../create-exec-plan/e2e-interaction.md), run on each scenario a `[E2E]` AC names | Present it to the user: ①昇格 / ②削除 / ③要件の書き直し is theirs to decide, before the `[E2E]` test is written. Record the decision in the Progress Log. A plan from `create-exec-plan` was checked when it was finalized, so a finding here usually means the scenario moved since, or the plan came from `promote-spec` |
 
 Also load the following depending on the platform:
 

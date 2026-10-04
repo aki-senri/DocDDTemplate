@@ -82,6 +82,12 @@ sed -n '/^## Sources/,/^## /p' {target exec-plan} 2>/dev/null || echo "no ## Sou
 cat docs/01_requirements/user_stories/{referenced-US}.md 2>/dev/null || echo "not found"
 cat docs/02_spec/{referenced-spec}.md 2>/dev/null || echo "not found"
 
+# For application spec review, or an exec-plan with an [E2E] AC: the complement check (§2b)
+# compares each E2E-NNN with the US / spec sections of the ACs in its 満たす AC, so the
+# reviewer needs the rule and those sections — a spec alone does not contain the US bullets.
+cat .claude/skills/create-exec-plan/e2e-interaction.md
+cat docs/01_requirements/user_stories/{US defining each AC in 満たす AC}.md 2>/dev/null || echo "not found"
+
 # Project documentation rules
 cat CLAUDE.md
 
@@ -148,6 +154,14 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 ### Diff (if this document was just changed)
 {output of: git diff main...HEAD -- {target}, or "none — reviewing the document as it stands"}
 
+### E2E interaction (single source — apply in §2b; include for an application spec, or an exec-plan with an [E2E] AC)
+{full content of .claude/skills/create-exec-plan/e2e-interaction.md, or "not applicable"}
+
+### The ACs underneath each E2E scenario (needed for the §2b complement check)
+{for each E2E-NNN: its 満たす AC, and for each of those ACs the US `### AC-NNN` section and the spec
+ section marked "satisfies AC-NNN". Or "not applicable — no E2E-NNN in scope"
+ / "{AC-ID}: not found — {where it was looked for}"}
+
 ### constraints.md (if applicable)
 {content, or "not available"}
 
@@ -208,9 +222,17 @@ something nobody wanted.
 - Is each 完了条件 an observable end state, not a restatement of the steps?
 - Does the `E2E-NNN → AC-xxx` table cover every AC? Flag any AC belonging to no scenario — it means
   either the goal image is missing a path or the AC is not needed for the finished thing.
+- The converse — the complement check of `e2e-interaction.md`: does each scenario's 完了条件 and
+  each step's observable result have an AC in its `満たす AC` that builds it? Report every **outcome
+  no AC backs** as a detected requirement gap for a human to decide (①昇格 / ②削除 /
+  ③要件の書き直し), and every contradiction with those ACs. Do not propose which option to take as
+  if it were settled — the choice is what to build.
 
 **For exec-plans** — the `[E2E]` acceptance criterion:
 - Does the plan have one, and is it traced to an `E2E-NNN` (or to the US goal image)?
+- Does the Decision Log carry the complement-check record for each `E2E-NNN` the `[E2E]` ACs name
+  (`create-exec-plan` runs it before the plan freezes the scenario)? Run the check yourself on those
+  scenarios and report any outcome no AC backs — the autonomous loop would halt on it at Step 0c.
 - If the plan is a refactoring plan, does the E2E AC state *behavior preservation* rather than new
   behavior?
 - If the plan has none, is it genuinely documentation-only? (`create-exec-plan` exempts only that
@@ -288,6 +310,7 @@ Type: {document type}
 ### Goal image / E2E coverage
 {For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
 {For spec: E2E シナリオ present? Any AC belonging to no E2E-NNN?}
+{E2E 補完: E2E-NNN 一致 / 裏づけの無い成果「{成果}」— 人が ①昇格 ②削除 ③要件の書き直し を決める / 矛盾 / n/a（理由）}
 {For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
 
 ### Process walkthrough (process documents only — omit otherwise)

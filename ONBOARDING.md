@@ -443,7 +443,7 @@ transcribed into them.
 
 Two rules are worth remembering: an AC with no source is written `n/a（理由）`, never left blank;
 and the sources are frozen spec documents only — reading the implementation instead would undo
-red-first. The details, including what to do when a source disagrees with its AC line, are in
+red-first, and `docs/00_project/**` (ADRs, research notes) is background to read, not a source. The details, including what to do when a source disagrees with its AC line, are in
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md).
 
 ### Decision gate on test failure (important)

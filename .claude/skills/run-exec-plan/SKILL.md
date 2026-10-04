@@ -148,6 +148,18 @@ there in full, and the AC line is their one-line condensation:
 | `n/a（spec 未作成…）` with a US section — `/create-spec` was skipped for a small change | the US `## ゴール像` の主要ユーザージャーニー, which is what `create-exec-plan` derived the AC from |
 | `n/a` for both, or the plan has no `## Sources` | Nothing to open — transcribe from the AC line alone and say so in the report |
 
+**Before transcribing, run the complement check** in
+[`../create-exec-plan/e2e-interaction.md`](../create-exec-plan/e2e-interaction.md) on the `E2E-NNN` the row
+names — on every entry to this step, a resumed run included, since a scenario that moved after the
+plan froze it is only visible by reading it again. Record the result in the Decision Log (format in
+that file). An outcome the scenario states that no AC in its `満たす AC` backs, or a contradiction
+with them, is a **HALT** with (a): transcribing it would make the loop build a requirement nobody
+wrote, and choosing ①昇格 / ②削除 / ③要件の書き直し is a human's call. A preservation `[E2E]` AC is
+exempt from the halt (that file says why) — record the finding and continue. If the human's
+resolution changes a scenario whose `[E2E]` test is **already placed**, it changes a frozen
+expectation: that is (c), and the test is re-transcribed red-first after the human records the
+change — the "already placed" row below does not apply to it (`e2e-interaction.md`).
+
 Transcribe the through-flow from the AC text **and that material**, run it, and confirm
 **valid red**. Record the
 observation in the Decision Log; that entry freezes the expectation.
@@ -158,6 +170,7 @@ observation in the Decision Log; that entry freezes the expectation.
 | An earlier session already placed it (a recorded `red-first` entry, AC still `- [ ]`) | Re-run it, confirm the same red, and start the loop — do not rewrite the test |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
 | The source scenario or journey **contradicts** the `[E2E]` AC line (different 完了条件) | **HALT** with (a) — which one is the target is a spec judgement (`ac-sources.md`) |
+| The scenario states an outcome **no AC in its `満たす AC` backs**, or contradicts them (complement check above) | **HALT** with (a) — a requirement gap the scenario found; a human decides ①/②/③ (`e2e-interaction.md`). Not for a preservation `[E2E]` AC: record and continue |
 | Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
 | The plan has **no** `[E2E]` AC (documentation-only, or it predates the requirement) | Nothing to do here — continue |
@@ -418,7 +431,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
+| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 0c** when an `E2E-NNN` states an outcome no AC in its `満たす AC` backs, or contradicts them (the complement check in `../create-exec-plan/e2e-interaction.md`); by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
@@ -478,7 +491,8 @@ When the budget is exhausted, halt with stop-condition (b).
 - [ ] AC readiness gate run over **every** unchecked AC before the loop, and its result recorded in
       the Decision Log (Step 0b)
 - [ ] Every `[E2E]` AC had its test written and observed in **valid red** before the loop started,
-      with the observation recorded (Step 0c) — or its exemption recorded
+      with the observation recorded (Step 0c) — or its exemption recorded — and the complement check
+      on its `E2E-NNN` recorded before the test was transcribed
 - [ ] Each processed AC went through read-the-sources -> write-the-failing-test -> implement ->
       run-tests -> check-invariants -> spec re-anchor, and its `red-first` Decision Log entry
       precedes its `done` entry
@@ -500,6 +514,7 @@ Final report output by the agent:
 
 Plan      : exec-plans/active/YYYY-MM-{name}.md
 Readiness : ✅ {n} ACs READY (Step 0b)   |   ❌ AC-NNN NOT READY (R2) → loop not started
+E2E 補完  : ✅ E2E-NNN 一致 (Step 0c)   |   ❌ E2E-NNN 裏づけの無い成果 → HALT (a)   |   n/a ({理由})
 E2E red   : ✅ AC-NNN [E2E] → {test name} 赤で配置 (Step 0c)   |   n/a (no [E2E] AC)
 Sources   : ✅ {n}/{n} AC の起点を読んでから起草 (Step 1b)   |   ⚠️ プランに ## Sources が無い
 Red-first : ✅ {n}/{n} ACs で赤を観測してから実装   |   ⚠️ AC-NNN n/a ({理由})

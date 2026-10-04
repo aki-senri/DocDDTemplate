@@ -46,7 +46,7 @@ The agent asks the following questions **one at a time, in order**.
 | Q1 | What is the name of this plan? (alphanumeric and hyphens, e.g. `user-auth`, `refactor-service-layer`) | Filename |
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
-| Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
+| Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below — including the complement check on each scenario named) | `## Acceptance Criteria` (last entries), `## Decision Log` |
 | Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
 | Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
@@ -198,6 +198,18 @@ grepping for the marker.
 - [ ] AC-005: [E2E] E2E-001 のとおり、{前提}から{完了条件}まで通しで実行できる
 ```
 
+**Check each scenario before the plan freezes it.** Finalizing this plan with an `E2E-NNN` in its
+`## Sources` is the moment that scenario freezes for the plan. Before that, run the complement check
+in [`e2e-interaction.md`](e2e-interaction.md) on every scenario the
+`[E2E]` ACs name: does each outcome the scenario states have an AC in its `満たす AC` that builds it?
+An outcome no AC backs is a requirement gap the scenario has found — decide ①昇格 / ②削除 /
+③要件の書き直し **with the user**, and do not finalize the plan until the scenario and its ACs agree.
+Record the result per scenario in the Decision Log (format in that file). For a preservation
+`[E2E]` AC (refactoring), present and record the finding but do not hold the plan on it — that file
+says why. Deciding on the user's
+behalf, or writing the plan with the gap left in, hands the autonomous loop a scenario it will halt
+on at Step 0c.
+
 If the work is small enough that `/create-spec` was skipped, derive the E2E AC from the goal
 image (`## ゴール像` の主要ユーザージャーニー) of the source US instead. For a refactoring plan,
 take the E2E scenario the affected code already participates in. If none of these exist, ask the
@@ -270,7 +282,9 @@ completed:
 ## Steps
 
 1. Complete the Q1–Q4 interview (including Q3b — read the spec's `## E2E シナリオ` section first
-   if a spec exists, so the E2E criteria can be derived rather than asked from scratch)
+   if a spec exists, so the E2E criteria can be derived rather than asked from scratch, and run the
+   complement check in [`e2e-interaction.md`](e2e-interaction.md) on
+   each scenario named, deciding any gap with the user)
 2. If the plan changes a process (Q3e — scope table in
    [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
    readiness check, so it is checked with the rest
@@ -296,6 +310,10 @@ completed:
       when no spec exists). For a documentation-only plan: **no `[E2E]` AC is present**, and
       `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
+- [ ] Every `E2E-NNN` the `[E2E]` criteria name was run through the complement check in
+      [`e2e-interaction.md`](e2e-interaction.md), and its result is in
+      the Decision Log — any outcome no AC backs was decided (①/②/③) with the user before the plan
+      was finalized, or the user's refusal to decide is recorded
 - [ ] The plan has a `## Sources` table with **a row for every criterion**, each naming a section
       (not just a file) or an explicit `n/a（理由）` — no blank cells, and no colon directly after
       `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md))
@@ -314,6 +332,7 @@ Final report output by the agent:
 File     : exec-plans/active/YYYY-MM-{name}.md
 機能 AC  : AC-001, AC-002, ...
 E2E AC   : AC-NNN [E2E] ← E2E-001 (or "derived from US-XXX ゴール像")
+E2E 補完 : E2E-001 一致 | 裏づけの無い成果 {n} 件 → {①/②/③ の決定} | n/a（{理由}）
 Sources  : {n}/{n} AC に起点あり  |  n/a {n} 件（{理由}）
 
 === AC readiness ===

@@ -217,7 +217,9 @@ Each plan therefore carries a `## Sources` table, one row per AC, and it is read
   prove only what was transcribed into them, so the finished behavior is compared once more against
   the spec section the AC traces to.
 
-Sources are frozen spec material only — never the implementation code, which would undo red-first.
+Sources are frozen spec material only — never the implementation code, which would undo red-first,
+and never the decision material in `docs/00_project/**` (ADRs, research notes), which may be read for
+background but is not the frozen target.
 The table format, the four ways a source can disagree with its AC line, and the re-anchor verdicts
 are in [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md).
 

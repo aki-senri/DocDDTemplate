@@ -47,11 +47,24 @@ A source is **frozen spec material authored by a human**:
 | The spec's `### E2E-NNN` scenario (for an `[E2E]` AC) | Another plan's Decision Log |
 | `constraints.md` rows the AC must respect | The implementer's own inference about intent |
 | The US `## ゴール像` (when `/create-spec` was skipped) | An issue comment thread, unless the plan records it as the origin |
+| — | `docs/00_project/**` — the overview, ADRs (`decisions.md`), the glossary, research notes. **Readable as background; never a source** (below) |
 
 The exclusions are the point, not an oversight. Red-first (`../run-tests/red-first.md`) exists so
 the measurement is independent of the implementation; if "read the sources" quietly permitted
 reading the code, the driver would be back to transcribing what the code does. **Widening the
 source set must never widen it toward the implementation.**
+
+**Nor toward the material a decision was made from.** `docs/00_project/**` holds why the spec is what
+it is: the decisions, the alternatives they rejected, the research behind them. Reading it to
+understand the background is allowed, at any step. Naming it in `## Sources` is not, and neither is
+taking an expected result from it: that material is what a human weighed before freezing the
+requirements, not the frozen target itself, and it routinely says more than the requirements
+adopted — a rejected option, a figure that was rounded off, a constraint later relaxed. An expected
+value found **only** there is, for red-first, an expected result the AC and its sources do not state:
+drafting it into a test is the invention `../run-tests/red-first.md` forbids, and deciding that it
+should be required is a requirement change (CLAUDE.md「AC も起点も述べていない期待結果の決定」).
+"May read" (background) and "may anchor to" (draft the expectation from) are separate permissions,
+and only the frozen spec documents in the left column hold the second.
 
 ---
 
@@ -277,6 +290,7 @@ stay AC coverage and `[E2E]` coverage.
 | Red-first (`../run-tests/red-first.md`, INV-T02) | Is the measurement independent of the implementation? |
 | `[E2E]` coverage | Do the fragments add up to something the user can do? |
 | Process walkthrough (`process-walkthrough.md`) | Does the process these documents describe actually run — including at the sites that consume what changed? |
+| E2E interaction (`e2e-interaction.md`) | Does an `E2E-NNN` say more than the ACs underneath it — and if so, who decided that it should? |
 | **AC sources** (this file) | Does the implementer receive the **whole** goal — and is the finished result still checked against it? |
 
 Readiness `R4` and this file are adjacent but distinct: R4 asks *whether* an AC anchors to an E2E

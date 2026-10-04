@@ -172,6 +172,15 @@ Every AC defined in the source requirements should appear in at least one E2E sc
 belongs to no scenario, say so explicitly in the report — it usually means either the goal image
 is missing a path, or the AC is not actually needed for the finished thing.
 
+**The converse: a scenario that says more than its ACs.** Writing a journey end to end routinely
+turns up an outcome no AC in its `満たす AC` builds. That is a requirement gap the scenario has
+found, not detail to keep quietly. Run the complement check in
+[`../create-exec-plan/e2e-interaction.md`](../create-exec-plan/e2e-interaction.md) on each drafted scenario and list every **outcome no AC
+backs** in the report as a complement candidate. Do not add an AC, edit the US, or drop the step to
+make them agree — choosing ①昇格 / ②削除 / ③要件の書き直し decides what to build, and the human
+makes that choice when approving the spec (the scenario is not frozen until a plan names it; see
+that file).
+
 Each drafted file gets frontmatter:
 
 ```yaml
@@ -210,6 +219,8 @@ detail (that is `docs/03_design/`, layer 3) or implementation detail — keep th
       Mermaid diagram, 前提, 完了条件, and 満たす AC
 - [ ] The `E2E-NNN → AC-xxx` cross-cutting traceability table is present, and any AC belonging to
       no scenario was reported
+- [ ] The complement check ([`../create-exec-plan/e2e-interaction.md`](../create-exec-plan/e2e-interaction.md)) was run on each scenario, and
+      every outcome no AC backs was reported as a complement candidate — not resolved by the skill
 - [ ] The spec describes *what* the app does, with NO technical design (architecture/data
       model/API internals)
 - [ ] Every drafted file has `status: draft` frontmatter
@@ -227,6 +238,7 @@ Drafted spec      : docs/02_spec/app_spec.md
 AC coverage       : AC-001 → {feature} | AC-002 → {feature} | ...
 E2E シナリオ      : E2E-001 {name} → AC-001, AC-003 | E2E-002 {name} → AC-002, AC-004
 AC not in any E2E : {AC list, or "none"}
+E2E 補完候補      : E2E-NNN「{成果}」— 満たす AC のどれも述べていない（承認時に ①昇格 ②削除 ③要件の書き直し を決める） | none
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec

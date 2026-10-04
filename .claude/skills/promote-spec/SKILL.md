@@ -297,6 +297,8 @@ Do not proceed to Step 6 without an explicit "yes".
    - Promotion <label>: AC-003, AC-007 marked stale (spec changed after implementation).
    - AC readiness / red-first: このプランは `create-exec-plan` の起票インタビューを経ていない。
      readiness は `/start-feature`（Step 1b）または `/run-exec-plan`（Step 0b）で検査される。
+   - E2E 補完検出: 同じく起票時には行っていない。`[E2E]` AC の `E2E-NNN` は
+     `/start-feature`（Step 2）または `/run-exec-plan`（Step 0c）で検査される（`e2e-interaction.md`）。
    ```
 
    **The `## Sources` table must point at the *new* spec** (`../create-exec-plan/ac-sources.md`).

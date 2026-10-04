@@ -218,7 +218,8 @@ User Story に、振る舞いは spec の「satisfies AC-NNN」節に残りま�
   突き合わせます。
 
 起点として認めるのは人が凍結した仕様文書だけで、実装コードは含みません（含めると red-first が
-閉じた穴が開きます）。表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
+閉じた穴が開きます）。`docs/00_project/**`（ADR・調査ノート）も背景として読むのはよいが、凍結された
+目標ではないため起点にはしません。表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
 を参照してください。
 
