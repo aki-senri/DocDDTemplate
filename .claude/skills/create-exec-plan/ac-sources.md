@@ -80,11 +80,14 @@ Rules for the table:
   criterion. Write `| AC-001 |`, not `| AC-001: … |`. (Same family of pitfall as the annotation rule
   in `SKILL.md`.)
 - Write each source as `` `path` § section ``, with the path from the repository root in backticks.
+  A reference names a path only when it **starts** with that backticked path; backticks anywhere
+  else in a cell are prose.
   A section is an ID (`§ AC-001`, `§ E2E-001`, `§ TC-001` — defined by a heading, a table row's first
   cell, or a line `ID:`), a heading name (`§「タグの付与」`, or bare: `§ ゴール像`), or nested headings
   joined by `／` (`§ ゴール像／主要ユーザージャーニー`). Inside 「…」 a `/` is part of the name, not a
   nesting separator. A backticked token after the `§` is part of the section name
-  (`` §「設定（`config.yaml`）」 ``), not a second path; a URL is a link, not a path.
+  (`` §「設定（`config.yaml`）」 ``), not a second path; a URL is a link, not a path. A section
+  name that contains `、`, `,` or `;` is wrapped in 「…」, or it is read as two references.
 - Point at a **section**, not just a file. "`app_spec.md`" alone is not a source; the driver would
   have to guess which part applies, which is the guessing this table removes.
 - A cell may name more than one source — the US bullets and a `constraints.md` row, say — separated
@@ -92,7 +95,8 @@ Rules for the table:
 - `同上` works within one column, so a reader can resolve a row without scanning upward past a
   different file path. It has two forms. `同上 § X` takes the first file of the row above, with
   section X. A bare `同上` repeats the whole cell above — every source and section it names; under
-  `n/a（理由）` it is `n/a` with the same reason.
+  `n/a（理由）` it is `n/a` with the same reason. Either form with no row above it is an error:
+  there is nothing to repeat.
 - In active plans these forms are resolved mechanically by DOC-INV-012
   (`../check-doc-invariants/SKILL.md`): a missing file blocks the PR, an unmatched section warns.
 
@@ -149,6 +153,16 @@ file and merely warns on a section it cannot match.
 Repairing the row is a plan edit about *what the AC condenses* — a human's call, like every other
 disagreement between a plan and its sources. The driver does not repair it, even when the move looks
 obvious: guessing which file a row "meant" is the inference the `## Sources` table exists to replace.
+
+**Moving a source breaks rows elsewhere.** A change that moves or renames a file a row names, or
+retitles a section, breaks that row although no AC changed. The rows are updated **in the same
+commit as the move** (at least before it is pushed), and by a human. That holds for every way a
+source moves: a promotion (`promote-spec` Step 4 lists the rows, Step 5 shows them, Step 6 has them
+repointed right after the merge and before the push), a fix made directly on `main`, and a plan whose
+own work moves a file its `## Sources` names — which would otherwise trip DOC-INV-012 on its own PR
+at the moment it succeeds. A moved or renamed file left behind is a DOC-INV-012 ❌ that blocks every
+PR after it; a retitled section is a ⚠️ there, and a HALT (a) at run time if the reader cannot
+identify it.
 
 ---
 
@@ -229,6 +243,7 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 | `start-feature` (Step 1b / Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened — in conversation rather than halting |
 | `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened is reported, not judged on the line alone (advisory) |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
+| `promote-spec` (Step 4–6) | Promoting a spec that moves or retitles a source | List the active plans' rows it breaks (Step 4), show them in the decision report (Step 5), and have the human repoint them right after the merge, before the push (Step 6) — see「Moving a source」above |
 | `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory) |
 | `promote-spec` (Step 7) | Generating a reconcile plan | Write the table with the **new** spec's sections and `E2E-NNN` as the sources of the re-opened ACs |

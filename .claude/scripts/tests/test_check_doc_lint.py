@@ -1091,6 +1091,67 @@ class TestSourcesReviewFinding6Documents(unittest.TestCase):
         self.assertIn("under `n/a（理由）` it is `n/a` with the same reason", self.rules)
 
 
+
+class TestSourcesReReviewFindings(SourcesRepo):
+    """/docode-review 再実行（PR #44）の指摘 #4・#6。"""
+
+    # --- #6: a path is the backticked token at the *start* of a reference (人の決定)
+    def test_backticks_in_free_text_are_not_a_path(self):
+        for name, cell in [
+            ("version", "起点は Issue #41（`v2.0` 互換）"),
+            ("directory", "なし（`docs/` が無い）"),
+            ("unpaired", "`US` を見る v1.2 `x`"),
+        ]:
+            with self.subTest(name):
+                plan = self.plan(f"| AC-001 | {cell} | n/a（x） |", rel=f"exec-plans/active/{name}.md")
+                self.assertEqual(self.check(plan), [])
+
+    def test_bare_ditto_with_nothing_above_is_an_error(self):
+        plan = self.plan("| AC-001 | 同上 | n/a（x） |")
+
+        self.assertEqual([(f.check, f.level) for f in self.check(plan)], [("C6", "error")])
+
+    def test_ditto_in_a_later_position_follows_the_same_rule(self):
+        first_row = self.plan(f"| AC-001 | `{US_PATH}` § AC-001、同上 § AC-002 | n/a（x） |", rel="exec-plans/active/a.md")
+        with_file_above = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001 | n/a（x） |\n"
+            f"| AC-002 | `{SPEC_PATH}` § E2E-001、同上 § AC-009 | n/a（x） |",
+            rel="exec-plans/active/b.md",
+        )
+
+        self.assertEqual([f.level for f in self.check(first_row)], ["error"])
+        self.assertEqual([f.level for f in self.check(with_file_above)], ["warn"])
+
+    # --- #4: what the earlier tests left unconstrained (green on first run; verified by mutation)
+    def test_ditto_with_a_section_checks_that_section_in_the_inherited_file(self):
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001 | n/a（x） |\n"
+            "| AC-002 | 同上 § AC-009 | n/a（x） |"
+        )
+
+        findings = self.check(plan)
+
+        self.assertEqual([f.level for f in findings], ["warn"])
+        self.assertIn("AC-009", findings[0].message)
+
+    def test_ditto_does_not_reach_past_a_row_that_names_no_file(self):
+        for name, middle in [("na", "n/a（理由）"), ("free", "起点は Issue #41")]:
+            with self.subTest(name):
+                plan = self.plan(
+                    f"| AC-001 | `{US_PATH}` § AC-001 | n/a（x） |\n"
+                    f"| AC-002 | {middle} | n/a（x） |\n"
+                    "| AC-003 | 同上 § AC-002 | n/a（x） |",
+                    rel=f"exec-plans/active/{name}.md",
+                )
+                self.assertEqual([f.level for f in self.check(plan)], ["error"])
+
+    def test_an_id_does_not_match_a_longer_id(self):
+        write(self.root, "docs/01_requirements/longer.md", "# x\n\n### AC-0011: 別の AC\n")
+        plan = self.plan("| AC-001 | `docs/01_requirements/longer.md` § AC-001 | n/a（x） |")
+
+        self.assertEqual([f.level for f in self.check(plan)], ["warn"])
+
+
 class TestSourcesAC003Range(SourcesRepo):
     """#41 AC-003: exec-plans/active/** の ## Sources 節の表のみ。completed・docs・.claude・fence 内は対象外。"""
 

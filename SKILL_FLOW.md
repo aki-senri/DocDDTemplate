@@ -38,7 +38,7 @@ flowchart TD
         DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here.\n❌ → HALT (f); ✅/⚠️ → hand off\nHalts only on stop conditions"]
         SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction /\n  cannot be opened → HALT (a)"]
         REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe given/when/then from\n  the AC line AND its sources\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
-        REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC → HALT (a)\n· record it on the AC-NNN done line"]
+        REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC /\n  source cannot be opened → HALT (a)\n· record it on the AC-NNN done line"]
         CODE["Code change\n(Write / Edit)"]
         HOOK["PostToolUse hook\n⚠ Warning message only\n(does not block)"]
         CDF["/check-doc-freshness\nUpdate docs corresponding to\nchanged files via tracks: field"]
@@ -150,11 +150,14 @@ flowchart TD
 > [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
 > — the `## Sources` table an exec-plan carries (which US bullets and which spec section each
 > one-line AC condenses), and the two moments it is read: **before** drafting the test
-> (`run-exec-plan` Step 1b, `start-feature` Step 2) and **before** the AC's box is checked
-> (`run-exec-plan` Step 3a — the spec re-anchor). `create-exec-plan` (Q3d) writes the table,
-> `promote-spec` writes it for reconcile plans against the *new* spec, `pre-pr` (⑤c) reports a
-> missing table or re-anchor record (⚠️ only), and `docode-review` judges the diff against the
-> sources rather than the one-liner. It exists because the AC line is a condensation by design —
+> (`run-exec-plan` Step 0b for readiness and Step 1b, `start-feature` Step 1b / Step 2) and
+> **before** the AC's box is checked (`run-exec-plan` Step 3a — the spec re-anchor). A row that
+> cannot be opened halts the loop rather than falling back to the one-liner. `create-exec-plan` (Q3d)
+> writes the table, `promote-spec` writes it for reconcile plans against the *new* spec (and has rows
+> a promotion breaks repointed before pushing), `pre-pr` (⑤c) reports a missing table or re-anchor
+> record (⚠️ only), `check-doc-invariants` (DOC-INV-012) blocks on a file an active plan's row names
+> that does not exist (❌), and `docode-review` judges the diff against the sources rather than the
+> one-liner. It exists because the AC line is a condensation by design —
 > `spec-gate.py` parses `AC-(\d{3}):`, so the verifiable detail stays in the US and the spec, and
 > without a pointer it never reaches the implementer.
 >

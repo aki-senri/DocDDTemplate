@@ -578,12 +578,13 @@ def check_grep_snippets(path: Path, text: str) -> list[Finding]:
 
 SOURCES_HEADING_RE = re.compile(r"^##\s+Sources\s*$")
 H2_RE = re.compile(r"^##\s")
-#: A backticked token is a *path* when it has a directory separator or a file extension. Only a
-#: token *before* a reference's `§` is considered: one after it is part of the section name
-#: (`§「設定（\`config.yaml\`）」`), and a URL is a link, not a file in this repository.
-PATH_TOKEN_RE = re.compile(r"`([^`]*?(?:/|\.[A-Za-z0-9]+)[^`]*?)`")
+#: A reference names a path only when it *starts* with a backticked token — the form
+#: ac-sources.md「Rules for the table」 defines (`` `path` § section ``). Backticks anywhere else are
+#: prose or part of a section name (`§「設定（\`config.yaml\`）」`), and a URL is a link, not a file.
+FILE_EXTENSION_RE = re.compile(r"\.[A-Za-z][A-Za-z0-9]*$")
 REFERENCE_SEPARATORS = "、，,;；"
 _UNREADABLE = object()  # a source file that exists but cannot be read as text
+_NOTHING_ABOVE = object()  # no earlier row in this column: a 同上 here has nothing to repeat
 SECTION_ID_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
 HEADING_LINE_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 NAME_SEPARATORS = (" ", "　", ":", "：", "（", "(")
@@ -760,23 +761,46 @@ def _split_references(cell: str) -> list[str]:
     return [part for part in parts if part.strip()]
 
 
+def _leading_path(reference: str) -> tuple[str, str] | None:
+    """(path, rest) when a reference starts with a backticked path; None otherwise.
+
+    The token is read as an opening/closing *pair* from the reference's first character, so a
+    closing backtick is never taken for an opening one.
+    """
+    if not reference.startswith("`"):
+        return None
+    closing = reference.find("`", 1)
+    if closing == -1:
+        return None
+    token = reference[1:closing].strip()
+    if "://" in token or not ("/" in token or FILE_EXTENSION_RE.search(token)):
+        return None
+    return token, reference[closing + 1 :]
+
+
+def _section_of(rest: str) -> str | None:
+    """The `§` part of a reference, or None when it names no section."""
+    _, marker, section = rest.partition("§")
+    return section.strip() if marker else None
+
+
 def _source_refs(cell: str) -> list[tuple[str, str, str | None]]:
     """The sources one cell names, in order — ("ditto", "同上", §) and/or ("path", path, §).
 
     A cell may name more than one source (the US bullets and a `constraints.md` row, say), and each
-    is resolved on its own: checking only the first would let a missing second file through. The
-    path of a reference is a backticked token *before* its `§`; anything after the `§` is the
-    section name, backticks included. A section of None means the reference names no `§`.
+    is resolved on its own: checking only the first would let a missing second file through. A
+    reference names a source only by *starting* with a backticked path or with `同上`; a reference
+    that starts with anything else is prose, and whether such a cell is well formed is `pre-pr` ⑤c.
+    A section of None means the reference names no `§`.
     """
     refs: list[tuple[str, str, str | None]] = []
-    for index, reference in enumerate(_split_references(cell)):
-        head, marker, section = reference.partition("§")
-        section_or_none = section.strip() if marker else None
-        match = PATH_TOKEN_RE.search(head)
-        if match and "://" not in match.group(1):
-            refs.append(("path", match.group(1).strip(), section_or_none))
-        elif index == 0 and head.strip().startswith(DITTO):
-            refs.append(("ditto", DITTO, section_or_none))
+    for reference in _split_references(cell):
+        reference = reference.strip()
+        leading = _leading_path(reference)
+        if leading:
+            refs.append(("path", leading[0], _section_of(leading[1])))
+        elif reference.startswith(DITTO):
+            refs.append(("ditto", DITTO, _section_of(reference[len(DITTO) :])))
     return refs
 
 
@@ -788,10 +812,11 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
     Cells reading `n/a（理由）`, and cells naming neither a path nor `同上`, are not this check's to
     judge: whether every AC has a well-formed row is `pre-pr` ⑤c.
 
-    `同上` follows the column. `同上 § X` means "the file above, section X". A bare `同上` repeats
-    the cell above as it stands — under `n/a` it is `n/a` (the reason carries down), and under a file
-    it adds nothing new to check, so whatever the row above found is not reported a second time.
-    When a cell names several sources, the first is the one a later `同上` inherits.
+    `同上` follows the column, in any position of a cell. `同上 § X` takes the first file of the row
+    above, with section X. A bare `同上` repeats the whole cell above — under `n/a` it is `n/a` (the
+    reason carries down), and under a file it adds nothing new to check, so whatever the row above
+    found is not reported a second time. Either form with no row above it is an error: there is
+    nothing to repeat.
     """
     if not _in_sources_range(path, repo_root):
         return []
@@ -834,10 +859,15 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
             if not refs:
                 previous[column] = None  # free text: nothing to resolve, and nothing to inherit
                 continue
-            inherited = previous.get(column)
+            inherited = previous.get(column, _NOTHING_ABOVE)
             primary: object = None
             for position, (kind, written, section) in enumerate(refs):
-                if kind == "ditto" and section is None:
+                if kind == "ditto" and inherited is _NOTHING_ABOVE:
+                    findings.append(
+                        Finding("C6", "error", Path(path), row.number, f"{DITTO} has no row above it to repeat")
+                    )
+                    resolved = _UNRESOLVED
+                elif kind == "ditto" and section is None:
                     resolved = inherited  # a bare 同上: the cell above, as it stands
                 elif kind == "ditto":
                     if inherited is _UNRESOLVED:
