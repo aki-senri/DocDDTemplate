@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_doc_lint.py — mechanical checks for DocDD convention documents.
 
-Implements DOC-INV-007 through DOC-INV-011 (see
+Implements DOC-INV-007 through DOC-INV-012 (see
 `.claude/skills/check-doc-invariants/SKILL.md`, which is the only skill that invokes this file):
 
 | Check | Invariant    | What it detects                                       | Level |
@@ -14,9 +14,13 @@ Implements DOC-INV-007 through DOC-INV-011 (see
 | C4    | DOC-INV-010  | An unquoted Mermaid label containing `()[]{}`         | ❌    |
 | C5    | DOC-INV-011  | A multi-path `grep` in a `bash` fence without both    | ⚠️    |
 |       |              | `2>/dev/null` and `\\|\\| true`                         |       |
+| C6    | DOC-INV-012  | A file an active plan's `## Sources` row names that   | ❌    |
+|       |              | does not exist (⚠️ when only the § section is missing) |       |
 
 What it deliberately does not check is listed in the skill: pointers inside `exec-plans/**` (a plan
-is a working note, and an archived one is not a reference document), whether a consumer has the
+is a working note, and an archived one is not a reference document) — except an active plan's
+`## Sources` table, which DOC-INV-012 checks because it is read while the work is in flight —
+whether a consumer has the
 material it needs at the point it decides (process-walkthrough lap 7 step 3), and sites that
 *should* consume a rule but never name it. Those stay with the human or the driver.
 
@@ -42,6 +46,7 @@ INVARIANTS = {
     "C3": ("DOC-INV-009", "label reference existence"),
     "C4": ("DOC-INV-010", "Mermaid label quoting"),
     "C5": ("DOC-INV-011", "grep robustness in shell snippets"),
+    "C6": ("DOC-INV-012", "AC sources resolution"),
 }
 
 FIX_HINTS = {
@@ -50,6 +55,9 @@ FIX_HINTS = {
     "C3": "Update the label to the one the target file actually defines (it was probably renumbered).",
     "C4": 'Wrap the label in double quotes: |"a (b)"| — an unquoted bracket breaks the whole diagram.',
     "C5": "Append 2>/dev/null || true — a missing path or a no-match exits non-zero under set -e.",
+    "C6": "Present the row to a human — repairing it is theirs, not an agent's: repointing it, or "
+    "deciding there is nothing to read, is a decision about what the AC condenses "
+    "(ac-sources.md「When a source cannot be opened」). Do not guess the moved file or write n/a.",
 }
 
 # DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
@@ -556,6 +564,351 @@ def check_grep_snippets(path: Path, text: str) -> list[Finding]:
     return findings
 
 
+# --------------------------------------------------------------------------- C6: AC sources
+
+# The one *pointer* check that reads plans. DOC-INV-007 / 009 skip `exec-plans/**` because a plan is a
+# working note whose pointers nobody follows once it is archived. A `## Sources` table is the
+# deliberate exception: it is read *while the work is in flight* (run-exec-plan Step 0b / 1b / 3a,
+# start-feature Step 2), so a row that does not resolve stalls red-first now rather than misleading
+# some later reader of the archive. Completed plans stay out of range — their drift is accepted.
+#
+# Levels follow what can be decided mechanically. A missing file is unambiguous: ❌. A section is
+# matched by heading text, which can drift in wording ("タグの付与" vs "タグ付与"), so a section that
+# cannot be found is ⚠️ — a human or the driver reading the file can still tell whether it is there.
+
+SOURCES_HEADING_RE = re.compile(r"^##\s+Sources\s*$")
+H2_RE = re.compile(r"^##\s")
+#: A reference names a path only when it *starts* with a backticked token — the form
+#: ac-sources.md「Rules for the table」 defines (`` `path` § section ``). Backticks anywhere else are
+#: prose or part of a section name (`§「設定（\`config.yaml\`）」`), and a URL is a link, not a file.
+FILE_EXTENSION_RE = re.compile(r"\.[A-Za-z][A-Za-z0-9]*$")
+REFERENCE_SEPARATORS = "、，,;；"
+_UNREADABLE = object()  # a source file that exists but cannot be read as text
+_NOTHING_ABOVE = object()  # no earlier row in this column: a 同上 here has nothing to repeat
+SECTION_ID_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
+HEADING_LINE_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+NAME_SEPARATORS = (" ", "　", ":", "：", "（", "(")
+DITTO = "同上"
+_UNRESOLVED = object()  # a file above was already reported as missing; do not report it again
+
+
+def _in_sources_range(path: Path, repo_root: Path) -> bool:
+    try:
+        rel = Path(path).resolve().relative_to(Path(repo_root).resolve())
+    except ValueError:
+        return False
+    return rel.parts[:2] == ("exec-plans", "active")
+
+
+def _cells(row: str) -> list[str]:
+    """A table row's cells, honouring `\\|` escapes and pipes inside `code spans`."""
+    stripped = row.strip()
+    if stripped.startswith("|"):
+        stripped = stripped[1:]
+    if stripped.endswith("|") and not stripped.endswith("\\|"):
+        stripped = stripped[:-1]
+    cells, current, in_code, index = [], [], False, 0
+    while index < len(stripped):
+        char = stripped[index]
+        if char == "\\" and index + 1 < len(stripped):
+            current.append(stripped[index : index + 2])
+            index += 2
+            continue
+        if char == "`":
+            in_code = not in_code
+        if char == "|" and not in_code:
+            cells.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+        index += 1
+    cells.append("".join(current).strip())
+    return cells
+
+
+def _sources_rows(lines: list[Line]) -> list[Line]:
+    """Body rows of the first table under `## Sources`, outside fences, before the next `## `."""
+    body = body_lines(lines)
+    start = next((i for i, line in enumerate(body) if SOURCES_HEADING_RE.match(line.text)), None)
+    if start is None:
+        return []
+    section: list[Line] = []
+    for line in body[start + 1 :]:
+        if H2_RE.match(line.text):
+            break
+        section.append(line)
+    for index, line in enumerate(section[:-1]):
+        following = section[index + 1]
+        if (
+            line.text.strip().startswith("|")
+            and following.number == line.number + 1
+            and DELIMITER_RE.match(following.text)
+        ):
+            rows = []
+            for row in section[index + 2 :]:
+                if not row.text.strip().startswith("|"):
+                    break
+                rows.append(row)
+            return rows
+    return []
+
+
+def _headings(text: str) -> list[tuple[int, str]]:
+    found = []
+    for line in body_lines(scan_lines(text)):
+        match = HEADING_LINE_RE.match(line.text)
+        if match:
+            found.append((len(match.group(1)), _plain(match.group(2))))
+    return found
+
+
+def _plain(text: str) -> str:
+    """Heading text without inline-code backticks: `## \`v1.2\` の互換` is the section `v1.2 の互換`."""
+    return text.replace("`", "").strip()
+
+
+def _names_match(heading: str, name: str) -> bool:
+    """`タグの付与（satisfies AC-001）` is the section `タグの付与`; `AC-0011` is not `AC-001`."""
+    if heading == name:
+        return True
+    return heading.startswith(name) and heading[len(name)] in NAME_SEPARATORS
+
+
+def _id_defined(text: str, identifier: str) -> bool:
+    """An ID is defined by a heading, a table row's first cell (constraints), or a line `ID:`."""
+    for level, heading in _headings(text):
+        if _names_match(heading, identifier):
+            return True
+    for line in body_lines(scan_lines(text)):
+        stripped = line.text.strip()
+        if stripped.startswith("|") and _cells(stripped)[0] == identifier:
+            return True
+        bare = re.sub(r"^[-*]\s+(\[[ xX]\]\s+)?", "", stripped)
+        if bare.startswith((identifier + ":", identifier + "：")):
+            return True
+    return False
+
+
+def _section_segments(section: str) -> list[str]:
+    """`ゴール像／主要ユーザージャーニー` → two nested names; `「入出力/形式」` → one name.
+
+    `／` (or `/`) separates nesting levels only outside 「…」 and outside inline code: inside them it
+    is part of the heading text.
+    """
+    parts, current, bracketed, code = [], [], False, False
+    for char in section:
+        if char == "`":
+            code = not code
+        elif not code and char == "「":
+            bracketed = True
+        elif not code and char == "」":
+            bracketed = False
+        if char in "／/" and not bracketed and not code:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    parts.append("".join(current))
+    segments = []
+    for part in parts:
+        part = part.strip()
+        if part.startswith("「") and part.endswith("」"):
+            part = part[1:-1]
+        part = _plain(part)
+        if part:
+            segments.append(part)
+    return segments
+
+
+def _section_exists(text: str, section: str) -> bool:
+    segments = _section_segments(section)
+    if not segments:
+        return False
+    if len(segments) == 1 and SECTION_ID_RE.match(segments[0]):
+        return _id_defined(text, segments[0])
+
+    headings = _headings(text)
+
+    def descend(start: int, depth: int, parent_level: int) -> bool:
+        for index in range(start, len(headings)):
+            level, heading = headings[index]
+            if level <= parent_level:
+                return False
+            if _names_match(heading, segments[depth]):
+                if depth == len(segments) - 1 or descend(index + 1, depth + 1, level):
+                    return True
+        return False
+
+    return descend(0, 0, 0)
+
+
+def _split_references(cell: str) -> list[str]:
+    """A cell's references, split at `、` (or `,` / `;`) outside 「…」 and inline code."""
+    parts, current, bracketed, code = [], [], False, False
+    for char in cell:
+        if char == "`":
+            code = not code
+        elif not code and char == "「":
+            bracketed = True
+        elif not code and char == "」":
+            bracketed = False
+        if char in REFERENCE_SEPARATORS and not bracketed and not code:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    parts.append("".join(current))
+    return [part for part in parts if part.strip()]
+
+
+def _leading_path(reference: str) -> tuple[str, str] | None:
+    """(path, rest) when a reference starts with a backticked path; None otherwise.
+
+    The token is read as an opening/closing *pair* from the reference's first character, so a
+    closing backtick is never taken for an opening one.
+    """
+    if not reference.startswith("`"):
+        return None
+    closing = reference.find("`", 1)
+    if closing == -1:
+        return None
+    token = reference[1:closing].strip()
+    if "://" in token or not ("/" in token or FILE_EXTENSION_RE.search(token)):
+        return None
+    return token, reference[closing + 1 :]
+
+
+def _section_of(rest: str) -> str | None:
+    """The `§` part of a reference, or None when it names no section."""
+    _, marker, section = rest.partition("§")
+    return section.strip() if marker else None
+
+
+def _source_refs(cell: str) -> list[tuple[str, str, str | None]]:
+    """The sources one cell names, in order — ("ditto", "同上", §) and/or ("path", path, §).
+
+    A cell may name more than one source (the US bullets and a `constraints.md` row, say), and each
+    is resolved on its own: checking only the first would let a missing second file through. A
+    reference names a source only by *starting* with a backticked path or with `同上`; a reference
+    that starts with anything else is prose, and whether such a cell is well formed is `pre-pr` ⑤c.
+    A section of None means the reference names no `§`.
+    """
+    refs: list[tuple[str, str, str | None]] = []
+    for reference in _split_references(cell):
+        reference = reference.strip()
+        leading = _leading_path(reference)
+        if leading:
+            refs.append(("path", leading[0], _section_of(leading[1])))
+        elif reference.startswith(DITTO):
+            refs.append(("ditto", DITTO, _section_of(reference[len(DITTO) :])))
+    return refs
+
+
+def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
+    """C6 / DOC-INV-012 — what an active plan's `## Sources` table names can be opened.
+
+    ❌ a file a cell names does not exist (or `同上 § …` has no file above it to inherit);
+    ⚠️ the file exists but the `§` section cannot be found, or the cell names a file and no section.
+    Cells reading `n/a（理由）`, and cells naming neither a path nor `同上`, are not this check's to
+    judge: whether every AC has a well-formed row is `pre-pr` ⑤c.
+
+    `同上` follows the column, in any position of a cell. `同上 § X` takes the first file of the row
+    above, with section X. A bare `同上` repeats the whole cell above — under `n/a` it is `n/a` (the
+    reason carries down), and under a file it adds nothing new to check, so whatever the row above
+    found is not reported a second time. Either form with no row above it is an error: there is
+    nothing to repeat.
+    """
+    if not _in_sources_range(path, repo_root):
+        return []
+    findings: list[Finding] = []
+    previous: dict[int, object] = {}  # column → Path | _UNRESOLVED | None
+    cache: dict[Path, object] = {}  # Path → text | _UNREADABLE
+    root = Path(repo_root).resolve()
+
+    def check_section(row: Line, target: Path, written: str, section: str | None) -> None:
+        if section is None or not section:
+            findings.append(
+                Finding("C6", "warn", Path(path), row.number, f"{written} names a file but no § section")
+            )
+            return
+        if target not in cache:
+            try:
+                cache[target] = target.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                cache[target] = _UNREADABLE
+        if cache[target] is _UNREADABLE:
+            findings.append(
+                Finding(
+                    "C6",
+                    "warn",
+                    Path(path),
+                    row.number,
+                    f"{written} cannot be read as text — § {section} not checked",
+                )
+            )
+            return
+        if not _section_exists(cache[target], section):
+            findings.append(Finding("C6", "warn", Path(path), row.number, f"§ {section} not found in {written}"))
+
+    for row in _sources_rows(scan_lines(text)):
+        for column, cell in enumerate(_cells(row.text)[1:], start=1):
+            if cell.strip("` ").lower().startswith("n/a"):
+                previous[column] = None
+                continue
+            refs = _source_refs(cell)
+            if not refs:
+                previous[column] = None  # free text: nothing to resolve, and nothing to inherit
+                continue
+            inherited = previous.get(column, _NOTHING_ABOVE)
+            primary: object = None
+            for position, (kind, written, section) in enumerate(refs):
+                if kind == "ditto" and inherited is _NOTHING_ABOVE:
+                    findings.append(
+                        Finding("C6", "error", Path(path), row.number, f"{DITTO} has no row above it to repeat")
+                    )
+                    resolved = _UNRESOLVED
+                elif kind == "ditto" and section is None:
+                    resolved = inherited  # a bare 同上: the cell above, as it stands
+                elif kind == "ditto":
+                    if inherited is _UNRESOLVED:
+                        resolved = _UNRESOLVED  # the file above is already reported
+                    elif inherited is None:
+                        findings.append(
+                            Finding(
+                                "C6",
+                                "error",
+                                Path(path),
+                                row.number,
+                                f"{DITTO} § {section} has no source file above it to inherit",
+                            )
+                        )
+                        resolved = _UNRESOLVED
+                    else:
+                        resolved = inherited
+                        check_section(row, Path(inherited), f"{DITTO}（{Path(inherited).name}）", section)
+                else:
+                    # From the repository root only, as ac-sources.md「Rules for the table」 says —
+                    # a reader opening the row resolves it that way, so the check must too.
+                    target = (root / written.lstrip("/")).resolve()
+                    problem = None
+                    if not target.is_relative_to(root):
+                        problem = f"source path points outside the repository: {written}"
+                    elif target.is_dir():
+                        problem = f"source names a directory, not a file: {written}"
+                    elif not target.is_file():
+                        problem = f"source file does not exist: {written}"
+                    if problem:
+                        findings.append(Finding("C6", "error", Path(path), row.number, problem))
+                        resolved = _UNRESOLVED
+                    else:
+                        resolved = target
+                        check_section(row, target, written, section)
+                if position == 0:
+                    primary = resolved
+            previous[column] = primary
+    return findings
+
+
 # --------------------------------------------------------------------------- driver
 
 RANGES = (".claude/skills/**/*.md", "docs/**/*.md", "exec-plans/**/*.md", "*.md")
@@ -565,6 +918,7 @@ CHECKS = {
     "C3": lambda path, text, root: check_labels(path, text, root),
     "C4": lambda path, text, root: check_mermaid(path, text),
     "C5": lambda path, text, root: check_grep_snippets(path, text),
+    "C6": lambda path, text, root: check_sources(path, text, root),
 }
 
 
@@ -644,7 +998,7 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
             return "" if rel.as_posix() in (".", "") else rel.as_posix()
         return f"{rel.as_posix()}:{finding.line}"
 
-    out = ["=== Document lint results (DOC-INV-007〜011) ===", "", f"Files checked: {checked}", ""]
+    out = ["=== Document lint results (DOC-INV-007〜012) ===", "", f"Files checked: {checked}", ""]
     for check, (invariant, title) in INVARIANTS.items():
         rows = [f for f in findings if f.check == check]
         errors = [f for f in rows if f.level == "error"]
@@ -657,7 +1011,7 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
             where = location(finding)
             out.append(f"{prefix}{where}: {finding.message}" if where else f"{prefix}{finding.message}")
         # The hint tells a reader how to clear a violation; a run-wide note has nothing to clear.
-        if errors or (warnings and check == "C5"):
+        if errors or any(f.line for f in warnings):
             out.append(f"    Fix: {FIX_HINTS[check]}")
         out.append("")
 
@@ -675,14 +1029,14 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        description="Mechanical checks for DocDD convention documents (DOC-INV-007〜011).",
+        description="Mechanical checks for DocDD convention documents (DOC-INV-007〜012).",
     )
     parser.add_argument("paths", nargs="*", help="files to check (default: the four ranges)")
     parser.add_argument("--root", default=".", help="repository root (default: cwd)")
     parser.add_argument(
         "--only",
         default="",
-        help="comma-separated subset of checks, e.g. C1,C4 (default: all)",
+        help="comma-separated subset of checks, e.g. C1,C6 (default: all)",
     )
     parser.add_argument(
         "--mermaid-parser",

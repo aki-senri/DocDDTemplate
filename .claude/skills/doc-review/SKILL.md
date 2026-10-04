@@ -156,7 +156,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 
 ### AC sources (the US bullets / spec sections the plan's ## Sources names — needed to apply R2)
 {for each row: the AC-ID, the section path, and the section text.
- Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so" }
+ Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so"
+ / "{AC-ID}: cannot be opened — {path § section as written}: report it; R2 for this AC is NOT READY,
+ not judged on the line alone" }
 
 ### Project documentation rules (CLAUDE.md excerpt)
 {relevant sections covering doc rules, diagram rules, etc.}
@@ -180,7 +182,9 @@ do not substitute your own notion of a "good" AC, and name the failing check by 
 verdict here should match theirs. For that to hold, judge **R2 against the AC line together with the
 sources supplied above** — the other three gates do, and judging a one-liner in isolation would
 manufacture NOT READY verdicts they will never reproduce. If the sources were not available, say so
-in the finding rather than failing R2 for detail you were not shown.
+in the finding rather than failing R2 for detail you were not shown. That is not the same as a row
+marked **cannot be opened** above: "not available" means the caller did not hand you the material;
+"cannot be opened" means the row itself is a broken pointer — that AC is NOT READY.
 This review is **advisory**: report the verdict, change nothing.
 
 Then, beyond readiness:

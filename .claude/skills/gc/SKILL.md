@@ -62,12 +62,16 @@ Run the `check-invariants` skill against all of `src/**`.
 
 Run the `check-doc-invariants` skill against all documents in the repository.
 
-- Target: all `docs/**/*.md` and `exec-plans/**/*.md`, plus — for the script-backed
-  DOC-INV-007〜011 — `.claude/skills/**/*.md` and the root `*.md`
-- Check every built-in invariant the skill defines: DOC-INV-001 through DOC-INV-011. The list is
-  the skill's, not this file's; that skill runs the script behind DOC-INV-007〜011, this file does
-  not invoke it directly
-- Fix any violations found
+- Target: all `docs/**/*.md` and `exec-plans/**/*.md`, plus the wider ranges the skill defines
+  for its script-backed invariants (the convention documents themselves, and active plans'
+  `## Sources` tables)
+- Check every built-in invariant the skill defines. The list is the skill's, not this file's, so a
+  new invariant needs no edit here; that skill runs the script behind the mechanical ones, this file
+  does not invoke it directly
+- Fix any violations found — **except DOC-INV-012**. A `## Sources` row that cannot be opened is
+  reported to a human, not repaired: repointing it to the file it "probably meant", or writing
+  `n/a` in its place, is a decision about what that AC condenses
+  (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
   record the decision if leaving ASCII art intentionally
 
@@ -163,8 +167,7 @@ Run the `update-context` skill.
 - DOC-INV-004 violations (AC traceability): {count}
 - DOC-INV-005 warnings (diagram rules): {count}
 - DOC-INV-006 violations (goal image / E2E traceability): {count}
-- DOC-INV-007〜010 violations (links / tables / label references / Mermaid): {count}
-- DOC-INV-011 warnings (shell-snippet robustness): {count}
+- Script-backed invariants (DOC-INV-007 onward): {the check-doc-invariants report, verbatim}
 
 ### ④ Lifecycle cleanup
 - draft → active: {count}

@@ -137,7 +137,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 ├── .claude/
 │   ├── settings.json          # フック設定（コード変更時の自動リマインド）
 │   ├── hooks/                 # spec-gate.py（仕様ゲート）・post-tool-notify.py
-│   ├── scripts/               # check_doc_lint.py（DOC-INV-007〜011。check-doc-invariants が実行）
+│   ├── scripts/               # check_doc_lint.py（スクリプト化された DOC-INV。check-doc-invariants が実行）
 │   └── skills/                # 各スキルの定義
 │       ├── init-project/
 │       ├── create-requirements/

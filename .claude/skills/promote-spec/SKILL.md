@@ -156,6 +156,17 @@ Classify the impact of each changed/removed AC:
 > or (b) deferring promotion so it does not land on an AC under active implementation. Do not
 > promote over an in-flight collision without the user's explicit acknowledgement.
 
+> **Sources that move are a collision this table does not show.** The analysis above is per AC, so
+> a promotion that keeps every AC but moves a spec file or retitles a section raises no in-flight
+> collision — and still breaks the `## Sources` rows of active plans that name it. List them here
+> (`grep -rn "<moved path or old section name>" exec-plans/active/ 2>/dev/null || true`), show them
+> in the Step 5 report, and have the human repoint them **in Step 6, right after the merge and before
+> anything is pushed** — not before the promotion (the new path does not exist on `main` yet, so a
+> repointed row would fail there) and not after the push (the shared `main` would already be broken).
+> Repairing a row is a human's call (`../create-exec-plan/ac-sources.md`「When a source cannot be
+> opened」). A moved or renamed file left behind is a DOC-INV-012 ❌ that blocks every PR after the
+> merge, including PRs that have nothing to do with those plans; a retitled section is a ⚠️.
+
 > **Precedence when an AC is both in-flight and already completed:** treat it as an in-flight
 > collision (the stricter case) — the active plan owner reconciles it; do **not** also create a
 > separate reconcile plan for it in Step 7.
@@ -202,6 +213,11 @@ Do not proceed to Step 6 without an explicit "yes".
    ```
 3. **On conflict: stop.** Report the conflicting files and hand resolution to the human. Do not
    auto-resolve. Proceed to Step 7 **only after the merge commit actually exists on `main`**.
+
+   **Then, if Step 4 listed `## Sources` rows this promotion breaks**, stop again before tagging:
+   the human repoints those rows now, as a commit on `main` on top of the merge. This is the only
+   point where it works — the new paths exist, and nothing has been pushed. Do not repoint them
+   yourself (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」).
 4. **Tag the new target snapshot** (the post-merge `main`):
    ```bash
    git tag spec-target-<label>
@@ -352,6 +368,8 @@ REMOVED : {count}   (AC-009, ...)
 🟠 Stale impl           : {count}
   - AC-003  (completed: 2026-05-login.md; tracks src/auth/**) — needs reconciliation
 🔵 Target-only          : {count}
+⚠️ Sources rows this promotion breaks : {count}
+  - exec-plans/active/2026-06-search.md:19 → docs/02_spec/app_spec.md (moved) — the human repoints it in Step 6, before pushing
 
 ── Decision required ─────────────────────────
 Promotion changes the development target — confirm to proceed (yes / adjust / cancel).
@@ -374,6 +392,7 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Drift guard checked (branch current with `main`, or user brought it current)
 - [ ] Spec diff classified into NEW / CHANGED / REMOVED at the AC level
 - [ ] Impact analysed against `completed/` and `active/` plans (stale impl + in-flight collisions surfaced)
+- [ ] Active plans whose `## Sources` names a file or section this promotion moves were listed, and their owners asked to repoint the rows
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`
