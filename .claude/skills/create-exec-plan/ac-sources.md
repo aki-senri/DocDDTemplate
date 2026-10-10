@@ -38,20 +38,42 @@ session has only the files (CLAUDE.md「再開状態のファイル化規約」)
 
 ## What counts as a source
 
-A source is **frozen spec material authored by a human**:
+A source is **frozen spec material authored by a human**. Two questions are kept apart here, because
+answering one is not answering the other: *may this document be read?* and *may a test's expected
+result be drafted from it?* Every document falls in one of three classes:
 
-| Admissible | Not admissible |
-|------------|----------------|
-| The US file's `### AC-NNN` section (its bullets) | Existing implementation code |
-| The spec section that says "satisfies AC-NNN" | Existing tests |
-| The spec's `### E2E-NNN` scenario (for an `[E2E]` AC) | Another plan's Decision Log |
-| `constraints.md` rows the AC must respect | The implementer's own inference about intent |
-| The US `## ゴール像` (when `/create-spec` was skipped) | An issue comment thread, unless the plan records it as the origin |
+| Class | Documents | May be read | May supply given / when / then or an expected value |
+|-------|-----------|:-----------:|:---------------------------------------------------:|
+| **Source（起点にしてよい）** | The US file's `### AC-NNN` section (its bullets)・the spec section that says "satisfies AC-NNN"・the `E2E-NNN` scenario (for an `[E2E]` AC — frozen per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md))・`constraints.md` rows the AC must respect・the US `## ゴール像` (when `/create-spec` was skipped) | ✅ | ✅ — this is what `## Sources` names |
+| **Background（背景として読んでよい）** | Research and investigation notes・`docs/00_project/**` (overview, glossary, `decisions.md` — the ADRs)・another plan's Decision Log・an issue or discussion thread (a plan may still cite one as the *origin* inside an `n/a（理由）`) | ✅ — to understand *why* the spec says what it does, and to route a fix (current version or next) | ❌ — never |
+| **Not read（読まない）** | Existing implementation code・existing tests | ❌ — not for this purpose | ❌ |
 
-The exclusions are the point, not an oversight. Red-first (`../run-tests/red-first.md`) exists so
-the measurement is independent of the implementation; if "read the sources" quietly permitted
-reading the code, the driver would be back to transcribing what the code does. **Widening the
-source set must never widen it toward the implementation.**
+The implementer's own inference about intent is in none of the classes: it is not a document, and an
+expected result that rests on it is invented, not transcribed.
+
+**Why background is separate from source.** Background is the material a decision was made *from* —
+the comparison that was run, the option that was rejected, the business flow it was checked against.
+It is worth reading: without it nobody can tell why the spec is the way it is, and the routing
+question in CLAUDE.md (「今作っている物が間違っている」のか「次に作りたい物」なのか) becomes a guess. But
+it is not the decision. A research note can describe three options; the spec froze one. Drafting a
+test from the note would let the implementer re-decide what the human already decided — the same
+hole red-first closed, reopened from the other side.
+
+So the rules for background are:
+
+- **An expected result found only in background material is one that neither the AC nor its sources
+  state.** Drafting it is deciding it — outer gate (CLAUDE.md「自律実装ループ」). Unattended, that is
+  **HALT (a)**; where a human is present, they rewrite the AC or promote the detail into the US / spec.
+- **Background never overrides a source.** If it seems to disagree with one, the source is still what
+  is transcribed. Note the disagreement for the human (it may be an in-version defect to route); it is
+  not a stop condition by itself.
+- **Background never appears in `## Sources`.** See「When a row names background material」below.
+
+The exclusion of code and tests is the point, not an oversight. Red-first
+(`../run-tests/red-first.md`) exists so the measurement is independent of the implementation; if
+"read the sources" quietly permitted reading the code, the driver would be back to transcribing what
+the code does. **Widening what may be read must never widen it toward the implementation — nor turn
+material that informed a decision into the decision itself.**
 
 ---
 
@@ -166,6 +188,32 @@ identify it.
 
 ---
 
+## When a row names background material
+
+A row can resolve — the file exists, the section is there — and still name something that is **not a
+source**: a research note, an ADR in `docs/00_project/decisions.md`, another plan's Decision Log. That
+is neither `n/a` nor a source. The row claims the detail lives somewhere a test may be drafted from,
+and it does not; falling back to the AC line would mean drafting from an interpretation again, and
+reading the named material as a source would mean drafting from background.
+
+If the detail the AC needs is genuinely only in background material, it has not been decided yet in
+any frozen document. The fix is to put it there — promote it into the US or spec — or to write the
+row as `n/a（理由）` and let the AC line carry the whole goal.
+
+| Call site | Action |
+|-----------|--------|
+| `create-exec-plan` (Q3d) | **Do not write the row.** Promote the detail into the US / spec with the user, or write `n/a（理由）` |
+| `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against material that is not a source, and the `n/a` fallback does not apply. **HALT** with (a) before the loop starts |
+| `start-feature` Step 1b and Step 2 | Present the row to the user — at Step 1b already, as for a row that cannot be opened. Fixing it is theirs: promote the detail into the US / spec and repoint the row, or replace it with `n/a（理由）` |
+| `doc-review` §2 (advisory) | Report the row. `R2` for that AC is NOT READY, not judged on the line alone |
+| `docode-review` (advisory) | Hand the row to the reviewer as "names background material, not a source"; the reviewer reports it as a finding |
+
+`run-exec-plan` Step 1b and Step 3a are not listed: a row of this kind stops the run at Step 0b, and
+a resumed run passes through Step 0b again before it reaches them. No mechanical check flags these
+rows yet — DOC-INV-012 resolves paths, it does not classify them.
+
+---
+
 ## The two uses
 
 The table is read at two different moments, for two different reasons.
@@ -236,16 +284,16 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 
 | Call site | When | Action |
 |-----------|------|--------|
-| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec |
-| `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened → that AC is NOT READY → **HALT** (a) |
+| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec. Never name background material in a row (「When a row names background material」). A row naming an `E2E-NNN` freezes it — run complement detection first, and again for a row the readiness rewrite changes (`../create-spec/e2e-interaction.md`) |
+| `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened, or that names background material → that AC is NOT READY → **HALT** (a). A row naming an `E2E-NNN` also gets complement detection (`../create-spec/e2e-interaction.md`) |
 | `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) |
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
-| `start-feature` (Step 1b / Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened — in conversation rather than halting |
-| `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened is reported, not judged on the line alone (advisory) |
+| `start-feature` (Step 1b / Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened or names background material — in conversation rather than halting |
+| `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened or names background material is reported, not judged on the line alone (advisory) |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
 | `promote-spec` (Step 4–6) | Promoting a spec that moves or retitles a source | List the active plans' rows it breaks (Step 4), show them in the decision report (Step 5), and have the human repoint them right after the merge, before the push (Step 6) — see「Moving a source」above |
 | `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range |
-| `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory) |
+| `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory). A row that cannot be opened or names background material is handed over as such, never as `n/a` |
 | `promote-spec` (Step 7) | Generating a reconcile plan | Write the table with the **new** spec's sections and `E2E-NNN` as the sources of the re-opened ACs |
 
 The action differs by site for the same reason as in `ac-readiness.md` and `red-first.md`: whether a

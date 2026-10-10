@@ -172,6 +172,13 @@ Every AC defined in the source requirements should appear in at least one E2E sc
 belongs to no scenario, say so explicitly in the report — it usually means either the goal image
 is missing a path, or the AC is not actually needed for the finished thing.
 
+**A scenario is not frozen when this skill writes it.** Until an exec-plan that names that scenario
+in its `## Sources` is finalized, the scenario, the US and the spec may each be corrected to match
+the others — drafting a scenario is often how a gap in the requirements is found. Report such a gap (the
+`Requirements gaps` line of the report) rather than writing it into the scenario as if it were
+decided: the freeze point and the complement-detection rule are in
+[`e2e-interaction.md`](e2e-interaction.md).
+
 Each drafted file gets frontmatter:
 
 ```yaml
@@ -227,6 +234,7 @@ Drafted spec      : docs/02_spec/app_spec.md
 AC coverage       : AC-001 → {feature} | AC-002 → {feature} | ...
 E2E シナリオ      : E2E-001 {name} → AC-001, AC-003 | E2E-002 {name} → AC-002, AC-004
 AC not in any E2E : {AC list, or "none"}
+Requirements gaps : {outcomes a scenario needed that the US does not state — for the human to promote, drop or rework; or "none"}
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec

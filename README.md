@@ -218,6 +218,11 @@ Each plan therefore carries a `## Sources` table, one row per AC, and it is read
   the spec section the AC traces to.
 
 Sources are frozen spec material only — never the implementation code, which would undo red-first.
+Background material (research notes, the ADRs in `docs/00_project/`) may be read to understand *why*
+the spec says what it does, but no expected result may be drafted from it. An `E2E-NNN` scenario
+freezes when the plan that names it is finalized; a scenario that states an outcome the requirements
+do not is a gap for a human to resolve, not a detail to transcribe
+([`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)).
 The table format, the four ways a source can disagree with its AC line, and the re-anchor verdicts
 are in [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md).
 

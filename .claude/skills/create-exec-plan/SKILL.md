@@ -85,6 +85,18 @@ re-derive them here.
 Never leave a cell blank. A blank cannot be told apart from a forgotten row, and the table's value
 is exactly that a later reader can distinguish "there is nothing to read" from "nobody looked".
 
+Two more rules apply while filling the table, both because the plan is about to freeze:
+
+- **Name sources only — never background material.** A research note, an ADR in
+  `docs/00_project/decisions.md` or another plan's Decision Log may explain *why* an AC exists, but a
+  test may not be drafted from it (`ac-sources.md`「What counts as a source」). If the detail the AC
+  needs lives only there, promote it into the US / spec with the user, or write `n/a（理由）`.
+- **A row that names an `E2E-NNN` freezes that scenario for this plan.** Before finalizing, compare
+  the scenario against the comparison set that
+  [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) defines (wider than the
+  row), resolve any detected requirements gap or contradiction with the user, and record the result
+  in the Decision Log in that file's format. Freezing an unresolved gap would freeze a requirement nobody set.
+
 ---
 
 ## AC readiness
@@ -275,9 +287,14 @@ completed:
    [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
    readiness check, so it is checked with the rest
 2b. Collect each criterion's sources (Q3d) per [`ac-sources.md`](ac-sources.md), so the readiness
-   check that follows can answer `R4` against a named scenario rather than a guess
+   check that follows can answer `R4` against a named scenario rather than a guess. For every row
+   that names an `E2E-NNN`, run complement detection with the user
+   ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)) — this is the last
+   point before the scenario freezes
 3. Run the readiness check (Q3c) over every criterion using [`ac-readiness.md`](ac-readiness.md);
-   rewrite the NOT READY ones with the user and note any ⚠️ reasons for the Decision Log
+   rewrite the NOT READY ones with the user and note any ⚠️ reasons for the Decision Log. If a
+   rewrite changes a `## Sources` row so that it names a different `E2E-NNN`, run Step 2b's
+   complement detection on that scenario before going on — the plan freezes it when finalized
 4. Confirm today's date in `YYYY-MM-DD` format
 5. Create the `exec-plans/active/` directory if it doesn't exist
 6. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
@@ -298,7 +315,12 @@ completed:
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
 - [ ] The plan has a `## Sources` table with **a row for every criterion**, each naming a section
       (not just a file) or an explicit `n/a（理由）` — no blank cells, and no colon directly after
-      `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md))
+      `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md)), and no row naming background
+      material
+- [ ] Every `E2E-NNN` a row names — including one a Q3c rewrite introduced — was compared against
+      the comparison set in [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md), any
+      detected gap or contradiction was resolved with the user, and the result is recorded in the
+      Decision Log (see [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md))
 - [ ] **Every criterion was checked against [`ac-readiness.md`](ac-readiness.md)**, and the plan
       contains no NOT READY criterion (any ⚠️ has its reason recorded in the Decision Log)
 - [ ] If the plan changes a process in the scope of

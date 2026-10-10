@@ -68,7 +68,12 @@ opened** is not `n/a` and gets no fallback. Present it to the user now, with **S
 the NOT READY row's**: rewriting the AC does not repair a pointer, and "proceed anyway" is what Step 2
 then forbids. The user repoints the row, or replaces it with `n/a（理由）` if there is genuinely
 nothing to read; record the decision in the Progress Log. Judging R2 on the line alone here — or
-offering a choice Step 2 refuses — gives two verdicts for one row.
+offering a choice Step 2 refuses — gives two verdicts for one row. A row that names **background
+material** (a research note, an ADR, another plan's Decision Log) instead of a source is handled the
+same way, with the same choice: promote the detail into the US / spec and repoint the row, or replace
+it with `n/a（理由）` (`ac-sources.md`「When a row names background material」). Record that decision in
+the plan's **Decision Log**, not the Progress Log: promoting the detail is a spec change, and CLAUDE.md
+requires its routing (`main` or `spec/<label>`) to be recorded there.
 
 | Verdict | Action |
 |---------|--------|
@@ -108,6 +113,8 @@ autonomous driver reads in its Step 1b, per
 |---------------|--------------------|
 | **Refinement** of the AC line | Use it — it is the granularity to implement and test at |
 | A **separate outcome**, or a **contradiction** with the AC line | Present both readings to the user and let them decide. The human is here, so this is a conversation rather than the HALT the unattended loop takes |
+| The row names an `E2E-NNN` and complement detection ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) — take the comparison set from there) finds a gap or a contradiction | Present it to the user, who decides per that file's verdict table. Record the decision in the plan's **Decision Log** in that file's format — the decisions it offers are spec changes whose routing CLAUDE.md requires there |
+| The row names **background material**, or an expected result appears only in background material | Not a source — present it to the user (Step 1b already raised the row). Do not draft a test from it (`ac-sources.md`「What counts as a source」) |
 | The row names a file or section that **cannot be opened** | Present the row to the user — it is theirs to repoint or to replace with `n/a（理由）`. Do not proceed on the AC line as if it were `n/a`, and do not guess which file it meant (`ac-sources.md`「When a source cannot be opened」) |
 | The row says `n/a（理由）`, or the plan has no `## Sources` table | Note it and proceed on the AC text. Do not reconstruct sources from existing code |
 
@@ -188,7 +195,10 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 - [ ] Confirmed that baseline tests all pass, expected reds aside (Step 0)
 - [ ] Execution plan selected and confirmed
 - [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
-      and their decision recorded in the Progress Log (Step 1b)
+      and their decision recorded in the Progress Log (Step 1b) — except a row naming background
+      material, whose decision goes to the Decision Log (promoting its detail is a spec change)
+- [ ] Every `E2E-NNN` a `## Sources` row names went through complement detection (Step 2); any gap or
+      contradiction was put to the user and the decision recorded in the plan's Decision Log
 - [ ] Loaded `CONTEXT.md`, `invariants.md`, the selected execution plan, and the US / spec sections
       its `## Sources` names for the ACs being worked on (any conflict between a source and its AC
       line was put to the user)

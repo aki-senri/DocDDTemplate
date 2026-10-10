@@ -78,6 +78,9 @@ grep -l "AC-" exec-plans/active/*.md 2>/dev/null | head -3 | xargs cat 2>/dev/nu
 # For exec-plan review: load every section the plan's ## Sources table names.
 # R2 is judged against the AC line AND its sources (ac-readiness.md), so a reviewer
 # given only the one-liners would return a stricter verdict than the other gates.
+# A row naming background material (research note, ADR, another plan's Decision Log) is
+# not a source — pass it as such, not as its text (ac-sources.md「When a row names
+# background material」).
 sed -n '/^## Sources/,/^## /p' {target exec-plan} 2>/dev/null || echo "no ## Sources table"
 cat docs/01_requirements/user_stories/{referenced-US}.md 2>/dev/null || echo "not found"
 cat docs/02_spec/{referenced-spec}.md 2>/dev/null || echo "not found"
@@ -158,7 +161,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 {for each row: the AC-ID, the section path, and the section text.
  Or "the plan has no ## Sources table — judge R2 on the AC lines alone and say so"
  / "{AC-ID}: cannot be opened — {path § section as written}: report it; R2 for this AC is NOT READY,
- not judged on the line alone" }
+ not judged on the line alone"
+ / "{AC-ID}: names background material, not a source — {path § section as written}: report it; R2
+ for this AC is NOT READY, not judged on the line alone or on the background text" }
 
 ### Project documentation rules (CLAUDE.md excerpt)
 {relevant sections covering doc rules, diagram rules, etc.}
@@ -184,7 +189,9 @@ sources supplied above** — the other three gates do, and judging a one-liner i
 manufacture NOT READY verdicts they will never reproduce. If the sources were not available, say so
 in the finding rather than failing R2 for detail you were not shown. That is not the same as a row
 marked **cannot be opened** above: "not available" means the caller did not hand you the material;
-"cannot be opened" means the row itself is a broken pointer — that AC is NOT READY.
+"cannot be opened" means the row itself is a broken pointer — that AC is NOT READY. A row marked
+**names background material** is NOT READY for the same reason: the material may explain the AC, but
+a test may not be drafted from it (`ac-sources.md`「What counts as a source」).
 This review is **advisory**: report the verdict, change nothing.
 
 Then, beyond readiness:

@@ -218,7 +218,11 @@ User Story に、振る舞いは spec の「satisfies AC-NNN」節に残りま�
   突き合わせます。
 
 起点として認めるのは人が凍結した仕様文書だけで、実装コードは含みません（含めると red-first が
-閉じた穴が開きます）。表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
+閉じた穴が開きます）。調査ノートや `docs/00_project/` の ADR などの背景資料は「なぜその仕様か」を
+知るために読んでよいが、期待値を起草してはなりません。`E2E-NNN` はそれを名指すプランの確定時に
+凍結し、要件に無い成果を述べる E2E は転記せず人が判断する要件の穴として扱います
+（[`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)）。
+表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
 を参照してください。
 
