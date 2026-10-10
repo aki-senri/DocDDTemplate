@@ -159,7 +159,20 @@ flowchart TD
 > that does not exist (❌), and `docode-review` judges the diff against the sources rather than the
 > one-liner. It exists because the AC line is a condensation by design —
 > `spec-gate.py` parses `AC-(\d{3}):`, so the verifiable detail stays in the US and the spec, and
-> without a pointer it never reaches the implementer.
+> without a pointer it never reaches the implementer. Documents are in three classes there: sources
+> (a test may be drafted from them), **background** (research notes, `docs/00_project/**` ADRs — read
+> for *why*, never transcribed; a row naming one is NOT READY), and the code and tests (not read).
+>
+> **Shared reference file (not a skill):**
+> [`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)
+> — when an `E2E-NNN` scenario **freezes** (when the exec-plan that names it in `## Sources` is
+> finalized; before that, scenario, US and spec may correct one another in either direction), and
+> **complement detection**: a scenario stating an outcome nowhere in its comparison set (the row's
+> sources, the goal image, and the US / spec sections of its `満たす AC`) is a detected requirements
+> gap, which a human resolves (① promote it, ② drop it, ③ rework thin requirements).
+> `create-exec-plan` (Q3d) resolves it before the freeze, `start-feature` (Step 2) asks the
+> human, and `run-exec-plan` halts with (a) at Step 0b (backstop 0c / 1b / 3a). Extending it to
+> `doc-review`, `gc` or `check-doc-invariants` (DOC-INV-006) is still undecided.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first

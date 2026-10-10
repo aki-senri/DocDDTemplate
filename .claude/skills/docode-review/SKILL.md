@@ -106,7 +106,10 @@ sections into the prompt rather than referencing them. If a plan has no `## Sour
 row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all there is. A row that
 names something you **cannot open** is neither: pass it as such (template below), never as `n/a` —
 otherwise the reviewer judges that AC against its line alone, which is the fallback
-`../create-exec-plan/ac-sources.md`「When a source cannot be opened」 forbids.
+`../create-exec-plan/ac-sources.md`「When a source cannot be opened」 forbids. The same goes for a
+row that names **background material** (a research note, an ADR, another plan's Decision Log) instead
+of a source: pass it as such, not its text as if it were a source (`ac-sources.md`「When a row names
+background material」).
 
 **If the diff changes a documented process** — a skill definition, `CLAUDE.md`, a hook, or any rule
 other rules consume — also collect the **referrers**, for review point 1d's dependency-backflow lap:
@@ -177,7 +180,9 @@ Review the following changes objectively.
 {for each row of the plan's ## Sources table: the AC-ID, the section's path, and the section text.
  Or "None — the plan has no ## Sources table" / "n/a — {reason recorded in the plan}"
  / "cannot be opened — {path § section as written}: report this as a finding; do not judge this AC
- as if the row were n/a"}
+ as if the row were n/a"
+ / "names background material, not a source — {path § section as written}: report this as a
+ finding; do not judge this AC against the background text"}
 
 ## Referrers — sites that name what this diff changed (for review point 1d, dependency backflow)
 {for each file the grep in Step 1 returned: its path and whether the diff touched it. Include full

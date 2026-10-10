@@ -35,7 +35,10 @@ not against a general impression of quality.
 > sources ([`ac-sources.md`](ac-sources.md)), falling back to the line alone when the row is `n/a`
 > or the plan has no `## Sources` table at all. A row naming something that **cannot be opened** gets
 > no fallback: it is not `n/a` but a broken pointer, so R2 cannot be judged and the AC is NOT READY
-> (`ac-sources.md`「When a source cannot be opened」).
+> (`ac-sources.md`「When a source cannot be opened」). The same holds for a row that names
+> **background material** (a research note, an ADR, another plan's Decision Log) rather than a source:
+> it may be read for context, never transcribed from (`ac-sources.md`「When a row names background
+> material」).
 > Judging it against the one-liner in isolation would fail ACs whose detail is correctly recorded in
 > the US bullets, and would make this check disagree with the empirical one below. What R2 still
 > refuses is detail that exists **nowhere**: a pointer to a section that does not answer 前提 /
@@ -99,7 +102,7 @@ human is there, the fix is a conversation; where none is, the only correct move 
 | Call site | When it runs | READY | ⚠️ | NOT READY |
 |-----------|--------------|-------|----|-----------|
 | `create-exec-plan` (Q3c) | Before the plan file is finalized | Write the plan | Write the plan; record the reason in the Decision Log | Rewrite the AC with the user. **Do not finalize the plan** with a NOT READY criterion |
-| `start-feature` (Step 1b) | Before manual implementation | Proceed | Report and proceed | Present the failing checks and ask the user to rewrite or to proceed anyway; record the decision in the Progress Log |
+| `start-feature` (Step 1b) | Before manual implementation | Proceed | Report and proceed | Present the failing checks and ask the user to rewrite or to proceed anyway; record the decision in the Progress Log (for a row naming background material, in the Decision Log — `ac-sources.md`) |
 | `run-exec-plan` (Step 0b) | Before the autonomous loop starts | Start the loop | Start the loop **only if the reason is already recorded** (see below) | **Do not start the loop** — HALT with stop condition (a) and record it in the Decision Log |
 | `doc-review` (§2) | Optional independent review | ✅ | ⚠️ | ❌ in the findings table — advisory only; the reviewing agent changes no files |
 
