@@ -178,12 +178,12 @@ E2E シナリオは要件・仕様から一方向に導出されるものでは�
 | `/run-exec-plan`（Step 0b） | ループ開始前 | **HALT (a)**（ループを開始しない） |
 | `/run-exec-plan`（Step 0c / 1b / 3a） | E2E テスト起草・起点の読み取り・再アンカー | backstop として **HALT (a)**。穴をテストに転記せず、どの文書も直さない。凍結済み `[E2E]` テストが既に穴を含む場合の決定は停止条件 (c)（単一ソースの「Known gaps」） |
 
-`doc-review`・`gc`・`check-doc-invariants` の DOC-INV-006 の対称化など**地点の拡張は未決定**（Issue #42 Step 4／#37 論点2）。
+`doc-review`・`gc`・`check-doc-invariants` の DOC-INV-006 の対称化など**地点の拡張は未決定**で、
 決まるまでこれらの地点はこの規則を適用しない。`promote-spec` が AC 行を変えずに凍結済み E2E を
-書き換えるケースの検出も同じく Step 4 へ送った既知の穴で、それまでは編集者（昇格の実行者を含む）が
+書き換えるケースの検出も同じく未決定の既知の穴（単一ソースの「Known gaps」）で、それまでは編集者（昇格の実行者を含む）が
 `exec-plans/active/` と `exec-plans/completed/` の `## Sources` を ID で探す（active はそのプランの
 Decision Log、completed は reconcile へ）。凍結地点を定めても**作成順**（`create-spec` が US の
-ゴール像を前提にする）と**置き場**（spec の `## E2E シナリオ` 節）はまだ変えていない（Step 4・Step 3）。
+ゴール像を前提にする）と**置き場**（spec の `## E2E シナリオ` 節）は変えない。
 
 他の検証との違い: AC の起点は「起点が **AC 行**より多くを述べていないか」を問う。補完検出が問うのは
 **「E2E が**要件**より多くを述べていないか — 走行が目指す目標は人が決めたものか」**。

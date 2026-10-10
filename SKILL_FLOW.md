@@ -172,7 +172,7 @@ flowchart TD
 > gap, which a human resolves (① promote it, ② drop it, ③ rework thin requirements).
 > `create-exec-plan` (Q3d) resolves it before the freeze, `start-feature` (Step 2) asks the
 > human, and `run-exec-plan` halts with (a) at Step 0b (backstop 0c / 1b / 3a). Extending it to
-> `doc-review`, `gc` or `check-doc-invariants` (DOC-INV-006) is still undecided (issue #42 Step 4).
+> `doc-review`, `gc` or `check-doc-invariants` (DOC-INV-006) is still undecided.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first

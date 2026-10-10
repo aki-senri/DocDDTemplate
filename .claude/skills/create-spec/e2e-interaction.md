@@ -7,9 +7,9 @@
 
 ## Why this exists
 
-v3.0.0 introduced the chain ゴール像 → `E2E-NNN` → `[E2E]` AC and treated it as a one-way
-derivation: requirements first, the E2E scenario derived from them, the plan derived from both
-(issue #37). That premise does not hold. An E2E scenario asks "is the thing we defined actually the
+It is tempting to treat the chain ゴール像 → `E2E-NNN` → `[E2E]` AC as a one-way derivation:
+requirements first, the E2E scenario derived from them, the plan derived from both. That premise
+does not hold. An E2E scenario asks "is the thing we defined actually the
 right end state?", and answering it changes the requirements as often as it follows them — a tool
 that improves a business flow changes the flow it was specified against. When requirements are
 written loosely, the E2E scenario is where the finished picture gets worked out. **Which document
@@ -63,13 +63,12 @@ matches Decision Log and Progress Log prose; only a hit inside a `## Sources` ro
 `active/` is recorded in that plan's Decision Log; a hit in `completed/` is re-opened in a reconcile
 plan — the two branches of the table above. Nothing detects an edit to a scenario
 that leaves every AC line unchanged — the `gc` spec-drift backstop is keyed on AC-IDs — so this search
-is the editor's job until issue #42 Step 4 adds an E2E-keyed backstop.
+is the editor's job (see「Known gaps」).
 
 **What this file does not change.** It fixes which document may correct which, and when that stops.
-It does **not** change the *authoring order*: `create-spec` still drafts the scenarios from an
-approved US goal image and halts without one. Freeing the authoring order is a separate change
-(issue #42 Step 4). Nor does it change where scenarios live: today they are the spec's
-`## E2E シナリオ` section (`docs/02_spec/**` § `E2E-NNN`); moving them is issue #42 Step 3.
+It does **not** change the *authoring order*: `create-spec` drafts the scenarios from an approved US
+goal image and halts without one. Nor does it change where scenarios live: they are the spec's
+`## E2E シナリオ` section (`docs/02_spec/**` § `E2E-NNN`).
 
 ---
 
@@ -141,7 +140,7 @@ reopened, which is exactly the judgement only a human can make.
 The rule applies only where a scenario is **already read as a source** today. Extending it to other
 sites — `doc-review`, `gc`, or a symmetric DOC-INV-006 that flags scenario steps with no US / spec
 counterpart — would add new warnings, and **how far to extend the halt is an open decision**
-(issue #42 Step 4, issue #37 論点2). Until it is made, those sites do not apply this file.
+that this file does not make. Until it is made, those sites do not apply this file.
 
 | Call site | When | Action on a gap or a contradiction |
 |-----------|------|-----------------------------------|
@@ -164,7 +163,7 @@ has not been done yet, and `run-exec-plan` Step 0b does it.
 
 ---
 
-## Known gaps (deferred to issue #42 Step 4)
+## Known gaps
 
 Two states this file does not yet close. They are written here so a reader meeting one knows it is
 known, and what the existing rules already say about it.
@@ -175,7 +174,7 @@ known, and what the existing rules already say about it.
 | **The gap is already in a frozen `[E2E]` test.** Step 0c transcribes the whole scenario before the loop. If complement detection first fires at Step 1b / 3a — or at Step 0b of a **resumed** run whose Step 0c test already exists (a plan predating this file, or a scenario edited between sessions) — the gap may already be the test's expected result, and the human's ② (drop it) or a contradiction resolved against the scenario changes a frozen expectation | Step 0c's resume rule ("an earlier session placed it → re-run, do not rewrite") would steer the run toward the dropped step | That change is **stop condition (c)** — a test expectation change grounded in a spec change (INV-T01 / INV-T02). The human records the spec change and the test change together in the Decision Log; the driver does not rewrite the test itself. Step 0b running before Step 0c is what keeps this rare on a first run |
 
 Closing them — an `E2E-NNN`-keyed collision check in `promote-spec`, an E2E-keyed `gc` backstop — adds
-detections, which is the extension issue #42 Step 4 decides.
+detections — the same open decision as extending the call sites (「Where this is applied」).
 
 ---
 
