@@ -100,7 +100,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 |-------|------|
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
-| `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/`、`status: draft`。人間承認が必要） |
+| `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/` と、1シナリオ1ファイルの `docs/01-02_e2e/`。`status: draft`。人間承認が必要） |
 | `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、**`## Sources`**（その AC が凝縮した US bullet と spec 該当節）を記録する。DocDD のプロセスを変えるプランには**周回を辿る**検証 AC を置く |
 | `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度） |
 | `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in） |
@@ -157,8 +157,9 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 │       ├── update-context/
 │       └── gc/
 ├── docs/                      # ← init-project が生成（初期は存在しない）
-│   ├── 00_project/            # overview.md, decisions.md, glossary.md
+│   ├── 00_project/            # overview.md, decisions.md, glossary.md, research/（背景資料）
 │   ├── 01_requirements/       # constraints.md, user_stories/
+│   ├── 01-02_e2e/             # E2E-NNN_*.md（1シナリオ1ファイル。範囲 01-02 ＝要件・仕様の双方と双方向）
 │   ├── 02_spec/               # app_spec.md（アプリが何をするか）
 │   ├── 03_design/             # architecture.md, data_model.md, api_spec.md
 │   ├── 04_implementation/     # invariants.md, patterns.md, dependencies.md
@@ -217,10 +218,10 @@ User Story に、振る舞いは spec の「satisfies AC-NNN」節に残りま�
   転記された分しか証明しません。出来上がった振る舞いを、その AC が辿る spec 該当節ともう一度
   突き合わせます。
 
-起点として認めるのは人が凍結した仕様文書だけで、実装コードは含みません（含めると red-first が
-閉じた穴が開きます）。調査ノートや `docs/00_project/` の ADR などの背景資料は「なぜその仕様か」を
-知るために読んでよいが、期待値を起草してはなりません。`E2E-NNN` はそれを名指すプランの確定時に
-凍結し、要件に無い成果を述べる E2E は転記せず人が判断する要件の穴として扱います
+起点として認めるのは人が凍結した仕様文書だけで、実装コードや設計文書（`docs/03_design/` 以下）は
+含みません（含めると red-first が閉じた穴が開きます）。調査ノートや `docs/00_project/` の ADR などの
+背景資料は「なぜその仕様か」を知るために読んでよいが、期待値を起草してはなりません。
+`E2E-NNN` はそれを名指すプランの確定時に凍結し、要件に無い成果を述べる E2E は転記せず人が判断する要件の穴として扱います
 （[`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)）。
 表の書式・起点が AC 行と食い違う4通り・再アンカーの判定は
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)

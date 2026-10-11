@@ -107,9 +107,10 @@ row is `n/a`, note that in the prompt so the reviewer knows the AC lines are all
 names something you **cannot open** is neither: pass it as such (template below), never as `n/a` —
 otherwise the reviewer judges that AC against its line alone, which is the fallback
 `../create-exec-plan/ac-sources.md`「When a source cannot be opened」 forbids. The same goes for a
-row that names **background material** (a research note, an ADR, another plan's Decision Log) instead
-of a source: pass it as such, not its text as if it were a source (`ac-sources.md`「When a row names
-background material」).
+row that names **background material** — anything `ac-sources.md`「What counts as a source」 does
+not class as a source, such as a research note, an ADR, another plan's Decision Log or a design
+document — instead of a source: pass it as such, not its text as if it were a source
+(`ac-sources.md`「When a row names background material」).
 
 **If the diff changes a documented process** — a skill definition, `CLAUDE.md`, a hook, or any rule
 other rules consume — also collect the **referrers**, for review point 1d's dependency-backflow lap:

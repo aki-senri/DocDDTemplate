@@ -36,9 +36,10 @@ not against a general impression of quality.
 > or the plan has no `## Sources` table at all. A row naming something that **cannot be opened** gets
 > no fallback: it is not `n/a` but a broken pointer, so R2 cannot be judged and the AC is NOT READY
 > (`ac-sources.md`「When a source cannot be opened」). The same holds for a row that names
-> **background material** (a research note, an ADR, another plan's Decision Log) rather than a source:
-> it may be read for context, never transcribed from (`ac-sources.md`「When a row names background
-> material」).
+> **background material** — anything `ac-sources.md`「What counts as a source」 does not class as a
+> source, such as a research note, an ADR, another plan's Decision Log or a design document —
+> rather than a source: it may be read for context, never transcribed from (`ac-sources.md`「When a
+> row names background material」).
 > Judging it against the one-liner in isolation would fail ACs whose detail is correctly recorded in
 > the US bullets, and would make this check disagree with the empirical one below. What R2 still
 > refuses is detail that exists **nowhere**: a pointer to a section that does not answer 前提 /
@@ -50,7 +51,7 @@ not against a general impression of quality.
 > transcribed there is a readiness escape, and the response is the same as a NOT READY verdict:
 > rewrite it with a human, or halt.
 | **R3** | 成功指標が具体 | Is the pass/fail signal concrete — a threshold, a value, a named output shape? | The decision rests on a subjective word: 速い / 使いやすい / 十分に / きれいに / 適切に |
-| **R4** | E2E ステップへのアンカー | Can you name which `E2E-NNN` — and which step of it — this AC makes work? | No through-flow step depends on it. That means either the E2E scenario is missing a path, or the AC is not needed for the finished thing. (Source order: the spec's `## E2E シナリオ` → the US `## ゴール像` の主要ユーザージャーニー → this plan's own `[E2E]` AC) |
+| **R4** | E2E ステップへのアンカー | Can you name which `E2E-NNN` — and which step of it — this AC makes work? | No through-flow step depends on it. That means either the E2E scenario is missing a path, or the AC is not needed for the finished thing. (Source order: the scenario files in `docs/01-02_e2e/` — in a project not yet migrated, the spec's `## E2E シナリオ` section → the US `## ゴール像` の主要ユーザージャーニー → this plan's own `[E2E]` AC) |
 | **R5** | what であって how でない | Does it state the result to be achieved rather than the mechanism? | It prescribes the implementation (class names, library choice, function split). A how-AC goes green when the mechanism exists, whether or not the result does — and it makes any equally valid alternative look like a violation |
 
 ### Applying the checks to a `[E2E]` AC

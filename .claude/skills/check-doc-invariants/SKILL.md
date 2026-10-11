@@ -45,14 +45,64 @@ Documents must not reference documents at a more concrete abstraction layer.
 
 | Layer | Path | May reference |
 |-------|------|---------------|
-| 1 – Requirements | `docs/01_requirements/` | External resources, `constraints.md` within layer 1 |
-| 2 – Spec | `docs/02_spec/` | Layer 1 and below |
-| 2.5 – Exec-plans | `exec-plans/` | Layers 1–2 (US files and spec sections) |
-| 3 – Design | `docs/03_design/` | Layers 1–2 and below |
-| 4 – Implementation | `docs/04_implementation/` | Layers 1–3 and below |
+| 0 – Project | `docs/00_project/` | External resources and layer 0 only. Every other layer may reference it |
+| 1 – Requirements | `docs/01_requirements/` | External resources, layer 0, layer 1 (`constraints.md`), the E2E scenarios |
+| 1〜2 – E2E scenarios (a **range**) | `docs/01-02_e2e/` | Layers 0–2, and the other scenarios |
+| 2 – Spec | `docs/02_spec/` | Layers 0–2, including the E2E scenarios |
+| 2.5 – Exec-plans | `exec-plans/` | Layers 0–2 (US files, E2E scenarios, spec sections) |
+| 3 – Design | `docs/03_design/` | Layers 0–3 (including exec-plans and the E2E scenarios) |
+| 4 – Implementation | `docs/04_implementation/` | Layers 0–4 |
 | 5 – Quality | `docs/05_quality/` | All `docs/` layers |
 
-**Violation example**: A `docs/01_requirements/` file links to `docs/03_design/api_spec.md`.
+**Violation examples**: A `docs/01_requirements/` file links to `docs/03_design/api_spec.md`. A
+`docs/00_project/decisions.md` ADR links to `docs/02_spec/app_spec.md`. A scenario in
+`docs/01-02_e2e/` links to `docs/03_design/ui_flows.md`.
+
+**Layer 0 is the most abstract layer, and references nothing below it.** `docs/00_project/` holds
+the material decisions are made *from* — the overview, the glossary, the ADRs in `decisions.md`, the
+research notes under `research/`. Every layer may cite it, which is what lets a US point at the ADR
+behind a constraint. It may not link back down: material that links to the spec it informed has
+started to depend on its own conclusion. When an ADR needs to say where a decision landed, it names
+the document in prose — a mention is not a link and is not checked. (Being readable from every layer
+does not make it a source for a test: `../create-exec-plan/ac-sources.md`「What counts as a source」
+classes it as background.)
+
+**No grace period applies to layer 0.** A project whose `docs/00_project/` already links down — an
+`overview.md` ported from a README that links into `docs/`, an ADR linking the design it chose —
+gets DOC-INV-001 ❌ the first time this check runs. The fix is mechanical and changes no meaning:
+turn each such link into a prose mention of the document (its path or title in backticks, not a
+Markdown link). Unlike the E2E move below, nothing else points at these links, so there is no
+reason to stage it.
+
+**A range layer spans more than one layer.** A directory whose prefix is a range — `docs/LO-HI_*/`
+— holds documents that stand in a **two-way** relationship with every layer from LO to HI, which no
+single number can express: given a number, a document sits on the line, above one neighbour and
+below the other. The rule for a range is mechanical:
+
+| The range is… | It counts as | So |
+|---------------|--------------|----|
+| the **target** of a link | its lowest layer, LO | every layer numbered LO or higher may link to it |
+| the **source** of a link | its highest layer, HI | it may link to any layer numbered HI or lower |
+
+Between two ranges, compare the source's HI with the target's LO. Today one range exists,
+`docs/01-02_e2e/` — the E2E scenarios. Applied to it:
+
+| Link | Counts as | Verdict |
+|------|-----------|---------|
+| US (1) → `01-02_e2e` | 1 → 1 | ✅ |
+| Spec (2) → `01-02_e2e`, and exec-plan (2.5) → `01-02_e2e` | 2 → 1, 2.5 → 1 | ✅ |
+| `01-02_e2e` → US (1), → spec (2) | 2 → 1, 2 → 2 | ✅ — the two-way part |
+| `01-02_e2e` → `docs/03_design/` (3) | 2 → 3 | ❌ |
+| `docs/00_project/` (0) → `01-02_e2e` | 0 → 1 | ❌ |
+
+Why the E2E scenarios get a range rather than a number: a scenario is written from the US goal image
+and the spec is written with it, yet working the scenario out is also how gaps in the requirements
+and the spec are found, so each of the three may correct the others until a plan freezes the
+scenario. Numbering it `02` makes it the spec's peer and the requirements' downstream; renumbering
+everything to put it between them makes it the spec's upstream. Either reading is wrong. The range
+names the band it spans. **What this invariant governs is only which links may exist.** Which
+document may correct which, and when that stops, is the freeze rule in
+`../create-spec/e2e-interaction.md`, not this table.
 
 **Why exec-plans sit at 2.5 and not 1.5.** A plan is written *from* an approved spec — that is the
 `create-requirements → create-spec → create-exec-plan` order — so the spec is upstream of the plan,
@@ -118,10 +168,35 @@ For each `docs/01_requirements/user_stories/US-*.md`:
 - A `## ゴール像` section must exist, containing the subsections `完成時にできること`,
   `主要ユーザージャーニー`, and `非ゴール` (see `create-requirements`)
 
-For each `docs/02_spec/**/*.md`:
-- A `## E2E シナリオ` section must exist with at least one `### E2E-NNN:` heading
-- Every AC referenced by the spec should appear in at least one scenario's `満たす AC`
-  (warn if an AC belongs to no scenario)
+For the E2E scenarios — one file each, `docs/01-02_e2e/E2E-NNN_{slug}.md` (see `create-spec`):
+- Each file must carry a `# E2E-NNN:` heading whose ID matches its file name, and the lines
+  `前提:`, `完了条件:` and `満たす AC:` — the material an `[E2E]` AC is transcribed from
+- When `docs/02_spec/**/*.md` exists, at least one scenario must exist, in either layout below
+- Every AC referenced by the spec should appear in at least one scenario's `満たす AC`, in either
+  layout (warn if an AC belongs to no scenario)
+- An `E2E-NNN` defined in more than one place — two files, or a file and an old-layout section —
+  is a warning: the ID is meant to be unique, and the freeze search
+  (`../create-spec/e2e-interaction.md`) can no longer tell which definition a plan froze
+
+**The old layout is still read, during a grace period.** Scenarios used to be a `## E2E シナリオ`
+section inside a spec file, with `### E2E-NNN:` headings. A project generated before the move keeps
+working: its old-layout scenarios count for both checks above, and the section is reported as a
+⚠️ **migration candidate**, not a violation. Moving it is a human's step, because a scenario that an
+active plan names in `## Sources` breaks that row the moment the scenario moves:
+
+1. Cut each `### E2E-NNN:` block into its own file `docs/01-02_e2e/E2E-NNN_{slug}.md`, with
+   `status:` copied from the spec file and the heading raised to `# E2E-NNN:`. Keep the ID.
+2. Remove the section (and its summary table) from the spec file.
+3. Find the plans that name each moved scenario
+   (`grep -rn "E2E-NNN" exec-plans/active/ 2>/dev/null || true` — only hits in a `## Sources` row
+   count) and repoint those rows to the new file **in the same commit**, by hand
+   (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」). A row left behind is
+   only a DOC-INV-012 **⚠️**, not a ❌: the spec file still exists and only its `§ E2E-NNN` section
+   is gone, so the PR is not blocked — but the plan's next run halts with (a) at Step 0b, because
+   the row can no longer be opened. Treat that ⚠️ as one to fix before merging the move.
+
+Moving a scenario changes where it lives, not what it says, so it is an in-version fix
+(CLAUDE.md「変更のルーティング」) and does not move the target of a plan that froze it.
 
 For each `exec-plans/active/*.md`:
 - At least one AC should be an E2E criterion (`- [ ] AC-NNN: [E2E] ...`)
@@ -142,8 +217,11 @@ For each `exec-plans/active/*.md`:
 | Item | Level |
 |------|-------|
 | US missing `## ゴール像` (or one of its three subsections) | ❌ Violation |
-| Spec missing `## E2E シナリオ` (or it has no `E2E-NNN`) | ❌ Violation |
+| A spec exists but no scenario exists in either layout | ❌ Violation |
+| A scenario file without a `# E2E-NNN:` heading matching its file name, or without `前提:` / `完了条件:` / `満たす AC:` | ❌ Violation |
 | Spec AC belonging to no `E2E-NNN` scenario | ⚠️ Warning |
+| A spec file with an old-layout `## E2E シナリオ` section (migration candidate) | ⚠️ Warning |
+| An `E2E-NNN` defined in more than one place | ⚠️ Warning |
 | Active plan with no `[E2E]` AC | ⚠️ Warning |
 | Active plan with `E2E: n/a (documentation-only)` recorded | ℹ️ Informational |
 | Active plan recording `E2E: n/a (documentation-only)` that nonetheless has an `[E2E]` AC | ⚠️ Warning |
@@ -250,7 +328,9 @@ Assign layer numbers:
 
 | Prefix | Layer |
 |--------|-------|
+| `docs/00_project/` | 0 |
 | `docs/01_requirements/` | 1 |
+| `docs/01-02_e2e/` | 1〜2 (a range — see below) |
 | `docs/02_spec/` | 2 |
 | `exec-plans/` | 2.5 |
 | `docs/03_design/` | 3 |
@@ -263,6 +343,10 @@ For each link `[text](target)` in a document at layer N:
 - Resolve `target` relative to the repository root
 - Determine target layer M
 - If M > N → violation (higher-layer document referencing a lower-layer document)
+
+For a **range** layer (`docs/LO-HI_*/`), use its lowest layer when it is the target and its highest
+when it is the source — `docs/01-02_e2e/` is 1 as a target and 2 as a source. That single
+substitution is the whole of the range rule; see the examples under DOC-INV-001 above.
 
 Skip external URLs (starting with `http://` or `https://`).
 
@@ -301,8 +385,14 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
 
 1. For each `docs/01_requirements/user_stories/US-*.md`: check for a `## ゴール像` heading and its
    three required subsections
-2. For each `docs/02_spec/**/*.md`: check for a `## E2E シナリオ` heading and at least one
-   `### E2E-NNN:`; collect the `満たす AC` lists and compare against the ACs the spec references
+2. Collect the scenarios from both layouts:
+   - each `docs/01-02_e2e/E2E-*.md`: check its `# E2E-NNN:` heading against its file name and its
+     `前提:` / `完了条件:` / `満たす AC:` lines
+   - each `docs/02_spec/**/*.md` with a `## E2E シナリオ` section: read its `### E2E-NNN:` blocks,
+     and report the section as a migration candidate (⚠️)
+
+   If `docs/02_spec/**/*.md` exists and neither layout yielded a scenario → ❌. Report any ID found
+   twice (⚠️). Then compare the union of the `満たす AC` lists against the ACs the spec references
 3. For each `exec-plans/active/*.md`: check for at least one `- [ ] AC-NNN: [E2E]` /
    `- [x] AC-NNN: [E2E]` line, and for `E2E: n/a` in the `## Decision Log`
 
@@ -373,6 +463,9 @@ Exec-plans checked: {count}
 
 ⚠️ DOC-INV-006 warnings: {count}
   - docs/02_spec/app_spec.md: AC-004 belongs to no E2E-NNN scenario
+  - docs/02_spec/app_spec.md: ## E2E シナリオ (E2E-001, E2E-002) is in the old layout — migration candidate
+    Fix: Cut each scenario into docs/01-02_e2e/E2E-NNN_{slug}.md, remove the section, and repoint
+         every active plan's ## Sources row that names it, in the same commit (see DOC-INV-006)
   - exec-plans/active/2026-01-feature.md: no [E2E] AC (predates the requirement?)
     Fix: Add an [E2E] AC (see create-exec-plan), or record E2E: n/a if documentation-only
   - exec-plans/active/2026-03-docs.md: records E2E: n/a but defines AC-004 [E2E]

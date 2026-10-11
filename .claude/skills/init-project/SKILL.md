@@ -26,6 +26,10 @@ disable-model-invocation: true
 | `docs/00_project/decisions.md` | Technology decision log (ADR format) | Generated from Q2 answers |
 | `docs/07_ai_context/CONTEXT.md` | Navigation map (including development rules) | Generated from all answers |
 
+`overview.md` and `decisions.md` are layer 0 — the most upstream layer — and link to nothing below
+it: where they need to point at a later document (an ADR naming the architecture it chose), they
+mention it in prose, not as a Markdown link (DOC-INV-001 in `../check-doc-invariants/SKILL.md`).
+
 ### Phase 1 (executed based on the platform selected in Q4)
 
 | Platform | Reference | Number of documents generated |
@@ -172,6 +176,7 @@ A complete list of documents managed by the project. `Required` items are always
 | `docs/00_project/overview.md` | Required | Always |
 | `docs/00_project/glossary.md` | Optional | When there is a risk of terminology misunderstanding |
 | `docs/00_project/decisions.md` | Required | Always (records technology decision ADRs) |
+| `docs/00_project/research/{topic}.md` | Optional | When material a decision is made from — an investigation, a comparison, a rejected option, an external source — is worth keeping. Background only: readable from every layer, never a test's source (`../create-exec-plan/ac-sources.md`) |
 | `docs/01_requirements/functional/common.md` | Optional | When multiple platforms exist |
 | `docs/01_requirements/functional/{platform}.md` | Required | Always (one file per platform) |
 | `docs/01_requirements/non_functional/common.md` | Optional | When multiple platforms exist |
@@ -179,6 +184,7 @@ A complete list of documents managed by the project. `Required` items are always
 | `docs/01_requirements/user_stories/common.md` | Optional | When multiple platforms exist |
 | `docs/01_requirements/user_stories/{platform}.md` | Required | Always |
 | `docs/01_requirements/constraints.md` | Required | Always |
+| `docs/01-02_e2e/E2E-NNN_{slug}.md` | Required | Once a spec exists — drafted by `/create-spec`, one file per end-to-end scenario; not created at initialization. The `01-02` prefix is a range: a scenario relates both ways to the requirements and the spec (DOC-INV-001 in `../check-doc-invariants/SKILL.md`) |
 | `docs/02_spec/app_spec.md` | Required | Always (application spec — what the app does; drafted/expanded by `/create-spec`) |
 | `docs/03_design/architecture.md` | Required | Always |
 | `docs/03_design/data_model.md` | Optional | When the project has a DB or persistent storage |
@@ -215,6 +221,18 @@ Each document should have the following frontmatter.
 status: draft    # draft | active | deprecated
 tracks:          # (optional) glob pattern of corresponding code
   - src/**/models/**
+---
+```
+
+A research note under `docs/00_project/research/` should additionally record when and from where
+the material was gathered, so a later reader can judge whether it still holds:
+
+```yaml
+---
+status: active
+collected: YYYY-MM-DD    # when the material was gathered
+references:              # where it came from (URL, document, interview)
+  - https://example.com/...
 ---
 ```
 

@@ -147,9 +147,12 @@ Migrate and reorganize existing docs into the following directories.
 docs/
 ├── 00_project/
 │   ├── overview.md       ← Project overview (can be ported from README.md)
-│   └── decisions.md      ← Tech-selection rationale (convert to ADR format)
+│   ├── decisions.md      ← Tech-selection rationale (convert to ADR format)
+│   └── research/         ← (optional) Research notes — background, never a test's source
 ├── 01_requirements/
 │   └── user_stories/     ← Requirements / user stories
+├── 01-02_e2e/
+│   └── E2E-001_*.md      ← End-to-end scenarios, one per file (drafted by /create-spec)
 ├── 02_spec/
 │   └── app_spec.md       ← Application spec (what the app does)
 ├── 03_design/
@@ -166,6 +169,10 @@ docs/
 ```
 
 > **Minimum required files**: `docs/04_implementation/invariants.md` and `docs/07_ai_context/CONTEXT.md`. Without these two, `/start-feature` will not work.
+>
+> **When porting README.md into `overview.md`**, turn its links into the other `docs/` layers into
+> plain mentions: `docs/00_project/` is the most upstream layer and links to nothing below it
+> (DOC-INV-001 in `.claude/skills/check-doc-invariants/SKILL.md`).
 
 #### Step 3: Create CONTEXT.md manually
 
@@ -354,7 +361,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 ```
 0. /create-requirements → Define User Stories / goal image / AC conditions (optional, recommended)
                           Goal image = what the user can do when done / primary journey / non-goals (required)
-0.5 /create-spec        → Draft the application spec (docs/02_spec/) and E2E scenarios from approved requirements
+0.5 /create-spec        → Draft the application spec (docs/02_spec/) and E2E scenarios (docs/01-02_e2e/) from approved requirements
                           (optional; skip for small changes. Needs human approval before create-exec-plan)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
                           At least one [E2E] AC in addition to the functional ones
@@ -393,7 +400,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 | Skill | Purpose | Output |
 |-------|---------|--------|
 | `/create-requirements` | Define **what to build** and **what it looks like when done** (User Story + goal image + AC conditions) | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
-| `/create-spec` | Draft **what the app does** (purpose, features, behavior, scope) and **what works end to end** (E2E scenarios) from approved requirements | `docs/02_spec/app_spec.md` (`status: draft`) |
+| `/create-spec` | Draft **what the app does** (purpose, features, behavior, scope) and **what works end to end** (E2E scenarios) from approved requirements | `docs/02_spec/app_spec.md`, `docs/01-02_e2e/E2E-NNN_*.md` (`status: draft`) |
 | `/create-exec-plan` | Plan **how to build** (task breakdown + progress tracking) | `exec-plans/active/YYYY-MM-{name}.md` |
 
 `/create-requirements` is optional, but running it first when developing as a team or when "what to build" is vague makes the AC definitions in `/create-exec-plan` clearer. When `/create-requirements` finishes, it guides you with "Next step: run `/create-exec-plan`. Recommended ACs: AC-001, AC-002, ...".
@@ -442,8 +449,9 @@ finished behavior is compared once more against that spec section. Green tests o
 transcribed into them.
 
 Two rules are worth remembering: an AC with no source is written `n/a（理由）`, never left blank;
-and the sources are frozen spec documents only — reading the implementation instead would undo
-red-first. Background material (research notes, ADRs) may be read for *why*, but is never a source.
+and the sources are frozen spec documents only — reading the implementation (or the design
+documents under `docs/03_design/` and below) instead would undo red-first. Background material
+(research notes, ADRs) may be read for *why*, but is never a source.
 The details, including what to do when a source disagrees with its AC line, are in
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md).
 

@@ -57,6 +57,7 @@ Then determine the document type from its path:
 | Path pattern | Document type |
 |-------------|---------------|
 | `docs/01_requirements/user_stories/US-*.md` | User Story |
+| `docs/01-02_e2e/E2E-*.md` | E2E scenario |
 | `docs/02_spec/**/*.md` | Application spec |
 | `docs/03_design/**/*.md` | Design document |
 | `docs/04_implementation/**/*.md` | Implementation document |
@@ -78,12 +79,18 @@ grep -l "AC-" exec-plans/active/*.md 2>/dev/null | head -3 | xargs cat 2>/dev/nu
 # For exec-plan review: load every section the plan's ## Sources table names.
 # R2 is judged against the AC line AND its sources (ac-readiness.md), so a reviewer
 # given only the one-liners would return a stricter verdict than the other gates.
-# A row naming background material (research note, ADR, another plan's Decision Log) is
-# not a source — pass it as such, not as its text (ac-sources.md「When a row names
-# background material」).
+# A row naming background material — anything ac-sources.md「What counts as a source」
+# does not class as a source (research note, ADR, another plan's Decision Log, design
+# document) — is not a source: pass it as such, not as its text (ac-sources.md「When a
+# row names background material」).
 sed -n '/^## Sources/,/^## /p' {target exec-plan} 2>/dev/null || echo "no ## Sources table"
 cat docs/01_requirements/user_stories/{referenced-US}.md 2>/dev/null || echo "not found"
 cat docs/02_spec/{referenced-spec}.md 2>/dev/null || echo "not found"
+cat docs/01-02_e2e/{referenced-scenario}.md 2>/dev/null || echo "not found"
+
+# For a spec or scenario review: the scenarios are separate files (one per E2E-NNN), so the
+# AC coverage check below needs all of them, not only the spec file.
+cat docs/01-02_e2e/E2E-*.md 2>/dev/null || echo "no scenario files (old layout, or no spec yet)"
 
 # Project documentation rules
 cat CLAUDE.md
@@ -128,7 +135,7 @@ You are a document reviewer with no prior context about this document's authorin
 Review the following document from a DocDD (Document-Driven Development) perspective.
 
 ## Document type
-{User Story / Application spec / Design document / Exec-plan / Implementation document / General document}
+{User Story / E2E scenario / Application spec / Design document / Exec-plan / Implementation document / General document}
 
 ## Document to review
 {full content of target document}
@@ -174,7 +181,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 - Does the frontmatter include the required fields (`status:`, `tracks:`, `ac_ids:` as applicable)?
 - Is `status:` appropriate for the document's actual state?
 - For US files: is `ac_ids:` present and consistent with the ACs defined in the document body?
-- Are there any forward references (requirements doc linking to design/implementation)?
+- Are there any forward references — links against DOC-INV-001's layer table in
+  `check-doc-invariants` (a requirements doc linking to design/implementation; a `docs/00_project/`
+  doc linking to any lower layer; an E2E scenario linking beyond the spec)?
 
 ### 2. Acceptance criteria quality (for User Stories and exec-plans)
 
@@ -210,11 +219,13 @@ something nobody wanted.
 - 主要ユーザージャーニー: is it a through-flow (Mermaid), or a list of disconnected capabilities?
 - 非ゴール: is it stated, and does it actually exclude something a reader might otherwise assume?
 
-**For application specs** — the `## E2E シナリオ` section:
-- Is it present, with at least one `E2E-NNN` carrying 前提 / 完了条件 / 満たす AC?
+**For application specs and E2E scenarios** — the scenarios in `docs/01-02_e2e/` (one file per
+`E2E-NNN`; a project not yet migrated has them as the spec's `## E2E シナリオ` section — report that
+as a migration candidate, see DOC-INV-006 in `check-doc-invariants`):
+- Is there at least one scenario, each carrying a `# E2E-NNN:` heading, 前提 / 完了条件 / 満たす AC?
 - Is each 完了条件 an observable end state, not a restatement of the steps?
-- Does the `E2E-NNN → AC-xxx` table cover every AC? Flag any AC belonging to no scenario — it means
-  either the goal image is missing a path or the AC is not needed for the finished thing.
+- Do the scenarios' `満たす AC` lines together cover every AC? Flag any AC belonging to no scenario
+  — it means either the goal image is missing a path or the AC is not needed for the finished thing.
 
 **For exec-plans** — the `[E2E]` acceptance criterion:
 - Does the plan have one, and is it traced to an `E2E-NNN` (or to the US goal image)?
@@ -294,7 +305,7 @@ Type: {document type}
 
 ### Goal image / E2E coverage
 {For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
-{For spec: E2E シナリオ present? Any AC belonging to no E2E-NNN?}
+{For spec / scenario: scenarios present (and in docs/01-02_e2e/, or ⚠️ old layout)? Any AC belonging to no E2E-NNN?}
 {For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
 
 ### Process walkthrough (process documents only — omit otherwise)

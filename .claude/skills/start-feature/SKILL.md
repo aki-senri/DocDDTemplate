@@ -69,9 +69,11 @@ the NOT READY row's**: rewriting the AC does not repair a pointer, and "proceed 
 then forbids. The user repoints the row, or replaces it with `n/a（理由）` if there is genuinely
 nothing to read; record the decision in the Progress Log. Judging R2 on the line alone here — or
 offering a choice Step 2 refuses — gives two verdicts for one row. A row that names **background
-material** (a research note, an ADR, another plan's Decision Log) instead of a source is handled the
-same way, with the same choice: promote the detail into the US / spec and repoint the row, or replace
-it with `n/a（理由）` (`ac-sources.md`「When a row names background material」). Record that decision in
+material** — anything `ac-sources.md`「What counts as a source」 does not class as a source, such as
+a research note, an ADR, another plan's Decision Log or a design document — instead of a source is
+handled the same way, with the same choice: promote the detail into the US / spec and repoint the
+row once the promotion is on `main`, or replace it with `n/a（理由）` (`ac-sources.md`「When a row
+names background material」). Record that decision in
 the plan's **Decision Log**, not the Progress Log: promoting the detail is a spec change, and CLAUDE.md
 requires its routing (`main` or `spec/<label>`) to be recorded there.
 
@@ -125,6 +127,11 @@ Also load the following depending on the platform:
 | Requirements definition phase | `docs/01_requirements/user_stories/{platform}.md` |
 | Design needed | `docs/03_design/architecture.md` |
 | Web application | `docs/03_design/api_spec.md` |
+
+These are for *implementing* — how the code is arranged. They are not read to decide what a test
+expects: design documents are in the "not read" class of
+[`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md)「What counts as a source」,
+so a test drafted red-first comes from the AC line and its sources, never from them.
 
 ### Step 3: Determine the branch name
 

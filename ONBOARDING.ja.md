@@ -147,9 +147,12 @@ DocDD のディレクトリ構造に既存ドキュメントをマッピング�
 docs/
 ├── 00_project/
 │   ├── overview.md       ← プロジェクト概要（README.md から移植可）
-│   └── decisions.md      ← 技術選定理由（ADR 形式に変換）
+│   ├── decisions.md      ← 技術選定理由（ADR 形式に変換）
+│   └── research/         ← （任意）調査ノート — 背景資料。テストの起点にはしない
 ├── 01_requirements/
 │   └── user_stories/     ← 要件定義・ユーザーストーリー
+├── 01-02_e2e/
+│   └── E2E-001_*.md      ← E2E シナリオ（1シナリオ1ファイル。/create-spec が起草）
 ├── 02_spec/
 │   └── app_spec.md       ← アプリ仕様（アプリが何をするか）
 ├── 03_design/
@@ -166,6 +169,10 @@ docs/
 ```
 
 > **最低限必要なファイル**: `docs/04_implementation/invariants.md` と `docs/07_ai_context/CONTEXT.md` の 2 つ。この 2 ファイルがないと `/start-feature` が動作しません。
+>
+> **README.md を `overview.md` に移すとき**は、`docs/` の他の層へのリンクを本文での言及に置き換えて
+> ください。`docs/00_project/` は最上流の層で、下の層へリンクしません
+> （`.claude/skills/check-doc-invariants/SKILL.md` の DOC-INV-001）。
 
 #### Step 3: CONTEXT.md を手動作成する
 
@@ -354,7 +361,7 @@ flowchart TD
 ```
 0. /create-requirements → User Story・ゴール像・AC 条件を定義（任意・推奨）
                           ゴール像＝完成時にできること／主要ユーザージャーニー／非ゴール（必須）
-0.5 /create-spec        → 承認済み要件からアプリ仕様（docs/02_spec/）と E2E シナリオを起草
+0.5 /create-spec        → 承認済み要件からアプリ仕様（docs/02_spec/）と E2E シナリオ（docs/01-02_e2e/）を起草
                           （任意・小さな変更ならスキップ。create-exec-plan の前に人間承認が必要）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
                           機能 AC に加えて最低1本の [E2E] AC を置く
@@ -391,7 +398,7 @@ flowchart TD
 | スキル | 目的 | 生成物 |
 |-------|------|-------|
 | `/create-requirements` | **何を作るか**と**完成したらどうなるか**を定義する（User Story + ゴール像 + AC 条件） | `docs/01_requirements/user_stories/US-XXX_{name}.md` |
-| `/create-spec` | **アプリが何をするか**（目的・機能・振る舞い・スコープ）と**通しで何ができるか**（E2E シナリオ）を承認済み要件から起草する | `docs/02_spec/app_spec.md`（`status: draft`） |
+| `/create-spec` | **アプリが何をするか**（目的・機能・振る舞い・スコープ）と**通しで何ができるか**（E2E シナリオ）を承認済み要件から起草する | `docs/02_spec/app_spec.md`、`docs/01-02_e2e/E2E-NNN_*.md`（`status: draft`） |
 | `/create-exec-plan` | **どう作るか**を計画する（タスク分解 + 進捗管理） | `exec-plans/active/YYYY-MM-{name}.md` |
 
 `/create-requirements` は任意ですが、チームで開発する場合や「何を作るか」が曖昧なときに先に実行しておくと、`/create-exec-plan` の AC 定義がより明確になります。`/create-requirements` が完了すると、「次のステップ: `/create-exec-plan` を実行してください。推奨 AC: AC-001, AC-002, ...」と案内されます。
@@ -438,9 +445,9 @@ AC ごとにその詳細がどこにあるかを書いた `## Sources` 表を持
 突き合わせる）です。テストが緑でも、それは転記された分しか証明していません。
 
 覚えておくべき規則は2つ。起点の無い AC は空欄ではなく `n/a（理由）` と書くこと。起点は凍結された
-仕様文書だけで、代わりに実装コードを読むと red-first が閉じた穴が開くこと（調査ノートや ADR などの
-背景資料は「なぜ」を知るために読んでよいが、起点にはしない）。詳細（起点が AC 行と
-食い違うときの扱いを含む）は
+仕様文書だけで、代わりに実装コードや設計文書（`docs/03_design/` 以下）を読むと red-first が閉じた
+穴が開くこと（調査ノートや ADR などの背景資料は「なぜ」を知るために読んでよいが、起点にはしない）。
+詳細（起点が AC 行と食い違うときの扱いを含む）は
 [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
 を参照してください。
 
