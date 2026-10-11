@@ -78,6 +78,12 @@ Run the `check-doc-invariants` skill against all documents in the repository.
   **report it, do not move them**. Moving a scenario breaks every active plan's `## Sources` row
   that names it, and repointing those rows is a human's call — the same reason DOC-INV-012 is not
   repaired here. The move itself is described under DOC-INV-006 in `check-doc-invariants`
+- For the DOC-INV-006 **symmetric check** (要決定 / 要確認 / ℹ️) and the upward-trace lines
+  (`由来ジャーニー` / `満たす業務要求`): **report them, do not fix them** — not even an ❌ that names
+  a missing US. Dropping a scenario step, promoting it into the US, choosing which side of a
+  contradiction is right, or deciding which journey a scenario realizes is each a decision about
+  what to build; "fix any violations" above does not reach it
+  (`create-spec/e2e-interaction.md`「Where this is applied」)
 
 ### ④ Document lifecycle cleanup
 
@@ -171,6 +177,7 @@ Run the `update-context` skill.
 - DOC-INV-004 violations (AC traceability): {count}
 - DOC-INV-005 warnings (diagram rules): {count}
 - DOC-INV-006 violations (goal image / E2E traceability): {count}
+  - Symmetric check — 要決定: {count} / 要確認: {count} / ℹ️ deferred: {count} (reported only, not fixed)
 - Script-backed invariants (DOC-INV-007 onward): {the check-doc-invariants report, verbatim}
 
 ### ④ Lifecycle cleanup

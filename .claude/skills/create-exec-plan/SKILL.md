@@ -96,7 +96,10 @@ Two more rules apply while filling the table, both because the plan is about to 
   the scenario against the comparison set that
   [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) defines (wider than the
   row), resolve any detected requirements gap or contradiction with the user, and record the result
-  in the Decision Log in that file's format. Freezing an unresolved gap would freeze a requirement nobody set.
+  in the Decision Log in that file's format. A comparison set that cannot be assembled (a US under
+  the scenario's `由来ジャーニー` with no goal image, say) is not a pass: the plan is not finalized
+  until it is whole (that file's「Where this is applied」). Freezing an unresolved gap would freeze
+  a requirement nobody set.
 
 ---
 

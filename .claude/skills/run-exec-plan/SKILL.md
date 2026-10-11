@@ -61,7 +61,8 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ## What this skill does
 
-1. Select the active exec-plan, confirm baseline is green, gate on **AC readiness**
+1. Select the active exec-plan — a plan **deferred** until a promotion is not started at all (Step 0)
+   — confirm baseline is green, gate on **AC readiness**
    (every unchecked AC is testable as written — otherwise halt before the loop starts), and put
    each `[E2E]` AC's test in place **as a failing test** before any AC is implemented
 2. Loop over each unchecked AC:
@@ -88,6 +89,13 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 - Confirm exactly one target plan. If several active plans exist, ask the user which one
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
+- **If the plan is deferred, do not start.** A plan whose Decision Log has a bullet beginning
+  `- deferred: spec/` with no later bullet beginning `- deferred 解除:` is waiting on a promotion
+  ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a plan, and
+  lifting it」). Report it with that line and end — before the baseline, the readiness gate and the
+  comparison, and **without appending a HALT entry**. The finding it waits on is still on `main`, so
+  running Step 0b would only find it again and record the same HALT on every resume; the deferral is
+  already the record. Lifting it is the human's.
 - Run `run-tests` as a baseline. If baseline is already red, **halt** — do not start a loop
   on a red baseline (you could not attribute failures to your own changes).
   **Expected reds do not count as a red baseline.** When resuming a partly-done plan, the tests
@@ -132,6 +140,7 @@ done here.
 | All READY, and complement detection found nothing | Start the loop |
 | ⚠️ (R3 / R4 unmet) **and the reason is already in the plan's Decision Log**, and complement detection found nothing | Start the loop |
 | Complement detection found a gap or a contradiction (any AC) | **Do not start the loop.** Halt with stop condition (a), in `e2e-interaction.md`'s HALT format |
+| The comparison set could not be assembled — a US under `由来ジャーニー` has no goal image, a `満たす AC` entry no US defines (`e2e-interaction.md`「Where this is applied」: no fallback at a gate) | **Do not start the loop.** Halt with (a), naming the missing member |
 | ⚠️ with no recorded reason | Treat as NOT READY — the driver may not author the reason itself |
 | Any **NOT READY** | **Do not start the loop.** Halt with stop condition (a) |
 
@@ -172,7 +181,7 @@ observation in the Decision Log; that entry freezes the expectation.
 | An earlier session already placed it (a recorded `red-first` entry, AC still `- [ ]`) | Re-run it, confirm the same red, and start the loop — do not rewrite the test |
 | The through-flow cannot be transcribed without inventing a step or an expected result the AC and spec do not state | **HALT** with stop condition (a) — this is a readiness escape, not a test-writing problem |
 | The source scenario or journey **contradicts** the `[E2E]` AC line (different 完了条件) | **HALT** with (a) — which one is the target is a spec judgement (`ac-sources.md`) |
-| Complement detection (`../create-spec/e2e-interaction.md` — a gap or a contradiction against its comparison set) fires here, missed by Step 0b | **HALT** with (a) — complement detection (`../create-spec/e2e-interaction.md`). Do not transcribe the gap into the test |
+| Complement detection (`../create-spec/e2e-interaction.md` — a gap or a contradiction against its comparison set, or a set that cannot be assembled) fires here, missed by Step 0b | **HALT** with (a) — complement detection (`../create-spec/e2e-interaction.md`). Do not transcribe the gap into the test |
 | Red is **invalid** (as defined in `red-first.md`) | Fix the test or harness — minimal signatures only, no behavior — within `MAX_REPAIR_ATTEMPTS`; if still not valid red, **HALT** with (b) |
 | The `[E2E]` AC is a **preservation** criterion (refactoring / reconcile: the existing flow must keep working) and an existing test already covers it, green | Red-first is n/a — record the exemption line from `red-first.md` and start the loop |
 | The plan has **no** `[E2E]` AC (documentation-only, or it predates the requirement) | Nothing to do here — continue |
@@ -212,7 +221,7 @@ for.
 | **Refinement** — the same outcome with concrete preconditions, boundaries or expected values | Use it. Step 2a transcribes at *that* granularity, not the one-liner's |
 | **A separate outcome** the AC line does not cover | **HALT** with (a). Either the AC bundles several results (`R1`) or a criterion was never written; both are a human's call |
 | **A contradiction** — the same outcome, a different expected value | **HALT** with (a). Do not pick a side, and do not edit the AC or the spec to agree |
-| The row names an `E2E-NNN` and complement detection finds a gap or a contradiction against its comparison set (Step 0b missed it) | **HALT** with (a), per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) |
+| The row names an `E2E-NNN` and complement detection finds a gap or a contradiction against its comparison set, or the set cannot be assembled (Step 0b missed it) | **HALT** with (a), per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) |
 | An expected result appears only in **background material** (a research note, an ADR) | Not a source. Drafting it would be deciding it — **HALT** with (a) (`ac-sources.md`「What counts as a source」) |
 | The row names a file or section that **cannot be opened** | **HALT** with (a). It is not the `n/a` rows below — do not draft from the AC line alone, and do not guess which file the row meant (`ac-sources.md`「When a source cannot be opened」) |
 | **One column** is `n/a（理由）` (typically spec, when `/create-spec` was skipped) | Read the other one. A partial `n/a` is not an exemption — the goal simply lives one layer up |
@@ -344,7 +353,7 @@ actions are:
 | **spec が述べる振る舞いに対応するテストが無い** | Measurement gap. Add a **new** test for it red-first (Step 2a's procedure), then implement to green. Counts against `MAX_REPAIR_ATTEMPTS`. Never edit or weaken a frozen test to cover the gap — that is (c) |
 | **spec が AC 行と矛盾** | **Halt** with (a). Change neither side |
 | **The missing behavior is a separate outcome, not part of this AC** | **Halt** with (a) — same row as Step 1b's "separate outcome" |
-| **Complement detection fires on the `E2E-NNN` being re-anchored against** — a gap or a contradiction against the comparison set (missed by Step 0b) | **Halt** with (a), per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md). Not a measurement gap — adding a test for it would turn an undecided requirement into a frozen one. If the `[E2E]` test frozen at Step 0c already holds the gap, the human's decision may change that expectation — stop condition (c) (that file's「Known gaps」) |
+| **Complement detection fires on the `E2E-NNN` being re-anchored against** — a gap or a contradiction against the comparison set, or a set that cannot be assembled (missed by Step 0b) | **Halt** with (a), per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md). Not a measurement gap — adding a test for it would turn an undecided requirement into a frozen one. If the `[E2E]` test frozen at Step 0c already holds the gap, the human's decision may change that expectation — stop condition (c) (that file's「Known gaps」) |
 | **起点が開けない** — the row names a file or section that cannot be opened | **Halt** with (a). Not the `n/a` row below |
 | **起点なし** — both columns `n/a`, or the plan has no `## Sources` table | Nothing to anchor to. Record `spec 再アンカー: n/a（{理由}）` and go to Step 3b |
 
@@ -438,7 +447,7 @@ current state to the Decision Log, and surface a concise summary to the user.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); by **Step 0b** when a row names background material instead of a source, and by **Step 1b** when an expected result appears only in background material; by **Step 0b** (backstop **0c / 1b / 3a**) when an `E2E-NNN` states an outcome nowhere in its comparison set, or contradicts it (complement detection, `../create-spec/e2e-interaction.md`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
+| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); by **Step 0b** when a row names background material instead of a source, and by **Step 1b** when an expected result appears only in background material; by **Step 0b** (backstop **0c / 1b / 3a**) when an `E2E-NNN` states an outcome nowhere in its comparison set, or contradicts it, or the set cannot be assembled (complement detection, `../create-spec/e2e-interaction.md`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
@@ -479,6 +488,12 @@ iteration records enough state in the plan itself:
   - HALT at AC-NNN (stop condition <id>). <what is blocking> <what the human must decide>.
   ```
 
+- A **deferral** is written by a human, not by this skill — `deferred: spec/<label> の昇格まで — <所見>`,
+  and later `deferred 解除: <日付・理由>`
+  ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a plan, and
+  lifting it」). It is resume state too: a session that finds an unlifted deferral bullet stops at
+  Step 0 without writing anything, and the line itself is what the next session reads.
+
 A new session resuming this plan must be able to continue using only the checkboxes and the
 Decision Log — never assume the prior conversation is available.
 
@@ -494,7 +509,9 @@ When the budget is exhausted, halt with stop-condition (b).
 
 ## Completion criteria
 
-- [ ] Target plan selected and baseline confirmed green — expected reds aside (Step 0)
+- [ ] Target plan selected and baseline confirmed green — expected reds aside (Step 0) — **or** the
+      plan was deferred and the run did not start (Step 0), with nothing appended to the plan; the
+      remaining criteria then do not apply
 - [ ] AC readiness gate run over **every** unchecked AC before the loop, and its result recorded in
       the Decision Log (Step 0b)
 - [ ] Every `[E2E]` AC had its test written and observed in **valid red** before the loop started,
@@ -528,7 +545,8 @@ Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 
 Tests     : ✅ {n} passing
 docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested → HALT (f)
                          | n/a (loop stopped before every AC was checked — see Stopped at)
-Stopped at: {none | AC-NNN, stop condition <id>: <reason>}
+Stopped at: {none | AC-NNN, stop condition <id>: <reason> | ⏸ not started — deferred: <the line>}
 
-Next action: {run /pre-pr for the completed ACs | human decision needed for the HALT}
+Next action: {run /pre-pr for the completed ACs | human decision needed for the HALT
+             | lift the deferral (deferred 解除:) once the promotion it waits for has landed}
 ```
