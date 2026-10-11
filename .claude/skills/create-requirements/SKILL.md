@@ -29,6 +29,8 @@ disable-model-invocation: true
 2. Conducts an interview to define the User Story and its **goal image** (required)
 3. Generates `docs/01_requirements/user_stories/US-XXX_{name}.md`
 4. Optionally updates `docs/01_requirements/constraints.md` with new constraints
+4b. Records the material the requirement was decided from in the US's `## 関連` (Q6), drafting a
+   research note under `docs/00_project/research/` for material that exists only outside the repository
 5. Suggests running `/create-spec` to draft the application spec from these requirements
    (then `/create-exec-plan` after the spec is approved)
 
@@ -212,12 +214,49 @@ If yes, collect:
 
 ---
 
-### Q6. Related documents
+### Q6. The material this requirement was decided from
 
-> "Are there any related decisions or constraints to cross-reference?
-> (e.g., `decisions.md: ADR-001`, `constraints.md: TC-003`)"
+The interview so far turns answers into conclusions. What those answers were based on — an
+investigation, the options compared, the one rejected, an external specification or regulation, the
+business flow, an interview — is consumed here and, unless written down now, ends up nowhere in the
+repository. A later reader then has the requirement but not why, and cannot tell whether a fix to it
+is a correction of the current target or the next thing to build (CLAUDE.md「変更のルーティング」).
 
-→ Used for the `## 関連` section
+> "この要件を決めるのに使った資料はありますか？（調査・比較した案・却下した案・外部の仕様や法令・
+> 業務フロー・ヒアリングなど）関連する決定や制約もあれば挙げてください
+> （例: `decisions.md: ADR-001`, `constraints.md: TC-003`）。（無ければ Enter でスキップ）"
+
+Handle each item by where it lives:
+
+| The material is… | Write in `## 関連` |
+|------------------|--------------------|
+| **In the repository** — an ADR, a research note under `docs/00_project/research/`, a constraint | `- 根拠: {path or ID} — {which part of this requirement it supports}` |
+| **Outside the repository only** — the conversation, a chat or ticket, an external tool, a URL, someone's notes | First ask: "この資料を `docs/00_project/research/{topic}.md` として残しますか？" **Yes** → draft the note (below) and write `- 根拠: docs/00_project/research/{topic}.md — {…}`. **No** → write the source as it is: `- 根拠: {URL / document name / ヒアリング（YYYY-MM-DD、相手）} — {…}` |
+| A related decision or constraint that is not a basis | `- 関連: {path or ID}` (as before) |
+
+**Drafting a research note.** Use the research-note frontmatter in
+[`../init-project/SKILL.md`](../init-project/SKILL.md)「Document frontmatter」 with `status: draft`,
+`collected:` the date the material was gathered (ask if it is not today) and `references:` where it came
+from. In the body, write only what the user gave: what was looked into, the options compared, the one
+rejected and why, and the source. Do not add material of your own — a note filled in by the agent
+records the agent's reasoning, not the basis the human decided on. The note is layer 0: it links
+nothing below `docs/00_project/` (DOC-INV-001 in `../check-doc-invariants/SKILL.md`), so it does not
+link back to the US.
+
+**`## 関連` is background, not a source.** A plan's `## Sources` never names it, and a test is never
+drafted from what it points at (`../create-exec-plan/ac-sources.md`「What counts as a source」). Anything a
+test needs belongs in the AC bullets of Q3. If the answer to Q6 reveals a condition the ACs do not state,
+go back to Q3 and add it there.
+
+**A choice between alternatives made here.** A research note keeps the options and the rejected one;
+an ADR keeps the decision itself, where the next person to propose the rejected option will look. If
+the answer describes such a choice, ask whether to keep it as an ADR too, per
+[`../init-project/adr-format.md`](../init-project/adr-format.md)「The procedure at a call site」 —
+only on a yes, with the rejected options and reasons taken from the user. This is the only place a
+requirement-level choice is asked about: `create-spec` Step 2c looks at the spec's own decisions, not
+the US's. A no stops nothing.
+
+→ Used for the `## 関連` section, and for any research note drafted
 
 ---
 
@@ -227,6 +266,8 @@ If yes, collect:
 |------|--------|
 | `docs/01_requirements/user_stories/US-XXX_{Q1}.md` | Create new |
 | `docs/01_requirements/constraints.md` | Append new rows (only if Q5 has answers) |
+| `docs/00_project/research/{topic}.md` | Create new (only for material Q6 found outside the repository and the user chose to keep) |
+| `docs/00_project/decisions.md` | Append an ADR (only for a choice the user said yes to at Q6) |
 
 ---
 
@@ -281,7 +322,9 @@ tracks:
 
 ## 関連
 
-{Q6 content — omit if empty}
+- 根拠: {Q6 — in-repo path / ID, or the source as given} — {which part of this requirement it supports}
+- 関連: {Q6 — related decision or constraint}
+{omit the section if Q6 was skipped}
 ```
 
 **Note on `ac_ids` frontmatter**: List all AC numbers defined in Q3.
@@ -295,6 +338,8 @@ tracks:
 2. Complete the Q1–Q6 interview (halt at Q4 if the goal image cannot be answered)
 3. Apply the interview answers to the template and create the US file
 4. If Q5 had answers, append the new constraint rows to `constraints.md`
+4b. If Q6 found material outside the repository that the user chose to keep, draft the research
+   note(s) under `docs/00_project/research/`
 5. Report completion and suggest next steps
 
 ---
@@ -306,6 +351,8 @@ tracks:
 - [ ] The `## ゴール像` section is present and contains all three required parts:
       完成時にできること (Q4a) / 主要ユーザージャーニー (Q4b, Mermaid) / 非ゴール (Q4c)
 - [ ] `constraints.md` updated if new constraints were defined in Q5
+- [ ] Every item Q6 named is in `## 関連` — in-repo material by path or ID, outside material either as
+      a drafted research note (`status: draft`, `collected`, `references`) or as the source given
 
 Final report output by the agent:
 
@@ -318,6 +365,9 @@ ACs     : AC-001, AC-002, ... (list all defined)
 相互チェック未了: {US-XXX ↔ E2E-NNN, … — existing scenarios shown as Q4b candidates; compared when a
                  plan freezes them (create-exec-plan Q3d); or "none"}
 Constraints added: {count} (or "none")
+根拠資料 : {n} 件（repo 内 {n} / 調査ノート作成 {n}: docs/00_project/research/{topic}.md / 出典のみ {n}）(or "none")
+ADR 候補 : {n} 件 — ADR-NNN 追記 {n} / 見送り {n} (Q6); or "none"
+           (a drafted research note or ADR is approved with the US — merge — like the US itself)
 
 Next step: Run /create-spec to draft the application spec (docs/02_spec/) and its E2E scenarios
 (docs/01-02_e2e/) from these requirements.

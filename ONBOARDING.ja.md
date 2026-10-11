@@ -102,7 +102,7 @@ Claude が以下の 4 つの質問をインタビュー形式で行います（�
 
 **Phase 0（共通）:**
 - `docs/00_project/overview.md` — プロジェクト概要
-- `docs/00_project/decisions.md` — 技術選定 ADR
+- `docs/00_project/decisions.md` — 決定の記録（ADR）。初期化時は技術選定。以降は `/create-spec`・`/promote-spec` が要件・仕様の決定を ADR にするかを尋ねる（書式は `.claude/skills/init-project/adr-format.md`。却下した案とその理由の節が必須）
 - `docs/07_ai_context/CONTEXT.md` — ナビゲーションマップ
 
 **Phase 1（プラットフォーム別）:**
@@ -147,7 +147,7 @@ DocDD のディレクトリ構造に既存ドキュメントをマッピング�
 docs/
 ├── 00_project/
 │   ├── overview.md       ← プロジェクト概要（README.md から移植可）
-│   ├── decisions.md      ← 技術選定理由（ADR 形式に変換）
+│   ├── decisions.md      ← 技術選定・要件・仕様の決定理由（ADR 形式に変換。却下した案も残す）
 │   └── research/         ← （任意）調査ノート — 背景資料。テストの起点にはしない
 ├── 01_requirements/
 │   └── user_stories/     ← 要件定義・ユーザーストーリー

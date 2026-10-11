@@ -102,7 +102,7 @@ After the interview, the following are generated automatically.
 
 **Phase 0 (common):**
 - `docs/00_project/overview.md` — Project overview
-- `docs/00_project/decisions.md` — Tech-selection ADR
+- `docs/00_project/decisions.md` — Decision record (ADRs): technology choices at initialization; afterwards `/create-spec` and `/promote-spec` ask whether a requirement or spec decision should become an ADR (format: `.claude/skills/init-project/adr-format.md`, with a required section for the rejected options and why)
 - `docs/07_ai_context/CONTEXT.md` — Navigation map
 
 **Phase 1 (per platform):**
@@ -147,7 +147,7 @@ Migrate and reorganize existing docs into the following directories.
 docs/
 ├── 00_project/
 │   ├── overview.md       ← Project overview (can be ported from README.md)
-│   ├── decisions.md      ← Tech-selection rationale (convert to ADR format)
+│   ├── decisions.md      ← Rationale for technology, requirement and spec decisions (ADR format; keep the rejected options)
 │   └── research/         ← (optional) Research notes — background, never a test's source
 ├── 01_requirements/
 │   └── user_stories/     ← Requirements / user stories

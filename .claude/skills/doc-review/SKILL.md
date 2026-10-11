@@ -4,7 +4,7 @@ description: |
   Launches an independent agent (with no authoring context) to review a requirement
   or design document from a DocDD perspective.
   Checks AC testability (using the shared AC readiness criteria), completeness, ambiguity,
-  and cross-reference integrity.
+  cross-reference integrity, and whether the document's decisions have a recorded basis.
   Optional skill — run after writing docs, before /create-exec-plan.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
@@ -62,6 +62,8 @@ Then determine the document type from its path:
 | `docs/03_design/**/*.md` | Design document |
 | `docs/04_implementation/**/*.md` | Implementation document |
 | `exec-plans/**/*.md` | Exec-plan |
+| `docs/00_project/decisions.md` | Decision record (ADR) |
+| `docs/00_project/research/*.md` | Research note |
 | Other `docs/**/*.md` | General document |
 
 ### Step 2: Load context
@@ -97,6 +99,17 @@ cat docs/01-02_e2e/E2E-*.md 2>/dev/null || echo "no scenario files (old layout, 
 # spec sections of every AC under 満たす AC — and takes the verdicts from e2e-interaction.md.
 cat .claude/skills/create-spec/e2e-interaction.md
 cat docs/01_requirements/user_stories/US-NNN_*.md 2>/dev/null || echo "not found"   # each US under 由来ジャーニー (or, without the line, owning a 満たす AC entry)
+
+# Decision basis — for a User Story, spec, scenario, ADR or research note (§6 judges whether the
+# document's decisions have a recorded basis). The reviewer needs what the document cites as its
+# basis, the ADRs, and the format they are judged against — not only the document.
+sed -n '/^## 関連/,/^## /p' {target document path} 2>/dev/null || true
+cat docs/00_project/decisions.md 2>/dev/null || echo "no decisions.md"
+cat {each in-repo file the target's ## 関連 names, e.g. docs/00_project/research/{topic}.md} 2>/dev/null || echo "not found"
+# For decisions.md as the target: the in-repo files its ADRs name under 根拠資料.
+# For a scenario: the document its 満たす業務要求 names (its recorded outer anchor).
+cat {each such in-repo file} 2>/dev/null || echo "not found"
+cat .claude/skills/init-project/adr-format.md
 
 # Project documentation rules
 cat CLAUDE.md
@@ -141,7 +154,7 @@ You are a document reviewer with no prior context about this document's authorin
 Review the following document from a DocDD (Document-Driven Development) perspective.
 
 ## Document type
-{User Story / E2E scenario / Application spec / Design document / Exec-plan / Implementation document / General document}
+{User Story / E2E scenario / Application spec / Design document / Exec-plan / Implementation document / Decision record (ADR) / Research note / General document}
 
 ## Document to review
 {full content of target document}
@@ -167,6 +180,11 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 ### constraints.md (if applicable)
 {content, or "not available"}
 
+### Recorded basis (needed for §6 — for a US, spec, scenario, ADR or research note)
+{the ADR format (.claude/skills/init-project/adr-format.md); docs/00_project/decisions.md; and each
+ in-repo file the document's ## 関連 names, with its content — or "{path}: not found".
+ Or "not applicable — {document type}"}
+
 ### Related User Story or exec-plan (if applicable)
 {content, or "not available"}
 
@@ -190,6 +208,8 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 - Are there any forward references — links against DOC-INV-001's layer table in
   `check-doc-invariants` (a requirements doc linking to design/implementation; a `docs/00_project/`
   doc linking to any lower layer; an E2E scenario linking beyond the spec)?
+- For a research note: are `collected:` and `references:` present (`init-project`「Document
+  frontmatter」)?
 
 ### 2. Acceptance criteria quality (for User Stories and exec-plans)
 
@@ -304,6 +324,38 @@ Advisory, like the rest of this review.
 - Are flow / sequence / class diagrams written in Mermaid?
 - Does each ASCII art figure have a plain-text explanation immediately following it?
 
+### 6. Decision basis — a conclusion with no recorded basis
+
+Applies to User Stories, application specs, E2E scenarios, ADRs and research notes. Skip it for
+exec-plans (their Decision Log is the record of their own decisions) and for design and implementation
+documents.
+
+A document can state a decision clearly and still leave a later reader unable to tell why — and so
+unable to tell whether a fix is a correction of the current target or the next thing to build
+(CLAUDE.md「変更のルーティング」), or whether an option being proposed was already rejected. Judge
+with the ADR format and the recorded basis supplied above:
+
+- **US / spec / scenario.** Find the statements that are *decisions* rather than restatements — the
+  ADR format's「When a decision is an ADR candidate」 condition 1: a choice where another option was
+  evident, a narrowing (a non-goal, a constraint, a removed behavior), a threshold value. For each, is
+  its basis recorded anywhere — the document's `## 関連`, an ADR in `decisions.md`, a research note?
+  Report one with none as **結論はあるが根拠が無い**, and suggest the entry that fits: `## 関連` (for a
+  US, `create-requirements` Q6; for a spec, `create-spec` Step 2b) or an ADR (the ADR format). A
+  scenario has no `## 関連`: its `満たす業務要求` is its recorded basis, and for a decision beyond it
+  suggest an ADR or the spec's `## 関連`. Do not ask for a basis for every sentence — a restatement of
+  a requirement needs none.
+- **ADR.** Does each ADR carry what the ADR format requires — above all 検討した代替案と却下理由 (a
+  table, or `なし（理由）`) and a 根拠資料 that is not blank? An ADR with no 種別 or no 却下理由 section is
+  reported as a suggestion to fill when it is next touched, not as a defect.
+- **Research note.** If it was the material for a choice, does it record the options and the one
+  rejected, with why?
+- **A basis that points at nothing** — a `## 関連` or 根拠資料 entry naming a file that does not exist,
+  or a ヒアリング with no date or person — is a finding: a basis nobody can find is not recorded.
+
+The basis is background, never a source: do not suggest naming it in a plan's `## Sources`, and do not
+fail an AC's readiness (§2) for a missing rationale. Severity here is 🟡 Medium at most, so this section
+alone never produces ❌ — it is advisory, like the rest of this review.
+
 ## Output format
 
 === Document Review Results ===
@@ -328,6 +380,11 @@ Type: {document type}
 {For spec / scenario: 由来ジャーニー / 満たす業務要求 present and resolvable? Any US realized by no scenario?}
 {For spec / scenario: symmetric comparison — 要件の穴 / 矛盾 per scenario, each for the human to decide; or "none"}
 {For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
+
+### Decision basis (US / spec / scenario / ADR / research note — omit otherwise)
+{結論はあるが根拠が無い: <statement> (<section>) — suggested entry: ## 関連 / ADR; or "none"}
+{For an ADR: required sections per the ADR format ✅ / ⚠️ <ADR-NNN: missing 検討した代替案と却下理由>}
+{Basis entries that point at nothing: <entry>; or "none"}
 
 ### Process walkthrough (process documents only — omit otherwise)
 {Second iteration: ✅ / ❌ <state where it breaks>}

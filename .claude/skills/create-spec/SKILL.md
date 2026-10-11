@@ -59,6 +59,9 @@ and never proceeds to implementation planning on its own.
    states) — one file each under `docs/01-02_e2e/`
 4. Trace each spec feature back to the US/AC it satisfies, and each E2E scenario across the set
    of ACs it needs (`E2E-001 → AC-001, AC-003`)
+4b. Record the material the spec's own decisions were made from (`## 関連`), and ask which of those
+   decisions to keep as ADRs in `docs/00_project/decisions.md` — drafting only the ones the user says
+   yes to
 5. Suggest `/doc-review` for an independent check, then human approval, then `/create-exec-plan`
 
 ---
@@ -242,6 +245,63 @@ status: draft
 
 `status: draft` is mandatory — this spec, and each scenario file, is not yet approved.
 
+### Step 2b: Record the material the spec was decided from
+
+Drafting a spec turns requirements into behavior, and in doing so settles what the requirements left
+open — an edge rule, a state, a limit, a scope line. Whatever those were settled from is consumed in
+this session. Ask for it with the same question and the same rules as `/create-requirements` Q6
+([`../create-requirements/SKILL.md`](../create-requirements/SKILL.md)「Q6」), asked about the
+**spec's** decisions rather than the requirement's — the US's own `## 関連` already holds what the
+requirement was decided from:
+
+> "この仕様で要件から一歩踏み込んで決めたこと（振る舞いの規則・境界・スコープ）について、判断に使った
+> 資料はありますか？（調査・比較・却下した案・外部の仕様や法令・業務フロー・ヒアリングなど）
+> （無ければ Enter でスキップ）"
+
+Write the answers in a `## 関連` section at the end of the spec file (in-repo material by path or ID;
+material outside the repository either as a research note the user chose to keep, drafted under
+`docs/00_project/research/`, or as the source as given). The section is background like the US's: a
+spec section a plan names as a source is one that describes an AC's behavior, and `## 関連` describes
+none (`../create-exec-plan/ac-sources.md`「What counts as a source」). A scenario file does not get the
+section — its outer anchor is `満たす業務要求`.
+
+### Step 2c: ADR candidates
+
+Before the report, look at what the drafted spec decided, and apply
+[`../init-project/adr-format.md`](../init-project/adr-format.md)「When a decision is an ADR
+candidate」 and「The procedure at a call site」: list the candidates, ask the user per candidate, and
+draft an ADR in `docs/00_project/decisions.md` only for each yes — taking the rejected alternatives and
+their reasons from the user. Look in:
+
+| Where in the draft | Typically a candidate when… |
+|--------------------|-----------------------------|
+| Behavior sections | A rule the US's ACs left open was settled one way — in this session, by the user's answer |
+| Scope & non-goals | Something a reader would assume is excluded beyond the US's own 非ゴール |
+| Answers the user gave while drafting | They chose between options this skill presented |
+
+**Look only at what is not yet approved.** A spec that already exists is extended, not rewritten
+(Step 2), and the decisions already on `main` were asked about when they were drafted; asking again on
+every extension would turn a question into noise that gets answered no by reflex. Take the scope from
+the files, not from the session, so a run resumed by a fresh session sees the same set:
+
+```bash
+# A branch that merges to main: what this branch changed since it left main, committed or not
+git diff $(git merge-base main HEAD) -- docs/02_spec/ 2>/dev/null || true
+# On spec/<label>: the draft not yet committed on the branch — what is committed there was asked
+# about when it was drafted, and diffing against main would ask about all of it again
+git diff HEAD -- docs/02_spec/ 2>/dev/null || true
+# Either way: a spec file this run created and has not staged yet (git diff does not show it)
+git ls-files --others --exclude-standard docs/02_spec/ 2>/dev/null || true
+```
+
+The same scope applies to Step 2b's question.
+
+Material recorded in Step 2b ends a decision's candidacy only when it names the option not taken and
+why — a research note that records the rejected option does; a link to a source does not
+(`adr-format.md`「When a decision is an ADR candidate」, condition 2). A no stops nothing — continue
+to Step 3. A drafted ADR goes on the same branch as this spec draft and takes effect when the human
+approves it (`adr-format.md`「Which branch the ADR goes on」); like the spec, it is not approved here.
+
 ### Step 3: Hand off for review and approval
 
 Do **not** approve, mark `active`, or proceed to planning. Report the draft and the required
@@ -281,6 +341,11 @@ about *what*, not *how*.
       model/API internals)
 - [ ] Every drafted file — spec and scenarios — has `status: draft` frontmatter
 - [ ] Each feature and behavior section references the US/AC it satisfies
+- [ ] The material behind the spec's decisions was asked for (Step 2b) and recorded in the spec's
+      `## 関連` section — or the user skipped it
+- [ ] ADR candidates were listed and asked about (Step 2c); an ADR was drafted in
+      `docs/00_project/decisions.md` for each yes, in the format of `../init-project/adr-format.md`,
+      with the rejected alternatives taken from the user — and a no did not stop the skill
 - [ ] The spec was NOT approved/marked active and did NOT proceed to planning automatically
 - [ ] Independent review + human approval + next step were communicated
 
@@ -299,11 +364,14 @@ AC not in any E2E : {AC list, or "none"}
 Requirements gaps : {outcomes a scenario needed that the US does not state — for the human to promote, drop or rework; or "none"}
 相互チェック未了  : {US-XXX — no ゴール像; scenarios drafted from the flow the user stated: {flow}.
                     No plan can freeze them until the goal image is in the US; or "none"}
+根拠資料          : {n} 件 in the spec's ## 関連（repo 内 {n} / 調査ノート作成 {n} / 出典のみ {n}）, or "none"
+ADR 候補          : {n} 件 — ADR-NNN 追記 {n} / 見送り {n} (drafts, approved with the spec); or "none"
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec
-  2. Approve : edit as needed, then approve the spec and the scenarios (merge — see
-               spec-version management). A scenario freezes later, per plan
+  2. Approve : edit as needed, then approve the spec and the scenarios — and any ADR or research
+               note drafted with them (merge — see spec-version management). A scenario freezes
+               later, per plan
   3. Plan    : run /create-exec-plan to turn the approved spec + ACs into a plan
                (the scenarios above become the plan's [E2E] acceptance criteria)
 ```

@@ -41,8 +41,11 @@ Verify the following.
 |------|-----------|
 | Current phase | Determined from the state of `exec-plans/active/` and `exec-plans/completed/` |
 | Priority tasks | List of files in `exec-plans/active/` |
-| Tech stack changes | Latest entries in `docs/00_project/decisions.md` |
-| Development rule changes | Confirmation from user, or changes in `decisions.md` |
+| Tech stack changes | Latest entries of 種別 `技術` in `docs/00_project/decisions.md` (an entry with no 種別 — see [`../init-project/adr-format.md`](../init-project/adr-format.md) — counts as `技術`) |
+| Development rule changes | Confirmation from user, or entries of 種別 `プロセス` in `decisions.md` |
+
+`decisions.md` also holds requirement and spec decisions (種別 `要件` / `仕様`). They are not tech-stack
+or rule changes; do not copy them into CONTEXT.md's Tech Stack or Development Rules sections.
 
 **Phase determination criteria:**
 

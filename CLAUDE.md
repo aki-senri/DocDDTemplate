@@ -294,6 +294,29 @@ DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除�
 
 新しいセッションは、上記チェックボックスと Decision Log のみで作業を再開できなければならない。
 
+## 決定の材料と ADR（結論だけでなく、何から決めたかを残す）
+
+要件・仕様・AC は「決めたこと」を残すが、決めるために集めた材料（調査・比較した案・却下した案・
+外部の出典）は対話の中で消費されて残らない。残らないと、同じ調査を繰り返し、却下した案が復活し、
+仕様の誤りを見つけたときのルーティング（下記「変更のルーティング」）が推測になる。
+
+| 置き場 | 何を残すか | 書式の単一ソース |
+|--------|-----------|-----------------|
+| `docs/00_project/decisions.md`（ADR） | 何を何より選んだか。**検討した代替案と却下理由の節は必須**（無ければ `なし（理由）`） | `.claude/skills/init-project/adr-format.md` |
+| `docs/00_project/research/*.md`（調査ノート） | 決定の材料そのもの（`collected`・`references` 付き） | `init-project`「Document frontmatter」 |
+| US・spec の `## 関連` | その文書が何から決まったかへの指し先 | `create-requirements` Q6（spec は `create-spec` Step 2b） |
+
+| 地点 | タイミング | 措置 |
+|------|-----------|------|
+| `/create-requirements`（Q6）・`/create-spec`（Step 2b） | 起草時 | 判断に使った資料を問い、`## 関連` に書く。repo 外にしか無い資料は調査ノート化を提案し、人が yes なら草案を作る |
+| `/create-requirements`（Q6）・`/create-spec`（Step 2c）・`/promote-spec`（Step 3・5・7） | 要件の選択を聞いたとき・起草完了時・昇格時 | ADR 候補を示し、人が yes の分だけ草案を書く（却下理由は人から取り、作らない） |
+| `/doc-review`（§6） | 任意レビュー | 「結論はあるが根拠が無い」・ADR の必須節の欠落を報告（助言） |
+
+**どの地点もゲートにしない**（no でも止めない。ブロックも ⚠️ ゲートも置かず、`/doc-review` は助言として報告するだけ）。蓄積は書く動機が無いと続かず、
+強制すると根拠を後から書く動機を生む（red-first の証跡をブロックにしなかったのと同じ理由）。
+材料がまだ手元にある瞬間に尋ねることで続ける。ADR・調査ノート・`## 関連` はいずれも**背景**であり
+起点ではない（上記「AC の起点」の3区分）。テストに要る条件は US の AC・spec の該当節に書く。
+
 ## ドキュメント内の図・ダイアグラム規則
 
 ドキュメントに図を記載する際は以下のルールに従う。
@@ -386,9 +409,9 @@ DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除�
 
 | スキル | 目的 | タイミング |
 |--------|------|-----------|
-| `/create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・制約・AC を定義する | 実装前・create-spec の前 |
+| `/create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・制約・AC と、判断に使った資料（`## 関連`）を定義する | 実装前・create-spec の前 |
 | `/doc-review` | 独立エージェントによるドキュメントレビュー | create-requirements / create-spec 後・create-exec-plan の前（任意） |
-| `/create-spec` | 承認済み要件からアプリ仕様（docs/02_spec/：何をするか）と **E2E シナリオ**（1シナリオ1ファイルの docs/01-02_e2e/。`E2E-001 → AC-001, AC-003` の横断 traceability）を草案として起草する | create-requirements 後・create-exec-plan の前 |
+| `/create-spec` | 承認済み要件からアプリ仕様（docs/02_spec/：何をするか）と **E2E シナリオ**（1シナリオ1ファイルの docs/01-02_e2e/。`E2E-001 → AC-001, AC-003` の横断 traceability）を草案として起草し、仕様の決定に使った資料と ADR 候補を人に尋ねる | create-requirements 後・create-exec-plan の前 |
 | `/create-exec-plan` | AC（受け入れ基準）と **`[E2E]` AC**（documentation-only プランは置かず `E2E: n/a` を記録）を定義し、各 AC の**起点**（`## Sources`：US bullet と spec 該当節）を記録して **AC readiness**（測定可能性）を検査する。プロセスを変えるプランには「1周辿る」検証 AC を置く | 実装前（必須） |
 | `/start-feature` | 実装開始前の準備チェック（AC readiness の再検査と、`## Sources` が指す US / spec の読み込みを含む） | create-exec-plan 後 |
 | `/run-exec-plan` | ループ前に AC readiness を検査し、`[E2E]` テストを赤で配置。AC を1つずつ自走実装（起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次）。停止条件のみで人間に委譲 | start-feature 後・自走させたいとき（opt-in） |
@@ -396,7 +419,7 @@ DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除�
 | `/check-doc-freshness` | コードとドキュメントの乖離確認 | コード変更後 |
 | `/check-invariants` | コードの INV 違反確認 | コード変更後 |
 | `/check-doc-invariants` | ドキュメントの構造ルール違反確認 | ドキュメント変更後 |
-| `/promote-spec` | 次バージョン仕様（`spec/<label>`）を現ターゲットへ昇格 | スプリント境界・次バージョン取り込み時 |
+| `/promote-spec` | 次バージョン仕様（`spec/<label>`）を現ターゲットへ昇格（CHANGED / REMOVED の ADR 候補を尋ねる） | スプリント境界・次バージョン取り込み時 |
 | `/docode-review` | 独立エージェントによるコードレビュー | 実装完了後・`/pre-pr` の前。自走完了時（`run-exec-plan` Step 4a）は必須、手動実装時は任意 |
 | `/pre-pr` | PR 前の総合チェック | PR 作成前（必須） |
 | `/complete-exec-plan` | exec-plan を完了状態に移動 | PR マージ後 |

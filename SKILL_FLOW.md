@@ -19,10 +19,10 @@ flowchart TD
     INIT --> REQ
 
     subgraph PLAN_PHASE["Implementation Planning (at each feature start)"]
-        REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
+        REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md\n· Q6: record the material the requirement\n  was decided from in ## 関連 (offer a\n  research note for material outside the repo)"]
         REQ -.->|optional review| DR
-        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption / dependency backflow\n  (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n  (no goal image yet: drafts anyway and\n  reports 相互チェック未了)\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval"]
+        DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption / dependency backflow\n  (process-walkthrough.md)\n· Checks completeness / reference direction\n· §6: conclusions with no recorded basis,\n  ADRs missing the rejected-options section\n  (advisory)\n· Returns verdict: ✅/⚠️/❌"]
+        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n  (no goal image yet: drafts anyway and\n  reports 相互チェック未了)\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Step 2b: material behind the spec in ## 関連\n· Step 2c: ADR candidates — draft only\n  the ones the human says yes to\n· Independent review + HUMAN approval"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
@@ -91,7 +91,7 @@ flowchart TD
 
     subgraph SPEC_PROMO["Spec Version Promotion (sprint boundary)"]
         SPECBR["spec/* branch\n· Accumulate next-version spec (docs only)\n· In-version fixes commit to main directly"]
-        PROMO["/promote-spec\n· Drift guard: check 次版戻し markers survived\n  the merge of main (stop if a line is gone)\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n  and E2E scenarios (by E2E-NNN)\n· Find stale impl + in-flight collisions,\n  incl. E2E collisions with no AC change\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs\n  (carries an [E2E] AC; re-opened ACs are\n  re-tested red-first against the new spec)"]
+        PROMO["/promote-spec\n· Drift guard: check 次版戻し markers survived\n  the merge of main (stop if a line is gone)\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n  and E2E scenarios (by E2E-NNN)\n· Find stale impl + in-flight collisions,\n  incl. E2E collisions with no AC change\n· ADR candidates: CHANGED/REMOVED items\n  no ADR on the branch names (asked, not gated)\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs\n  (carries an [E2E] AC; re-opened ACs are\n  re-tested red-first against the new spec)"]
         SPECBR --> PROMO
     end
 
@@ -134,6 +134,18 @@ flowchart TD
 | —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr`, on the manual (`start-feature`) path — spawns a subagent via the Agent tool (no internal caller on this path) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
+> **Shared reference file (not a skill):**
+> [`.claude/skills/init-project/adr-format.md`](.claude/skills/init-project/adr-format.md)
+> — the ADR format for `docs/00_project/decisions.md` (the section for the options considered and why
+> they were rejected is required), when a decision is an ADR candidate, and the procedure at the sites
+> that ask: `init-project` (Q2), `create-requirements` (Q6, a requirement-level choice), `create-spec`
+> (Step 2c) and `promote-spec` (Steps 3, 5 and 7) list candidates and draft an ADR only for each one
+> the human says yes to; `doc-review` (§6) reports a conclusion with no recorded basis; `update-context` reads only the technology and process ADRs.
+> None of them is a gate — a no stops nothing — because recording that is enforced gets written after
+> the fact. `create-requirements` (Q6) and `create-spec` (Step 2b) are the matching entry for the
+> material itself: `## 関連`, and a research note under `docs/00_project/research/` for material that
+> exists only outside the repository. All of it is background, never a source.
+>
 > **Shared reference file (not a skill):**
 > [`.claude/skills/create-exec-plan/process-walkthrough.md`](.claude/skills/create-exec-plan/process-walkthrough.md)
 > — the laps to walk when a plan changes a **process** (a loop, a resumable run, a stop condition, a

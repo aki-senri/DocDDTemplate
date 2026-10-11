@@ -99,8 +99,8 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | スキル | 用途 |
 |-------|------|
 | `init-project` | プロジェクト初期化（Phase 0 → Phase 1）。導入時に一度 |
-| `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約を定義（`docs/01_requirements/`） |
-| `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/` と、1シナリオ1ファイルの `docs/01-02_e2e/`。`status: draft`。人間承認が必要） |
+| `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約と、判断に使った資料（`## 関連`。repo 外の資料は調査ノート化を提案）を定義（`docs/01_requirements/`） |
+| `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/` と、1シナリオ1ファイルの `docs/01-02_e2e/`。`status: draft`。人間承認が必要）。仕様の決定に使った資料を `## 関連` に残し、決定を ADR（`decisions.md`）にするかを尋ねる |
 | `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、**`## Sources`**（その AC が凝縮した US bullet と spec 該当節）を記録する。DocDD のプロセスを変えるプランには**周回を辿る**検証 AC を置く |
 | `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度） |
 | `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in） |
@@ -123,7 +123,7 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 
 | スキル | 用途 | タイミング |
 |-------|------|-----------|
-| `doc-review` | 独立エージェントが要件・仕様ドキュメントをレビュー（共通の AC readiness 基準による検証可能性・網羅性・参照方向） | 任意・必要に応じて人が起動 |
+| `doc-review` | 独立エージェントが要件・仕様ドキュメントをレビュー（共通の AC readiness 基準による検証可能性・網羅性・参照方向・結論に根拠が残っているか） | 任意・必要に応じて人が起動 |
 | `docode-review` | 独立エージェントが変更コードを AC と一般品質に対してレビュー | `run-exec-plan` が自走完了した時点で**必須**（Step 4a が `pre-pr` への handoff 前に本スキルを呼び、❌ なら HALT）。手動実装（`start-feature`）経路では従来どおり任意 |
 
 > `run-tests`・`doc-review`・`docode-review` はモデル起動可（呼び出し側は Skill ツールで起動）。他の内部スキルは上位スキルが `SKILL.md` の手順をインライン実行する。CLAUDE.md「検証スキルの呼び出しポリシー」を参照。
