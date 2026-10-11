@@ -107,6 +107,15 @@ git rev-list --count spec/<label>..main   # commits on main not yet in the spec 
   ```
   Do **not** auto-run this if conflicts are likely — recommend it and let the user resolve, then
   re-run `/promote-spec`. Only proceed past this step once the branch is current.
+- **E2E scenarios moved on `main`.** If `main` moved scenarios out of a spec's old-layout
+  `## E2E シナリオ` section into `docs/01-02_e2e/` (DOC-INV-006 in `check-doc-invariants`) while the
+  spec branch edited or added scenarios in that section, the merge conflicts there. Resolve it on
+  the spec branch by applying the branch's change to the moved file (or, for a new scenario, a new
+  file `docs/01-02_e2e/E2E-NNN_{slug}.md`) — never by restoring the section, which would bring the
+  old layout back on promotion. The merge does not always conflict: a scenario the branch appended
+  in a hunk that does not overlap the removed section merges cleanly and lands back in the old
+  layout. So after the merge, check `git diff main...spec/<label> -- docs/02_spec/` for added
+  `### E2E-` headings and move each into its own file the same way.
 
 ### Step 3: Diff & classify spec changes
 
@@ -280,7 +289,7 @@ Do not proceed to Step 6 without an explicit "yes".
    |----|------------------------|---------------------|
    | AC-003 | `docs/01_requirements/user_stories/US-XXX_<name>.md` § AC-003 | `docs/02_spec/<file>.md` §「<新 spec の該当節>」 |
    | AC-007 | 同上 § AC-007 | 同上 §「<新 spec の該当節>」 |
-   | AC-NNN [E2E] | 同上 § ゴール像／主要ユーザージャーニー | 同上 § E2E-NNN |
+   | AC-NNN [E2E] | 同上 § ゴール像／主要ユーザージャーニー | `docs/01-02_e2e/E2E-NNN_<slug>.md` § E2E-NNN |
 
    ## Task Breakdown
    - [ ] Review `git diff spec-target-<prev>..spec-target-<label> -- docs/` for each AC
@@ -303,8 +312,10 @@ Do not proceed to Step 6 without an explicit "yes".
    A reconcile plan exists because the spec moved; if its sources still named the pre-promotion
    sections, the implementer would be steered by the very text the promotion replaced, and
    `run-exec-plan`'s Step 3a re-anchor would confirm the old behavior as correct. Fill each row from
-   the post-merge `docs/02_spec/**` — the sections the diff in Step 4 flagged as CHANGED — and use
-   `git diff spec-target-<prev>..spec-target-<label> -- docs/` to locate them. If a re-opened AC's
+   the post-merge sections the diff in Step 4 flagged as CHANGED — in `docs/02_spec/**`, and for the
+   `[E2E]` row the post-merge scenario file in `docs/01-02_e2e/` (in a project not yet migrated, the
+   spec's `§ E2E-NNN` instead) — and use `git diff spec-target-<prev>..spec-target-<label> -- docs/`
+   to locate them. If a re-opened AC's
    spec section cannot be identified, write `n/a（理由）` rather than guessing; do not leave a cell
    blank.
 
@@ -313,7 +324,7 @@ Do not proceed to Step 6 without an explicit "yes".
    the flow the new spec describes does not work — the exact failure the criterion exists for.
 
    - **Which ID to use.** Do not invent a new ID series or a number outside the spec: use the AC-ID
-     that the new spec's `E2E-NNN` traces to — normally one of the re-opened IDs — so DOC-INV-004
+     that the new scenario (`E2E-NNN`) traces to — normally one of the re-opened IDs — so DOC-INV-004
      traceability still holds. If no re-opened AC owns the through-flow, do **not** fabricate one:
      tell the user to add it via `/create-exec-plan`, where a human decides what the flow is.
    - **Red-first for a re-opened AC** (`run-tests/red-first.md`): the spec *changed*, so the old

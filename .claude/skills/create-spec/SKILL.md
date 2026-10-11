@@ -2,9 +2,10 @@
 name: create-spec
 description: |
   Drafts an independent application spec document under docs/02_spec/ from approved requirements
-  (docs/01_requirements/). The spec describes WHAT the app does — purpose, features, behavior,
-  required end-to-end scenarios (E2E-NNN, traced across the ACs they need), scope and non-goals
-  — NOT how it is built (no architecture, data model, or API internals; that is technical design). Output is always a draft for human review
+  (docs/01_requirements/), together with the required end-to-end scenarios — one file per scenario
+  under docs/01-02_e2e/ (E2E-NNN, traced across the ACs they need). The spec describes WHAT the app
+  does — purpose, features, behavior, scope and non-goals — NOT how it is built (no architecture,
+  data model, or API internals; that is technical design). Output is always a draft for human review
   (/doc-review) and approval — it never decides requirements and never auto-approves. After
   approval, hands off to /create-exec-plan.
 disable-model-invocation: true
@@ -36,9 +37,9 @@ This skill drafts the *what*; it does not decide, approve, or design the *how*.
 | Action | Who / Where |
 |--------|-------------|
 | Decide *what to build* (requirements, scope, product direction) | **Human** — already in `docs/01_requirements/`; this skill must not invent or change it |
-| Draft the *application spec* (consolidated what/behavior) from approved requirements | **This skill** (automated authoring) → `docs/02_spec/` |
+| Draft the *application spec* (consolidated what/behavior) and its E2E scenarios from approved requirements | **This skill** (automated authoring) → `docs/02_spec/` and `docs/01-02_e2e/` |
 | Review the draft independently | `/doc-review` |
-| **Approve / freeze** the spec | **Human** (merge = freeze; see CLAUDE.md spec-version management) |
+| **Approve** the spec and its scenarios | **Human** (merge to `main` = approval; see CLAUDE.md spec-version management). Approval is per document; it is not the per-plan **freeze** of a scenario, which happens later, when a plan names it (`e2e-interaction.md`) |
 | Technical *how* (architecture, data model, API) | **Out of scope** — that is design, not this spec |
 
 The output is always `status: draft`. The skill never marks a spec `active`, never merges,
@@ -52,8 +53,8 @@ and never proceeds to implementation planning on its own.
 2. If requirements are missing, not yet approved (`status: draft`), or too ambiguous to
    specify against, **halt** and direct the user to approve/define them first (do not guess
    intent)
-3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first), including
-   a required `## E2E シナリオ` section derived from the US goal image
+3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first), and the
+   required E2E scenarios derived from the US goal image — one file each under `docs/01-02_e2e/`
 4. Trace each spec feature back to the US/AC it satisfies, and each E2E scenario across the set
    of ACs it needs (`E2E-001 → AC-001, AC-003`)
 5. Suggest `/doc-review` for an independent check, then human approval, then `/create-exec-plan`
@@ -69,7 +70,7 @@ and never proceeds to implementation planning on its own.
 - Identify the user stories, their `ac_ids:`, acceptance conditions, and constraints
   (TC/BC/PF/SC) that shape what the app must do.
 - **Read the `## ゴール像` section of each source US file.** Its 完成時にできること,
-  主要ユーザージャーニー, and 非ゴール are the input for this spec's `## E2E シナリオ` section
+  主要ユーザージャーニー, and 非ゴール are the input for the E2E scenarios (`docs/01-02_e2e/`)
   (required) and for Scope & non-goals. If a US file has no `## ゴール像` section — e.g. it was
   written before that section became required — **halt** and report:
 
@@ -120,29 +121,42 @@ Capture the **what**, in this order (scope and structure first, granular detail 
 | Scope & non-goals | What is in scope; explicitly what is NOT (prevents scope creep) |
 | Features | The feature set, each as a short capability statement |
 | Behavior | How the app behaves for the key flows (rules, states, edge behavior) |
-| E2E シナリオ (**required**) | The end-to-end usage scenarios — see below. Never omitted |
+
+The end-to-end scenarios are **not** a section of the spec: each is its own file under
+`docs/01-02_e2e/` — see below. They are never omitted.
 
 Do **not** include technical design: no architecture, layering, data models, or API
 internals. Those belong to design (`docs/03_design/`), a separate later step if needed.
 
-For each feature, note the **US/AC it satisfies** (e.g., "satisfies AC-002") so the
-downstream exec-plan can trace AC → spec → code (keeps AC traceability intact).
+For each feature **and each behavior section**, note the **US/AC it satisfies** (e.g.,
+"satisfies AC-002") so the downstream exec-plan can trace AC → spec → code (keeps AC traceability
+intact). The marker is what lets a plan's `## Sources` row name the section as the AC's source; a
+section that describes an AC's behavior without saying so is easy to miss and easy to mistake for
+background (`../create-exec-plan/ac-sources.md`「What counts as a source」).
 
-#### The `## E2E シナリオ` section (required)
+#### The E2E scenarios (required) — `docs/01-02_e2e/`
 
 Features are fragments; a spec made only of fragments can satisfy every AC and still not work
-when used end to end. This section is what keeps the *whole* in the spec, and it is the source
-the exec-plan's `[E2E]` acceptance criterion is written against. **It is never `(if applicable)`
+when used end to end. The scenarios are what keep the *whole* in view, and each is the source the
+exec-plan's `[E2E]` acceptance criterion is written against. **They are never `(if applicable)`
 and never omitted.**
 
 Derive the scenarios from the `## ゴール像` section of the source US file — specifically its
 主要ユーザージャーニー. One scenario per distinct end-to-end path (a normal path at minimum;
 add key alternate/failure paths where the goal image calls for them).
 
-Write each scenario as:
+**One scenario, one file**: `docs/01-02_e2e/E2E-NNN_{slug}.md`. `E2E-NNN` is unique across the
+project — take the next free number, never reuse one. While a spec still has old-layout scenarios,
+count those too: the next free number is above every ID in either layout. A file per scenario is
+what lets a scenario be approved, routed (CLAUDE.md「変更のルーティング」) and frozen by a plan on its
+own, rather than as a paragraph of a larger spec file. Write each as:
 
 ```markdown
-### E2E-001: {scenario name}
+---
+status: draft
+---
+
+# E2E-001: {scenario name}
 
 {Mermaid flowchart or sequence diagram of the through-flow, per CLAUDE.md diagram rules}
 
@@ -153,28 +167,35 @@ Write each scenario as:
 - 満たす AC: AC-001, AC-003, AC-005
 ```
 
-**Cross-cutting traceability.** `満たす AC` is the point of this section: feature-level
-traceability runs *downward* (feature → satisfies AC-002), which cannot express "these several
-ACs together must add up to one working flow." The `E2E-NNN → AC-xxx, AC-yyy` mapping runs
-*across* the ACs and is what lets `run-tests` and `pre-pr` check E2E coverage rather than only
-per-AC coverage.
+**Why the scenarios live outside the spec.** The directory name is a range, `01-02`: a scenario
+stands in a two-way relationship with both the requirements (layer 1) and the spec (layer 2), and a
+single layer number would rank it above one and below the other. The reference-direction rule for a
+range is DOC-INV-001 in `../check-doc-invariants/SKILL.md`; when a scenario may correct the US or
+the spec — and when that stops — is [`e2e-interaction.md`](e2e-interaction.md).
 
-Also record the mapping as a table so it can be read at a glance:
-
-```markdown
-| E2E | シナリオ | 満たす AC |
-|-----|---------|----------|
-| E2E-001 | {name} | AC-001, AC-003, AC-005 |
-| E2E-002 | {name} | AC-002, AC-004 |
-```
+**Cross-cutting traceability.** `満たす AC` is the point of a scenario: feature-level traceability
+runs *downward* (feature → satisfies AC-002), which cannot express "these several ACs together must
+add up to one working flow." The `E2E-NNN → AC-xxx, AC-yyy` mapping runs *across* the ACs and is
+what lets `run-tests` and `pre-pr` check E2E coverage rather than only per-AC coverage. Each
+scenario file's `満たす AC` line is the **only** place the mapping is written; the at-a-glance table
+goes in this skill's report, not into the spec, where a second copy would drift from the files.
 
 Every AC defined in the source requirements should appear in at least one E2E scenario. If an AC
 belongs to no scenario, say so explicitly in the report — it usually means either the goal image
 is missing a path, or the AC is not actually needed for the finished thing.
 
-**A scenario is not frozen when this skill writes it.** Until an exec-plan that names that scenario
-in its `## Sources` is finalized, the scenario, the US and the spec may each be corrected to match
-the others — drafting a scenario is often how a gap in the requirements is found. Report such a gap (the
+**A project whose spec still has a `## E2E シナリオ` section** (the earlier layout, which put the
+scenarios inside `docs/02_spec/**`) keeps it valid for now — DOC-INV-006 reads both layouts and
+reports the old one as a ⚠️ migration candidate. Do not add new scenarios there: draft them in
+`docs/01-02_e2e/`. Moving the existing ones is the human's step, done as DOC-INV-006's fix hint
+describes, because a moved scenario breaks every active plan's `## Sources` row that names it.
+
+**A scenario is not frozen when this skill writes it — and approving it does not freeze it
+either.** Approval (the human merging the draft to `main`) makes it the current target; the freeze
+happens per plan, when an exec-plan that names the scenario in its `## Sources` is finalized. Until a
+plan freezes it, the scenario, the US and the spec may each be corrected to match the others —
+drafting a scenario is often how a gap in the requirements is found — though an edit to an approved
+document still goes through CLAUDE.md「変更のルーティング」. Report such a gap (the
 `Requirements gaps` line of the report) rather than writing it into the scenario as if it were
 decided: the freeze point and the complement-detection rule are in
 [`e2e-interaction.md`](e2e-interaction.md).
@@ -187,21 +208,23 @@ status: draft
 ---
 ```
 
-`status: draft` is mandatory — this spec is not yet approved.
+`status: draft` is mandatory — this spec, and each scenario file, is not yet approved.
 
 ### Step 3: Hand off for review and approval
 
 Do **not** approve, mark `active`, or proceed to planning. Report the draft and the required
-human gate (see report format): independent review → human approval (freeze) → planning.
+human gate (see report format): independent review → human approval → planning.
 
 ---
 
 ## Layer / reference rule
 
 `docs/02_spec/` is the spec layer (layer 2). It may reference requirements
-(`docs/01_requirements/`) as upward references. It must **not** pull in technical design
-detail (that is `docs/03_design/`, layer 3) or implementation detail — keep the spec about
-*what*, not *how*.
+(`docs/01_requirements/`) and the E2E scenarios (`docs/01-02_e2e/`). The scenarios are a range
+layer spanning 1 and 2: they may reference the US and the spec, and both may reference them
+(DOC-INV-001 in `../check-doc-invariants/SKILL.md`). Neither may pull in technical design detail
+(that is `docs/03_design/`, layer 3) or implementation detail — keep the spec and the scenarios
+about *what*, not *how*.
 
 ---
 
@@ -212,15 +235,18 @@ detail (that is `docs/03_design/`, layer 3) or implementation detail — keep th
 - [ ] The `## ゴール像` section of each source US was read (or the skill halted because it was
       missing)
 - [ ] An application spec was drafted under `docs/02_spec/` covering purpose, scope/non-goals,
-      features, behavior, and E2E シナリオ
-- [ ] The `## E2E シナリオ` section exists with at least one `E2E-NNN` scenario, each carrying a
-      Mermaid diagram, 前提, 完了条件, and 満たす AC
-- [ ] The `E2E-NNN → AC-xxx` cross-cutting traceability table is present, and any AC belonging to
-      no scenario was reported
+      features, and behavior — with no **new** scenario added to a `## E2E シナリオ` section. An
+      existing old-layout section is left in place (moving it is the human's step) and named in
+      the report as a migration candidate
+- [ ] At least one scenario exists for the spec, in either layout, and every scenario this run
+      drafted is a file `docs/01-02_e2e/E2E-NNN_{slug}.md` carrying `status: draft`, a
+      `# E2E-NNN:` heading, a Mermaid diagram, 前提, 完了条件, and 満たす AC
+- [ ] The `E2E-NNN → AC-xxx` mapping is shown in the report, and any AC belonging to no scenario
+      was reported
 - [ ] The spec describes *what* the app does, with NO technical design (architecture/data
       model/API internals)
-- [ ] Every drafted file has `status: draft` frontmatter
-- [ ] Each feature references the US/AC it satisfies
+- [ ] Every drafted file — spec and scenarios — has `status: draft` frontmatter
+- [ ] Each feature and behavior section references the US/AC it satisfies
 - [ ] The spec was NOT approved/marked active and did NOT proceed to planning automatically
 - [ ] Independent review + human approval + next step were communicated
 
@@ -231,6 +257,8 @@ Final report output by the agent:
 
 From requirements : docs/01_requirements/user_stories/US-XXX_{name}.md
 Drafted spec      : docs/02_spec/app_spec.md
+Drafted scenarios : docs/01-02_e2e/E2E-001_{slug}.md, docs/01-02_e2e/E2E-002_{slug}.md
+Old-layout E2E    : {spec file § E2E シナリオ (E2E-NNN, …) — a migration candidate for the human; or "none"}
 AC coverage       : AC-001 → {feature} | AC-002 → {feature} | ...
 E2E シナリオ      : E2E-001 {name} → AC-001, AC-003 | E2E-002 {name} → AC-002, AC-004
 AC not in any E2E : {AC list, or "none"}
@@ -238,7 +266,8 @@ Requirements gaps : {outcomes a scenario needed that the US does not state — f
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec
-  2. Approve : edit as needed, then approve/freeze (merge — see spec-version management)
+  2. Approve : edit as needed, then approve the spec and the scenarios (merge — see
+               spec-version management). A scenario freezes later, per plan
   3. Plan    : run /create-exec-plan to turn the approved spec + ACs into a plan
-               (the E2E シナリオ above become the plan's [E2E] acceptance criterion)
+               (the scenarios above become the plan's [E2E] acceptance criteria)
 ```

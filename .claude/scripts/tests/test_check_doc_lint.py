@@ -1340,5 +1340,47 @@ class TestSourcesAC008EndToEnd(SourcesRepo):
         self.assertNotIn("also-gone.md", report)
 
 
+E2E_PATH = "docs/01-02_e2e/E2E-001_tag-and-filter.md"
+
+E2E_FIXTURE = """\
+---
+status: active
+---
+
+# E2E-001: 付けて絞る
+
+- 前提: タグの無いファイルがある
+- 完了条件: 絞り込んだ一覧にタグ付きのファイルだけが出る
+- 満たす AC: AC-001, AC-002
+"""
+
+MIGRATED_SPEC_FIXTURE = SPEC_FIXTURE.split("## E2E シナリオ")[0]
+
+
+class TestSourcesE2ERangeLayout(SourcesRepo):
+    """E2E シナリオは1シナリオ1ファイルで範囲名のディレクトリ `docs/01-02_e2e/` に置く（create-spec）。
+    その行は `§ E2E-NNN` で `# E2E-NNN:` 見出しに解決する。旧配置から移設した後に付け替え漏れた行は、
+    spec ファイルが残り節だけが消えるため ❌ ではなく ⚠️（check-doc-invariants DOC-INV-006 の移設手順）。"""
+
+    def test_row_naming_a_scenario_file_resolves(self):
+        write(self.root, E2E_PATH, E2E_FIXTURE)
+        plan = self.plan(
+            f"| AC-001 | `{US_PATH}` § AC-001 | `{SPEC_PATH}` §「タグの付与」 |\n"
+            f"| AC-003 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | `{E2E_PATH}` § E2E-001 |"
+        )
+
+        self.assertEqual(self.check(plan), [])
+
+    def test_row_left_on_the_old_layout_after_the_move_is_a_warning(self):
+        write(self.root, E2E_PATH, E2E_FIXTURE)
+        write(self.root, SPEC_PATH, MIGRATED_SPEC_FIXTURE)
+        plan = self.plan(f"| AC-003 [E2E] | `{US_PATH}` § ゴール像 | `{SPEC_PATH}` § E2E-001 |")
+
+        findings = self.check(plan)
+
+        self.assertEqual([(f.check, f.level) for f in findings], [("C6", "warn")])
+        self.assertIn("E2E-001", findings[0].message)
+
+
 if __name__ == "__main__":
     unittest.main()

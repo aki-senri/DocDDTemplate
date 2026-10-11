@@ -296,7 +296,8 @@ ACs     : AC-001, AC-002, ... (list all defined)
 ゴール像 : {Q4a in one line} / ジャーニー {n} ステップ / 非ゴール {n} 件
 Constraints added: {count} (or "none")
 
-Next step: Run /create-spec to draft the application spec (docs/02_spec/) from these requirements.
+Next step: Run /create-spec to draft the application spec (docs/02_spec/) and its E2E scenarios
+(docs/01-02_e2e/) from these requirements.
   (Then, after the spec is reviewed and approved, run /create-exec-plan.)
   Suggested feature   : {Q1}
   ACs to spec for     : {AC list from Q3}

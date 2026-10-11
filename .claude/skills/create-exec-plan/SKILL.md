@@ -88,8 +88,9 @@ is exactly that a later reader can distinguish "there is nothing to read" from "
 Two more rules apply while filling the table, both because the plan is about to freeze:
 
 - **Name sources only — never background material.** A research note, an ADR in
-  `docs/00_project/decisions.md` or another plan's Decision Log may explain *why* an AC exists, but a
-  test may not be drafted from it (`ac-sources.md`「What counts as a source」). If the detail the AC
+  `docs/00_project/decisions.md` or another plan's Decision Log may explain *why* an AC exists, and a
+  design document how it is built, but a test may not be drafted from any of them
+  (`ac-sources.md`「What counts as a source」). If the detail the AC
   needs lives only there, promote it into the US / spec with the user, or write `n/a（理由）`.
 - **A row that names an `E2E-NNN` freezes that scenario for this plan.** Before finalizing, compare
   the scenario against the comparison set that
@@ -203,8 +204,9 @@ plans in particular, where re-opened IDs invite a parenthetical. The `[E2E]` mar
 goes *after* the colon so the gate keeps matching, and `run-tests` / `pre-pr` locate E2E ACs by
 grepping for the marker.
 
-**Where the content comes from.** If a spec exists, take the scenarios from its
-`## E2E シナリオ` section — one E2E AC per `E2E-NNN`, and reference it so the trace survives:
+**Where the content comes from.** If a spec exists, take the scenarios from `docs/01-02_e2e/`
+(one file per `E2E-NNN`; a project not yet migrated has them as the spec's `## E2E シナリオ`
+section) — one E2E AC per `E2E-NNN`, and reference it so the trace survives:
 
 ```markdown
 - [ ] AC-005: [E2E] E2E-001 のとおり、{前提}から{完了条件}まで通しで実行できる
@@ -259,7 +261,7 @@ completed:
 |----|------------------------|---------------------|
 | AC-001 | `docs/01_requirements/user_stories/US-XXX_{name}.md` § AC-001 | `docs/02_spec/app_spec.md` §「{節名}」 |
 | AC-002 | 同上 § AC-002 | 同上 §「{節名}」 |
-| AC-003 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | 同上 § E2E-001 |
+| AC-003 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | `docs/01-02_e2e/E2E-001_{slug}.md` § E2E-001 |
 
 <!-- 全 AC に行を置く。起点が無い AC は空欄にせず `n/a（理由）` と書く。
      この表の中では AC-NNN の直後にコロンを置かない（spec-gate.py が AC として拾うため）。
@@ -281,7 +283,7 @@ completed:
 
 ## Steps
 
-1. Complete the Q1–Q4 interview (including Q3b — read the spec's `## E2E シナリオ` section first
+1. Complete the Q1–Q4 interview (including Q3b — read the scenarios in `docs/01-02_e2e/` first
    if a spec exists, so the E2E criteria can be derived rather than asked from scratch)
 2. If the plan changes a process (Q3e — scope table in
    [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
@@ -309,7 +311,7 @@ completed:
 - [ ] The file contains `status: active`, `created: YYYY-MM-DD`, goal, acceptance criteria, and task breakdown
 - [ ] For any plan implementing requirements or functionality (**refactoring included**):
       **at least one acceptance criterion is an E2E criterion** written as `- [ ] AC-NNN: [E2E] ...`,
-      placed after the functional ACs, and traced to the spec's `E2E-NNN` (or to the US goal image
+      placed after the functional ACs, and traced to an `E2E-NNN` scenario (or to the US goal image
       when no spec exists). For a documentation-only plan: **no `[E2E]` AC is present**, and
       `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked

@@ -22,7 +22,7 @@ flowchart TD
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
         DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption / dependency backflow\n  (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E シナリオ section (REQUIRED):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval before freeze"]
+        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
@@ -119,7 +119,7 @@ flowchart TD
 | `pre-pr` | `run-tests` | Internal call |
 | `start-feature` | `run-tests` | Internal call |
 | `run-exec-plan` | `run-tests` | Internal call (per AC — once for the red-first run before implementing, once to verify; via Skill tool, `run-tests` is model-invocable) |
-| `run-exec-plan` | `docs/01_requirements/` + `docs/02_spec/` | Not a skill call — Step 1b **reads** the sections the plan's `## Sources` names, and Step 3a re-reads the spec section before checking the box |
+| `run-exec-plan` | `docs/01_requirements/` + `docs/01-02_e2e/` + `docs/02_spec/` | Not a skill call — Step 1b **reads** the sections the plan's `## Sources` names, and Step 3a re-reads the spec section before checking the box |
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
@@ -160,13 +160,15 @@ flowchart TD
 > one-liner. It exists because the AC line is a condensation by design —
 > `spec-gate.py` parses `AC-(\d{3}):`, so the verifiable detail stays in the US and the spec, and
 > without a pointer it never reaches the implementer. Documents are in three classes there: sources
-> (a test may be drafted from them), **background** (research notes, `docs/00_project/**` ADRs — read
-> for *why*, never transcribed; a row naming one is NOT READY), and the code and tests (not read).
+> (a test may be drafted from them), **background** (`docs/00_project/**` — ADRs and research notes —
+> and the parts of layers 1–2 that are not a source section; read for *why*, never transcribed; a row
+> naming one is NOT READY), and **not read** (the code, the tests, and `docs/03_design/**` down).
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)
 > — when an `E2E-NNN` scenario **freezes** (when the exec-plan that names it in `## Sources` is
-> finalized; before that, scenario, US and spec may correct one another in either direction), and
+> finalized; before that, scenario, US and spec may correct one another in either direction — an
+> approved one still through the routing; approval is per document, the freeze is per plan), and
 > **complement detection**: a scenario stating an outcome nowhere in its comparison set (the row's
 > sources, the goal image, and the US / spec sections of its `満たす AC`) is a detected requirements
 > gap, which a human resolves (① promote it, ② drop it, ③ rework thin requirements).
@@ -263,7 +265,7 @@ context (an issue closes on merge, not on this table):
 
 | # | Issue | Status |
 |---|-------|--------|
-| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved (#27, merged) — `create-requirements` goal image (required) → `create-spec` `## E2E シナリオ` (required, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
+| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved (#27, merged) — `create-requirements` goal image (required) → `create-spec` E2E scenarios (required, one file each in `docs/01-02_e2e/`, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
 | G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved (#24, merged) — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
 | G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved (#22, merged) — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
 | G-B / G-D | The goal reaching the driver was one condensed line — the US bullets and the spec section it stands for were never opened (in), and a green run was never checked back against the spec the traceability points at (out) | 🔄 Addressed, pending merge of #23 / #25 — shared `ac-sources.md`: `create-exec-plan` Q3d (`## Sources` table) / `run-exec-plan` Step 1b (read the sources before drafting the test) + Step 3a (spec re-anchor before the box is checked) / `red-first.md` source set / `start-feature` Step 2 / `pre-pr` ⑤c (⚠️) / `docode-review` / `promote-spec` reconcile template |

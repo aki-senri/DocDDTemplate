@@ -74,6 +74,10 @@ Run the `check-doc-invariants` skill against all documents in the repository.
   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
   record the decision if leaving ASCII art intentionally
+- For the DOC-INV-006 migration warning (scenarios still in a spec's `## E2E シナリオ` section):
+  **report it, do not move them**. Moving a scenario breaks every active plan's `## Sources` row
+  that names it, and repointing those rows is a human's call — the same reason DOC-INV-012 is not
+  repaired here. The move itself is described under DOC-INV-006 in `check-doc-invariants`
 
 ### ④ Document lifecycle cleanup
 

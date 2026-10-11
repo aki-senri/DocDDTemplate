@@ -18,8 +18,8 @@ So the verifiable detail exists — it is just somewhere else:
 | Where the detail lives | What it holds |
 |------------------------|---------------|
 | `docs/01_requirements/user_stories/US-XXX_*.md` § `AC-NNN` | the 2–5 checkable bullets the one-liner condenses |
-| `docs/02_spec/**` — the feature section marked "satisfies AC-NNN" | the behavior the AC is supposed to produce |
-| `docs/02_spec/**` § `E2E-NNN` | the through-flow, and which ACs must add up to it |
+| `docs/02_spec/**` — the section(s) describing AC-NNN's behavior (normally marked "satisfies AC-NNN") | the behavior the AC is supposed to produce |
+| `docs/01-02_e2e/E2E-NNN_*.md` § `E2E-NNN` (one file per scenario; a project not yet migrated has it as `docs/02_spec/**` § `E2E-NNN`) | the through-flow, and which ACs must add up to it |
 | `docs/01_requirements/constraints.md` | the TC / BC / PF / SC rows the result must respect |
 
 Before this file existed, none of it reached the autonomous driver. `run-exec-plan` steered by the
@@ -40,13 +40,35 @@ session has only the files (CLAUDE.md「再開状態のファイル化規約」)
 
 A source is **frozen spec material authored by a human**. Two questions are kept apart here, because
 answering one is not answering the other: *may this document be read?* and *may a test's expected
-result be drafted from it?* Every document falls in one of three classes:
+result be drafted from it?* Every document under `docs/**` falls in exactly one of three classes,
+decided by its path and, inside layers 1–2, by the section:
 
 | Class | Documents | May be read | May supply given / when / then or an expected value |
 |-------|-----------|:-----------:|:---------------------------------------------------:|
-| **Source（起点にしてよい）** | The US file's `### AC-NNN` section (its bullets)・the spec section that says "satisfies AC-NNN"・the `E2E-NNN` scenario (for an `[E2E]` AC — frozen per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md))・`constraints.md` rows the AC must respect・the US `## ゴール像` (when `/create-spec` was skipped) | ✅ | ✅ — this is what `## Sources` names |
-| **Background（背景として読んでよい）** | Research and investigation notes・`docs/00_project/**` (overview, glossary, `decisions.md` — the ADRs)・another plan's Decision Log・an issue or discussion thread (a plan may still cite one as the *origin* inside an `n/a（理由）`) | ✅ — to understand *why* the spec says what it does, and to route a fix (current version or next) | ❌ — never |
-| **Not read（読まない）** | Existing implementation code・existing tests | ❌ — not for this purpose | ❌ |
+| **Source（起点にしてよい）** | The US file's `### AC-NNN` section (its bullets)・the spec section that describes AC-NNN's behavior (`create-spec` marks it "satisfies AC-NNN" — a feature or a behavior section)・the `E2E-NNN` scenario, for an `[E2E]` AC (`docs/01-02_e2e/E2E-NNN_*.md`, or the old-layout `docs/02_spec/**` § `E2E-NNN` until the project migrates — frozen per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md))・`constraints.md` rows the AC must respect・the US `## ゴール像` (for an `[E2E]` AC, whether or not a spec exists; for any AC when `/create-spec` was skipped) | ✅ | ✅ — this is what `## Sources` names |
+| **Background（背景として読んでよい）** | `docs/00_project/**` (overview, glossary, `decisions.md` — the ADRs — and research notes under `research/`)・the rest of layers 1–2: the parts of `docs/01_requirements/**`, `docs/01-02_e2e/**` and `docs/02_spec/**` that are not a source above (`functional/*.md`, `non_functional/*.md`, the spec's purpose and scope, a section describing other ACs or none, a scenario other than the one an `[E2E]` row names — or any scenario, read for a functional AC)・another plan's Decision Log・an issue or discussion thread (a plan may still cite one as the *origin* inside an `n/a（理由）`) | ✅ — to understand *why* the spec says what it does, and to route a fix (current version or next) | ❌ — never |
+| **Not read（読まない）** | Existing implementation code・existing tests・`docs/03_design/**` through `docs/07_*/**` (design, implementation, quality, operations, AI context) | ❌ — not for this purpose | ❌ |
+
+**Why layers 3 and below are not read.** They describe *how* the thing is built — the architecture,
+the data model, the patterns the code follows. That is the implementation side of the line red-first
+draws, one step removed from the code, and an expected result drafted from a design document measures
+the design, not the goal. It is also the line DOC-INV-001 already draws for links: an exec-plan may
+not reference layers 3+ (`../check-doc-invariants/SKILL.md`). "Not for this purpose" is literal —
+other steps read these files for their own job (`run-tests` reads `test_strategy.md` for the test
+command; `start-feature` reads `patterns.md` for the implementation order). What is excluded is
+using them to decide what a test expects.
+
+**Why the rest of layers 1–2 is background, not source.** A source is the section a human condensed
+*this* AC from. The rest of the same documents is frozen, but it is about other things; drafting from
+it widens the AC by inference, which is the separate-outcome case below reached by another path. What
+decides is the content — does the section describe this AC? — not the marker: a behavior section in a
+spec written before `create-spec` marked behavior sections is still this AC's source if it describes
+it. Name it, and add the marker when the spec is next edited.
+
+**Why the US goal image is a source for an `[E2E]` AC even when a spec exists.** It is human-approved
+requirements material — the journey the scenario was derived from — not material a decision was made
+*from*. Naming it beside the scenario (`§ ゴール像／主要ユーザージャーニー`) is how a plan says which
+journey the `[E2E]` AC condenses; the scenario carries the detail.
 
 The implementer's own inference about intent is in none of the classes: it is not a document, and an
 expected result that rests on it is invented, not transcribed.
@@ -89,7 +111,7 @@ Placed in the exec-plan after `## Acceptance Criteria` (and after the `[E2E]` no
 |----|------------------------|---------------------|
 | AC-001 | `docs/01_requirements/user_stories/US-003_tagging.md` § AC-001 | `docs/02_spec/app_spec.md` §「タグの付与」 |
 | AC-002 | 同上 § AC-002 | 同上 §「一覧の絞り込み」 |
-| AC-005 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | 同上 § E2E-001 |
+| AC-005 [E2E] | 同上 § ゴール像／主要ユーザージャーニー | `docs/01-02_e2e/E2E-001_tag-and-filter.md` § E2E-001 |
 ```
 
 Rules for the table:
@@ -122,9 +144,12 @@ Rules for the table:
 - In active plans these forms are resolved mechanically by DOC-INV-012
   (`../check-doc-invariants/SKILL.md`): a missing file blocks the PR, an unmatched section warns.
 
-Referencing `docs/02_spec/` from an exec-plan is a legal upward reference — see DOC-INV-001 in
-`../check-doc-invariants/SKILL.md`, where exec-plans sit at layer 2.5 (below the spec they
-implement).
+Referencing `docs/02_spec/` or `docs/01-02_e2e/` from an exec-plan is a legal upward reference —
+see DOC-INV-001 in `../check-doc-invariants/SKILL.md`, where exec-plans sit at layer 2.5 (below the
+spec they implement) and the scenarios are a range spanning layers 1–2. A project whose scenarios
+are still in the old layout (a spec's `## E2E シナリオ` section) names them as
+`` `docs/02_spec/app_spec.md` § E2E-001 ``; once a scenario moves, the rows naming it are repointed
+in the same commit (DOC-INV-006 describes the move).
 
 ---
 
@@ -200,13 +225,28 @@ If the detail the AC needs is genuinely only in background material, it has not 
 any frozen document. The fix is to put it there — promote it into the US or spec — or to write the
 row as `n/a（理由）` and let the AC line carry the whole goal.
 
+**Repoint the row only once the promotion is on `main`.** The row's new target — the US or spec
+section the detail was promoted into — is read on `main`, the current target: by DOC-INV-012, which
+blocks on a file that does not exist, and by the reader, who halts on a section they cannot find
+(「When a source cannot be opened」). Until the promotion is merged, keep the row as it is: the AC
+stays NOT READY, which is the true state. If the promotion is routed to the next version
+(`spec/<label>`), it will not reach `main` before the promotion does, so the human chooses between
+writing the row as `n/a（理由）` now, or deferring the plan (record `deferred` in its Decision Log).
+
 | Call site | Action |
 |-----------|--------|
 | `create-exec-plan` (Q3d) | **Do not write the row.** Promote the detail into the US / spec with the user, or write `n/a（理由）` |
 | `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against material that is not a source, and the `n/a` fallback does not apply. **HALT** with (a) before the loop starts |
-| `start-feature` Step 1b and Step 2 | Present the row to the user — at Step 1b already, as for a row that cannot be opened. Fixing it is theirs: promote the detail into the US / spec and repoint the row, or replace it with `n/a（理由）` |
+| `start-feature` Step 1b and Step 2 | Present the row to the user — at Step 1b already, as for a row that cannot be opened. Fixing it is theirs: promote the detail into the US / spec and repoint the row once the promotion is on `main`, or replace it with `n/a（理由）` |
 | `doc-review` §2 (advisory) | Report the row. `R2` for that AC is NOT READY, not judged on the line alone |
 | `docode-review` (advisory) | Hand the row to the reviewer as "names background material, not a source"; the reviewer reports it as a finding |
+
+A row naming a document in the **not read** class — a design, implementation, quality or operations
+document under `docs/03_design/**` and below — is handled by the same table: it is not a source
+either, and drafting from it would measure *how* the thing is built rather than what it must do.
+Throughout DocDD, "a row naming background material" therefore means **a row naming anything that
+is not a source** — background or not read — and every site that applies this section applies it to
+both.
 
 `run-exec-plan` Step 1b and Step 3a are not listed: a row of this kind stops the run at Step 0b, and
 a resumed run passes through Step 0b again before it reaches them. No mechanical check flags these

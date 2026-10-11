@@ -112,9 +112,10 @@ row is `n/a` or the plan has no table, `R2` falls back to the AC line, as `ac-re
 A row that names something that **cannot be opened** is not `n/a` and gets no fallback: that AC is
 NOT READY, and the run halts with (a) — see
 [`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md)「When a source cannot be
-opened」. The same holds for a row that names **background material** (a research note, an ADR,
-another plan's Decision Log) instead of a source (`ac-sources.md`「When a row names background
-material」).
+opened」. The same holds for a row that names **background material** — anything
+`ac-sources.md`「What counts as a source」 does not class as a source, such as a research note, an
+ADR, another plan's Decision Log or a design document — instead of a source (`ac-sources.md`「When
+a row names background material」).
 
 While the sources are open, run **complement detection** on every row that names an `E2E-NNN`:
 compare the scenario against the **comparison set** that
@@ -157,7 +158,7 @@ there in full, and the AC line is their one-line condensation:
 
 | The `[E2E]` AC's source row names… | What to open |
 |-----------------------------------|--------------|
-| A spec `E2E-NNN` | `docs/02_spec/**` の `### E2E-NNN` シナリオ |
+| An `E2E-NNN` scenario | the file the row names — `docs/01-02_e2e/E2E-NNN_*.md`, or in a project not yet migrated, `docs/02_spec/**` の `### E2E-NNN` |
 | `n/a（spec 未作成…）` with a US section — `/create-spec` was skipped for a small change | the US `## ゴール像` の主要ユーザージャーニー, which is what `create-exec-plan` derived the AC from |
 | `n/a` for both, or the plan has no `## Sources` | Nothing to open — transcribe from the AC line alone and say so in the report |
 
@@ -201,8 +202,10 @@ by the one line means steering by whatever the driver reads into it.
 
 Open the AC's row in the plan's `## Sources` and read what it names. Follow
 [`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md); do not re-derive the
-admissible sources here. **Do not read implementation code for this AC** — the widened source set is
-frozen spec material only, and reading the code would undo what Step 2a exists for.
+admissible sources here. **Do not read implementation code for this AC** — nor, for drafting it,
+the design and other docs from `docs/03_design/**` down, which that file classes as not read — the
+widened source set is frozen spec material only, and reading the code would undo what Step 2a exists
+for.
 
 | What you find | Action |
 |---------------|--------|
