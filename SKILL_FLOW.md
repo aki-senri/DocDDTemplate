@@ -91,7 +91,7 @@ flowchart TD
 
     subgraph SPEC_PROMO["Spec Version Promotion (sprint boundary)"]
         SPECBR["spec/* branch\n· Accumulate next-version spec (docs only)\n· In-version fixes commit to main directly"]
-        PROMO["/promote-spec\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n· Find stale impl + in-flight collisions\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs\n  (carries an [E2E] AC; re-opened ACs are\n  re-tested red-first against the new spec)"]
+        PROMO["/promote-spec\n· Drift guard: check 次版戻し markers survived\n  the merge of main (stop if a line is gone)\n· Diff main vs the spec branch → classify NEW/CHANGED/REMOVED ACs\n  and E2E scenarios (by E2E-NNN)\n· Find stale impl + in-flight collisions,\n  incl. E2E collisions with no AC change\n· HUMAN decision, then merge --no-ff\n· Tag new target snapshot (spec-target-*); prev already tagged, seed baseline on 1st\n· Create reconcile exec-plan for stale ACs\n  (carries an [E2E] AC; re-opened ACs are\n  re-tested red-first against the new spec)"]
         SPECBR --> PROMO
     end
 
@@ -338,6 +338,9 @@ All skills are manually invoked, and hooks do not block execution.
 > boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the
 > outgoing version (`spec-target-*`), and feeds reconcile / new-AC plans back into the planning phase.
 > The merge is a deliberate human decision; the skill only assists analysis before and bookkeeping after.
+> Collisions are found by AC-ID **and** by `E2E-NNN`, so a scenario rewritten with no AC line changed
+> still shows up; edits made outside a promotion are caught weekly by `/gc`'s E2E backstop, which also
+> reports scenarios no plan has taken up (derived from the `## Sources` rows — there is no ledger file).
 
 ---
 

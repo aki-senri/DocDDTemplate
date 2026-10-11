@@ -2,9 +2,11 @@
 
 > **Single source.** `create-exec-plan` (Q3d), `start-feature` (Step 2) and `run-exec-plan`
 > (Step 0b / 0c / 1b / 3a) apply **this** file as gates; `check-doc-invariants` (DOC-INV-006) and
-> `doc-review` apply its comparison as advisory sites (「Where this is applied」). Do not restate the
-> freeze point or the complement-detection branches inline in a skill — reference this file, so the
-> call sites cannot drift apart.
+> `doc-review` apply its comparison as advisory sites (「Where this is applied」). `gc` (④, the E2E
+> backstop) and `promote-spec` (Step 2's `次版戻し` check, Steps 3–4's E2E-keyed collisions) read its
+> freeze point, freeze search and record formats. Do not restate the freeze point or the
+> complement-detection branches inline in a skill — reference this file, so the call sites cannot
+> drift apart.
 
 ## Why this exists
 
@@ -97,9 +99,11 @@ scenario is frozen for, search the `## Sources` tables of `exec-plans/active/` *
 (`grep -rn "E2E-001" exec-plans/active/ exec-plans/completed/ 2>/dev/null || true`). The grep also
 matches Decision Log and Progress Log prose; only a hit inside a `## Sources` row counts. A hit in
 `active/` is recorded in that plan's Decision Log; a hit in `completed/` is re-opened in a reconcile
-plan — the two branches of the table above. Nothing detects an edit to a scenario
-that leaves every AC line unchanged — the `gc` spec-drift backstop is keyed on AC-IDs — so this search
-is the editor's job (see「Known gaps」).
+plan — the two branches of the table above. This search is the editor's job — a promotion included,
+where `promote-spec` Steps 3–4 run it by `E2E-NNN` for the person promoting. The `gc` E2E backstop
+(`../gc/SKILL.md` ④) is the safety net behind it: weekly, it reports a scenario changed after a plan
+froze it with no record in that plan (active) or no reconcile plan re-opening its `[E2E]` AC
+(completed). It finds a skipped search late; it does not make the search optional.
 
 **What this file does not change.** It fixes which document may correct which, and when that stops.
 It does **not** fix an *authoring order* either way. The goal image and the scenarios may be written
@@ -180,6 +184,38 @@ is frozen against. A resolution therefore lets *this* plan proceed only once its
 | ① or ③ judged a **next-version** change | `spec/<label>` | The gap is still on `main`, so the next comparison halts on it again. The human also chooses one of: apply **②** on `main` now (drop the outcome from the current scenario; the next version adds it back), or **defer** this plan until the promotion (record `deferred:` in its Decision Log — see「Deferring a plan, and lifting it」) |
 | A contradiction's edit | `main` only | Correcting a contradiction is fixing the current version (CLAUDE.md「変更のルーティング」: 矛盾の是正), never a next-version change. If the side the human prefers would widen the scope and is judged next-version, `main` is made consistent on the narrower side — see「A contradiction whose winning side would widen the current scope」 |
 
+**When `main` drops text the next version should bring back, record it.** Two resolutions do this:
+② applied on `main` for a gap whose ① or ③ was judged next-version, and a contradiction whose
+broader side was judged next-version, where `main` is made consistent on the narrower side (below).
+Either way a line leaves `main` that is meant to return with the promotion, and nothing carries it
+there. `promote-spec` Step 2 brings `spec/<label>` current by merging `main` into it, and a line the
+version branch has not touched since it branched takes `main`'s deletion without a conflict —
+re-adding it on the branch beforehand does not help, because an unchanged line is exactly what a
+merge lets the other side delete. So the human who makes the edit on `main` records, at that moment,
+a bullet that begins at the start of the line in the plan's Decision Log:
+
+```markdown
+- E2E 次版戻し: spec/sprint-12 — `docs/01-02_e2e/E2E-001_tag-and-filter.md` の「- 完了条件: 一覧を CSV に書き出せる」を main で削除（a1b2c3d）。
+```
+
+It names the **file** and the removed line **verbatim** — a paraphrase cannot be checked
+mechanically — and the commit on `main` that removed it (fill it in once the commit exists; under a
+squash merge, the squashed commit). `promote-spec` Step 2 reads these bullets for its `<label>` and
+checks that each line is still in `spec/<label>`; when one is gone the promotion **stops** until a
+human re-adds it there. If the next version has since changed its mind, the human withdraws the
+marker instead, with a second bullet:
+
+```markdown
+- E2E 次版戻し 取消: spec/sprint-12 — `docs/01-02_e2e/E2E-001_tag-and-filter.md` の「- 完了条件: 一覧を CSV に書き出せる」（{理由}）。
+```
+
+As with a deferral, only a bullet that begins `- E2E 次版戻し:` (or `- E2E 次版戻し 取消:`) counts.
+The plan may be completed long before the promotion; the bullet is still found, because Step 2
+reads `exec-plans/completed/` too. **With no plan to hold it** — a gap an advisory site reported
+(DOC-INV-006, `doc-review`) and a human resolved before any plan named the scenario — there is no
+Decision Log for the bullet. The net there is the deletion review in `promote-spec` Step 2, which
+lists every line `main` has removed from `docs/` since the outgoing target, for the human to check.
+
 **Deferring a plan, and lifting it.** Deferral is recorded in the plan's Decision Log in one form, so
 that the sites below can find it:
 
@@ -215,7 +251,7 @@ judgement in CLAUDE.md「変更のルーティング」, and it is the human's:
 | The human judges the broader side… | On `main` | On `spec/<label>` |
 |------------------------------------|-----------|-------------------|
 | In-version (the current target was wrong) | Edit the narrower document to agree, as for any contradiction | — |
-| Next-version | Make `main` consistent **now, on the narrower side**: edit the broader document to agree with the narrower one (for a scenario, drop the step — ②) | Add the broader side, to come back at the promotion |
+| Next-version | Make `main` consistent **now, on the narrower side**: edit the broader document to agree with the narrower one (for a scenario, drop the step — ②), and record the removed line as `- E2E 次版戻し:` (above) | Add the broader side, to come back at the promotion |
 
 Deferring the plan alone is not a resolution here. The two documents on `main` would still disagree,
 so the next comparison — this plan's, any other plan's that freezes the scenario, and every advisory
@@ -299,18 +335,18 @@ has not been done yet, and `run-exec-plan` Step 0b does it.
 
 ## Known gaps
 
-Two states this file does not yet close. They are written here so a reader meeting one knows it is
-known, and what the existing rules already say about it.
+One state this file does not close. It is written here so a reader meeting it knows it is known, and
+what the existing rules already say about it.
 
 | State | What happens today | What already applies |
 |-------|--------------------|---------------------|
-| **A promotion rewrites a frozen scenario.** `promote-spec` Step 4 finds in-flight collisions by AC-ID, so a promotion that changes an `E2E-NNN`'s steps or 完了条件 while leaving every AC line alone reports none — and silently moves the target of an active plan whose `[E2E]` test is already frozen | Not detected by `promote-spec` or by `gc` (whose spec-drift backstop is also keyed on AC-IDs) | 「The freeze is per plan」: whoever edits a scenario — a promotion included — searches `exec-plans/active/` and `exec-plans/completed/` for its ID, as that section describes. The person running `promote-spec` is that editor |
 | **The gap is already in a frozen `[E2E]` test.** Step 0c transcribes the whole scenario before the loop. If complement detection first fires at Step 1b / 3a — or at Step 0b of a **resumed** run whose Step 0c test already exists (a plan predating this file, or a scenario edited between sessions) — the gap may already be the test's expected result, and the human's ② (drop it) or a contradiction resolved against the scenario changes a frozen expectation | Step 0c's resume rule ("an earlier session placed it → re-run, do not rewrite") would steer the run toward the dropped step | That change is **stop condition (c)** — a test expectation change grounded in a spec change (INV-T01 / INV-T02). The human records the spec change and the test change together in the Decision Log; the driver does not rewrite the test itself. Step 0b running before Step 0c is what keeps this rare on a first run |
 
-Closing them takes detections keyed on `E2E-NNN` rather than on AC-IDs — a collision check in
-`promote-spec`, a `gc` backstop for a scenario edited after a plan froze it. Neither exists yet. The
-advisory sites above do not close them: they compare a scenario with the requirements beside it, not
-with the version a plan froze.
+A promotion that rewrites a frozen scenario while leaving every AC line alone used to be listed here
+too. It is now detected: `promote-spec` classifies scenarios by `E2E-NNN` and reports in-flight E2E
+collisions and stale E2E (Steps 3–4), and the `gc` E2E backstop catches an edit made outside a
+promotion. The state above is different in kind — not an undetected edit but a decision already
+frozen into a test — and stop condition (c) is its answer, so no detection closes it.
 
 ---
 
@@ -327,19 +363,21 @@ or, when a finding was resolved:
 
 ```markdown
   補完検出: 要件の穴 1 件 — 「{シナリオが述べ、US/spec に無い成果}」→ 人の決定: ①昇格（{comparison set 内の節} に追記、
-  ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）| ②シナリオから削除（ルーティング: main）
-  | ③要件の見直し（{何を}、ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）。
+  ルーティング: {main | spec/<label> ＋ main で②適用 — 下の `- E2E 次版戻し:` 行も記録 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）| ②シナリオから削除（ルーティング: main）
+  | ③要件の見直し（{何を}、ルーティング: {main | spec/<label> ＋ main で②適用 — 下の `- E2E 次版戻し:` 行も記録 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）。
   補完検出: 矛盾 1 件 — 「{シナリオの記述}」と {US/spec の節} の「{記述}」→ 人の決定: {どちら} を正とし、
   {もう一方の文書と節} を修正（ルーティング: main — 矛盾の是正）。
   補完検出: 矛盾 1 件 — 「{シナリオの記述}」と {US/spec の節} の「{記述}」→ 人の決定: 広い側（{文書}）を
   次バージョンで採用。main では狭い側に合わせて {広い側の文書と節} を修正（ルーティング: main — 矛盾の是正、
-  spec/<label> — 広い側の追加）。
+  spec/<label> — 広い側の追加 — 下の `- E2E 次版戻し:` 行も記録）。
 ```
 
-When the resolution defers the plan, add the deferral as its own bullet, at the start of the line:
+When the resolution defers the plan, or removes on `main` a line the next version brings back, add
+the marker as its own bullet, at the start of the line:
 
 ```markdown
 - deferred: spec/<label> の昇格まで — `E2E-001` の「{phrase}」（要件の穴、{①|③}を次バージョンで）。
+- E2E 次版戻し: spec/<label> — `{file}` の「{削除した行そのまま}」を main で削除（{commit}）。
 ```
 
 A scenario frozen by a row added after the plan was finalized carries the edit's date
