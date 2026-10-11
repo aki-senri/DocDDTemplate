@@ -1,9 +1,10 @@
 # E2E interaction — when an E2E scenario freezes, and what to do when it fills a gap
 
 > **Single source.** `create-exec-plan` (Q3d), `start-feature` (Step 2) and `run-exec-plan`
-> (Step 0b / 0c / 1b / 3a) all apply **this** file. Do not restate the freeze point or the
-> complement-detection branches inline in a skill — reference this file, so the call sites cannot
-> drift apart.
+> (Step 0b / 0c / 1b / 3a) apply **this** file as gates; `check-doc-invariants` (DOC-INV-006) and
+> `doc-review` apply its comparison as advisory sites (「Where this is applied」). Do not restate the
+> freeze point or the complement-detection branches inline in a skill — reference this file, so the
+> call sites cannot drift apart.
 
 ## Why this exists
 
@@ -68,7 +69,25 @@ step exists. Such a plan never passes Q3d, so its first comparison happens **aft
 any other (present / HALT (a)). A plan that never passed `create-exec-plan` — hand-written, or predating this
 file — freezes when it is placed in `exec-plans/active/`; like a reconcile plan, its first comparison
 comes after the freeze. In every case the plan's `created:` date is the record of the freeze; nothing
-else needs to be stamped.
+else needs to be stamped — except for a row added later, below.
+
+**A row added to a plan after it was finalized.** Adding an AC, or repointing a row so that it names
+an `E2E-NNN` it did not name before, freezes that scenario for the plan **at that edit**, not at
+`created:` — the plan had no claim on the scenario until then. The edit is a change to the AC set,
+which is the human's to make (CLAUDE.md「自律実装ループ」— AC の定義), so whoever makes it runs
+the checks `create-exec-plan` would have run on the row: the readiness check (Q3c) on the AC, and the
+comparison below (Q3d) on the scenario, resolving any gap or contradiction **before** the edit lands.
+Then record it with the edit's date, which is the only record of this freeze (`created:` predates
+it):
+
+```markdown
+- E2E 凍結（後から追加 YYYY-MM-DD）: `E2E-004`（`docs/01-02_e2e/E2E-004_bulk.md`）を AC-007 の起点として凍結。
+  補完検出: comparison set と照合 → 詳細化のみ。
+```
+
+A later row without that record is handled like a plan without one (「Where this is applied」):
+`run-exec-plan` Step 0b runs the comparison, and a finding halts there. Neither the absence of the
+record nor the late freeze is a halt in itself.
 
 **The freeze is per plan.** A scenario that plan A names is frozen for plan A and still free for any
 plan not yet written. Editing it is free *of plan B's constraints* only — it still changes plan A's
@@ -83,9 +102,14 @@ that leaves every AC line unchanged — the `gc` spec-drift backstop is keyed on
 is the editor's job (see「Known gaps」).
 
 **What this file does not change.** It fixes which document may correct which, and when that stops.
-It does **not** change the *authoring order*: `create-spec` drafts the scenarios from an approved US
-goal image and halts without one. Nor does it decide where scenarios live, or which links between
-them may exist: each scenario is its own file, `docs/01-02_e2e/E2E-NNN_{slug}.md` (`create-spec`),
+It does **not** fix an *authoring order* either way. The goal image and the scenarios may be written
+in either order: `create-spec` drafts scenarios for a US with no goal image yet (from the flow the
+user states), and `create-requirements` offers existing scenarios as candidates for Q4b — each
+reporting the pair as `相互チェック未了`. The mutual check is not dropped, only moved to where it can
+be enforced: a plan cannot freeze a scenario until `create-exec-plan` Q3d has compared it against the
+comparison set below, which needs the goal image in full. Nor does this file decide where scenarios
+live, or which links between them may exist: each scenario is its own file,
+`docs/01-02_e2e/E2E-NNN_{slug}.md` (`create-spec`),
 and the directory is a range spanning layers 1–2 so the scenario can link to and be linked from both
 the US and the spec (DOC-INV-001 in `../check-doc-invariants/SKILL.md`). A project generated before
 the move may still have them as a spec's `## E2E シナリオ` section (`docs/02_spec/**` § `E2E-NNN`);
@@ -101,14 +125,21 @@ sources** — the comparison set:
 | # | In the comparison set | Why |
 |---|-----------------------|-----|
 | 1 | The US and spec sections the plan's `## Sources` row names, other than the scenario itself (for an `[E2E]` AC: the US `## ゴール像`／主要ユーザージャーニー) | What the plan already says the scenario condenses |
-| 2 | That US's `## ゴール像` in full — including 非ゴール | A 非ゴール is where a contradiction is most visible |
+| 2 | The `## ゴール像` in full — including 非ゴール — of that US **and of every US the scenario names under `由来ジャーニー`** | A 非ゴール is where a contradiction is most visible. `由来ジャーニー` is the scenario's own statement of which journeys it realizes; a journey it claims but the plan's row does not name is still one it must agree with |
 | 3 | For **every AC the scenario lists under `満たす AC`**: its US `### AC-NNN` section **and** the spec section(s) describing it (normally marked "satisfies AC-NNN"; an older spec may leave a behavior section unmarked — what counts is that it describes the AC) | Where a scenario step is most often stated. Without the US sections, a step another AC describes looks like a gap; without the spec sections, so does a UI-level step only the behavior section describes |
 
 "Stated" means **stated somewhere in this set**, and nothing outside it is searched. The set is the
 limit on purpose: an unattended driver needs a search it can finish, and every member is frozen
-source material the plan already points at. An outcome that the set does not contain but some *other*
-AC does is still a gap here — usually one the scenario's `満たす AC` list should name. Adding that AC
-to the list edits the scenario, so it is still the human's call (① or ②), not the driver's.
+source material the plan or the scenario already points at. The document a scenario names under
+`満たす業務要求` — its outer anchor, usually in `docs/00_project/**` — is **not** in the set: it is
+background (`../create-exec-plan/ac-sources.md`「What counts as a source」), the business requirement
+the US was written against rather than the requirement itself. If the scenario agrees with the anchor
+but not with the US, that is a gap or a contradiction against the US, decided as below — and the
+anchor is what tells the human whether the business requirement itself has moved.
+
+An outcome that the set does not contain but some *other* AC does is still a gap here — usually one
+the scenario's `満たす AC` list should name. Adding that AC to the list edits the scenario, so it is
+still the human's call (① or ②), not the driver's.
 
 Take the verdict from this table:
 
@@ -146,8 +177,50 @@ is frozen against. A resolution therefore lets *this* plan proceed only once its
 | Resolution | Routed to | What this plan does |
 |-----------|-----------|---------------------|
 | ①, ② or ③ as an in-version fix | `main` | Proceeds once the edit is merged; the next comparison passes |
-| ① or ③ judged a **next-version** change | `spec/<label>` | The gap is still on `main`, so the next comparison halts on it again. The human also chooses one of: apply **②** on `main` now (drop the outcome from the current scenario; the next version adds it back), or **defer** this plan until the promotion (record `deferred` in its Decision Log) |
-| A contradiction's edit | `main` only | Correcting a contradiction is fixing the current version (CLAUDE.md「変更のルーティング」: 矛盾の是正), never a next-version change |
+| ① or ③ judged a **next-version** change | `spec/<label>` | The gap is still on `main`, so the next comparison halts on it again. The human also chooses one of: apply **②** on `main` now (drop the outcome from the current scenario; the next version adds it back), or **defer** this plan until the promotion (record `deferred:` in its Decision Log — see「Deferring a plan, and lifting it」) |
+| A contradiction's edit | `main` only | Correcting a contradiction is fixing the current version (CLAUDE.md「変更のルーティング」: 矛盾の是正), never a next-version change. If the side the human prefers would widen the scope and is judged next-version, `main` is made consistent on the narrower side — see「A contradiction whose winning side would widen the current scope」 |
+
+**Deferring a plan, and lifting it.** Deferral is recorded in the plan's Decision Log in one form, so
+that the sites below can find it:
+
+```markdown
+- deferred: spec/sprint-12 の昇格まで — `E2E-001` の「CSV に書き出せる」（要件の穴、①を次バージョンで）。
+- deferred 解除: YYYY-MM-DD（spec/sprint-12 を昇格し、所見は main で解消）。
+```
+
+Only a Decision Log **bullet that begins** `- deferred: spec/` is a deferral, and only one that begins
+`- deferred 解除:` lifts it; the words appearing mid-sentence — in a resolution record (「このプランを
+deferred」), a review note, this very format quoted — are not. A plan is deferred while its latest
+deferral bullet has no later lifting bullet. The marker
+is not `reconcile: deferred` (CLAUDE.md, read by `gc`'s spec-drift backstop) — that one says an AC is
+not being reconciled yet; this one says the plan must not run until a promotion. A deferral is a
+human's decision, and so is lifting it. Who reads it:
+
+| Site | What it does with a deferred plan | Why |
+|------|-----------------------------------|-----|
+| `run-exec-plan` (Step 0) | Does not start the run: no readiness gate, no comparison, **no new HALT entry** — it reports the plan as deferred, with the line, and ends | The deferred finding is still on `main` by definition; running the comparison would find it again and append the same HALT on every resume. The deferral already *is* the record |
+| `start-feature` (Step 1) | Presents the deferral when the plan is selected; the user lifts it (recording `deferred 解除:`) or picks another plan | The human is present, and lifting is theirs |
+| `promote-spec` (Step 4 / Step 5) | When promoting `<label>`, lists the active plans deferred until `spec/<label>`, so the human can lift each once the promotion is merged | The promotion is the event the deferral waits for; without a reader the plan stays deferred after its reason is gone |
+| `check-doc-invariants` (DOC-INV-006 symmetric check) | Reports the finding the line names as ℹ️, not as 要決定 | The decision was made; re-raising it weekly would turn a recorded decision into noise |
+
+Deferral answers only a **gap** whose ① or ③ was judged next-version: `main` is incomplete, not
+inconsistent, and waiting is coherent. It never resolves a contradiction (below).
+
+**A contradiction whose winning side would widen the current scope.** Correcting a contradiction is
+fixing the current version and is done on `main`. But the side the human picks may be the broader one
+— the scenario's step over a US 非ゴール, say — and making the narrower document agree with it then
+adds scope. Whether that is "what we are building is wrong" or "what we want next" is the routing
+judgement in CLAUDE.md「変更のルーティング」, and it is the human's:
+
+| The human judges the broader side… | On `main` | On `spec/<label>` |
+|------------------------------------|-----------|-------------------|
+| In-version (the current target was wrong) | Edit the narrower document to agree, as for any contradiction | — |
+| Next-version | Make `main` consistent **now, on the narrower side**: edit the broader document to agree with the narrower one (for a scenario, drop the step — ②) | Add the broader side, to come back at the promotion |
+
+Deferring the plan alone is not a resolution here. The two documents on `main` would still disagree,
+so the next comparison — this plan's, any other plan's that freezes the scenario, and every advisory
+check — finds the same contradiction again. `main` is made consistent first; what is wanted next waits
+on the version branch.
 
 **Why ① and ③ are different.** ① says the scenario is right and the requirements merely omitted it:
 copy the outcome up. ③ says the omission is not isolated — the US is under-specified, and promoting
@@ -158,17 +231,57 @@ reopened, which is exactly the judgement only a human can make.
 
 ## Where this is applied
 
-The rule applies only where a scenario is **already read as a source** today. Extending it to other
-sites — `doc-review`, `gc`, or a symmetric DOC-INV-006 that flags scenario steps with no US / spec
-counterpart — would add new warnings, and **how far to extend the halt is an open decision**
-that this file does not make. Until it is made, those sites do not apply this file.
+Two kinds of site apply this file. **Gate sites** read a scenario as a source and act on a finding:
+they are where a plan freezes the scenario or runs against it, and only they halt. **Advisory sites**
+run the same comparison over the scenarios as documents — with no plan, so comparison set #1 is n/a —
+and only report. Extending the halt beyond the gate sites was considered and rejected: a halt needs a
+run to stop, an advisory site has none, and the gates that would act on its finding already exist
+(Q3d before the freeze, Step 0b after). What the advisory sites add is that a gap is seen **before**
+anyone writes a plan against the scenario, rather than at the moment a plan tries to freeze it.
 
-| Call site | When | Action on a gap or a contradiction |
-|-----------|------|-----------------------------------|
-| `create-exec-plan` (Q3d) | Writing a `## Sources` row that names an `E2E-NNN` — the last moment before the freeze | Run the comparison with the user and **resolve it before the plan is finalized**: ① / ② / ③ for a gap, a choice of target (and the edit that follows) for a contradiction. Record the result (format below). Freezing an unresolved gap would freeze a decision nobody made. If the readiness check (Q3c) that follows rewrites an AC or a row so that it names a different `E2E-NNN`, compare that scenario too before finalizing |
-| `start-feature` (Step 2) | Manual implementation path, loading the sources | Present the finding to the user and let them choose (① / ② / ③, or the target). Record the decision in the plan's **Decision Log** (format below) — ① and a contradiction's edit are spec changes, and CLAUDE.md requires their routing to be recorded there |
-| `run-exec-plan` (Step 0b) | Before the loop, while opening every unchecked AC's sources for `R2` | **HALT (a)** before the loop starts — the same reason readiness runs up front: spend the human's attention once, before any test is frozen from the scenario |
-| `run-exec-plan` (Step 0c / Step 1b / Step 3a) | Transcribing the `[E2E]` test, reading an AC's sources, re-anchoring | Backstop for what Step 0b missed: **HALT (a)**. Do not transcribe the gap into a test, and do not edit the scenario, the US or the spec. At Step 1b / 3a the `[E2E]` test may already hold the gap — see「Known gaps」 |
+**The comparison set at an advisory site.** With no plan, #1 is n/a, and #2 is the goal images of
+the USs under the scenario's `由来ジャーニー`. A scenario written before that line existed has none;
+there, #2 **falls back** to the goal images of the USs that own the ACs under its `満たす AC`, and the
+report says it used the fallback — on a clean pass too. The fallback stays inside what the scenario
+already names — the ACs it lists — so it does not widen the set by guesswork, and without it every
+legacy scenario would be reported twice for one missing line (once as the missing line, once as
+uncomparable). A set that still cannot be assembled — an AC under `満たす AC` whose US or spec section
+cannot be identified, or no US found even by the fallback — is reported as ⚠️ **要確認**, not
+compared on what is left.
+
+A `由来ジャーニー` line that is **present** but names a US that does not exist or has no goal image
+yet — the state `create-spec` leaves when it drafts ahead of the goal image — gets no fallback either:
+the scenario has said which journeys it answers to, and comparing against others would answer a
+different question. The set is not assembled, so the scenario is **not compared**, and no separate
+要確認 is raised: DOC-INV-006's upward-trace ❌ on that line already names the missing US, and a third
+report of the same state would be noise. The same holds when only one of several named USs lacks a
+goal image. The comparison runs once the line resolves.
+
+**The fallback makes the advisory set wider than a gate's, for a legacy scenario.** A gate's #2 is the
+row's US plus `由来ジャーニー`, with no fallback; the advisory #2 may hold every US owning a
+`満たす AC` entry. So a clean advisory pass on a fallback set does not promise a clean Q3d — an outcome
+stated only in another US's goal image passes here and is a gap there — and a contradiction against a
+非ゴール the gate never reads can be reported here. That is the price of comparing a scenario that has
+not said where it came from; adding `由来ジャーニー` (a routed edit — DOC-INV-006「Upward trace」)
+removes the difference.
+
+**At a gate site, an incomplete set is not "nothing found".** The gates have the plan's row (#1), but
+#2 or #3 can still be missing a member — a US under `由来ジャーニー` that has no goal image yet, a
+`満たす AC` entry no US defines. Comparing on the smaller set could pass a step that only the missing
+member would have shown to be a gap. So a gate treats it like a source that cannot be opened: at Q3d
+the plan is not finalized until the set is whole (or the human edits the scenario so it is); at
+`start-feature` Step 2 it is presented to the user; at `run-exec-plan` Step 0b / 0c / 1b / 3a it is
+**HALT (a)**, recorded with the member that is missing. There is no fallback at a gate: the gate is
+where a plan freezes, and a frozen comparison must rest on what the scenario actually claims.
+
+| Call site | Kind | When | Action on a gap or a contradiction |
+|-----------|------|------|-----------------------------------|
+| `create-exec-plan` (Q3d) | Gate | Writing a `## Sources` row that names an `E2E-NNN` — the last moment before the freeze | Run the comparison with the user and **resolve it before the plan is finalized**: ① / ② / ③ for a gap, a choice of target (and the edit that follows) for a contradiction. Record the result (format below). Freezing an unresolved gap would freeze a decision nobody made. If the readiness check (Q3c) that follows rewrites an AC or a row so that it names a different `E2E-NNN`, compare that scenario too before finalizing |
+| `start-feature` (Step 2) | Gate | Manual implementation path, loading the sources | Present the finding to the user and let them choose (① / ② / ③, or the target). Record the decision in the plan's **Decision Log** (format below) — ① and a contradiction's edit are spec changes, and CLAUDE.md requires their routing to be recorded there |
+| `run-exec-plan` (Step 0b) | Gate | Before the loop, while opening every unchecked AC's sources for `R2` | **HALT (a)** before the loop starts — the same reason readiness runs up front: spend the human's attention once, before any test is frozen from the scenario |
+| `run-exec-plan` (Step 0c / Step 1b / Step 3a) | Gate | Transcribing the `[E2E]` test, reading an AC's sources, re-anchoring | Backstop for what Step 0b missed: **HALT (a)**. Do not transcribe the gap into a test, and do not edit the scenario, the US or the spec. At Step 1b / 3a the `[E2E]` test may already hold the gap — see「Known gaps」 |
+| `check-doc-invariants` (DOC-INV-006 symmetric check — reached through `pre-pr` ③ and `gc` ③) | Advisory | Every check of the documents | Report a gap or a contradiction as ⚠️ **要決定**, a comparison set that cannot be assembled as ⚠️ **要確認** (after the fallback above), and a finding an active plan records under a `deferred:` line not yet lifted as ℹ️. **Never blocks, never edits** — `gc` reports these without fixing them |
+| `doc-review` (an E2E scenario under review) | Advisory | Independent review of a scenario or of the spec it belongs to | The same comparison and the same fallback as above. Report the finding in the review, for the human to decide. The reviewer edits nothing |
 
 `create-spec` points here too, but not as a call site: it drafts scenarios **before** any freeze,
 when correcting the US or the scenario is ordinary authoring. A gap it notices while drafting goes
@@ -194,8 +307,10 @@ known, and what the existing rules already say about it.
 | **A promotion rewrites a frozen scenario.** `promote-spec` Step 4 finds in-flight collisions by AC-ID, so a promotion that changes an `E2E-NNN`'s steps or 完了条件 while leaving every AC line alone reports none — and silently moves the target of an active plan whose `[E2E]` test is already frozen | Not detected by `promote-spec` or by `gc` (whose spec-drift backstop is also keyed on AC-IDs) | 「The freeze is per plan」: whoever edits a scenario — a promotion included — searches `exec-plans/active/` and `exec-plans/completed/` for its ID, as that section describes. The person running `promote-spec` is that editor |
 | **The gap is already in a frozen `[E2E]` test.** Step 0c transcribes the whole scenario before the loop. If complement detection first fires at Step 1b / 3a — or at Step 0b of a **resumed** run whose Step 0c test already exists (a plan predating this file, or a scenario edited between sessions) — the gap may already be the test's expected result, and the human's ② (drop it) or a contradiction resolved against the scenario changes a frozen expectation | Step 0c's resume rule ("an earlier session placed it → re-run, do not rewrite") would steer the run toward the dropped step | That change is **stop condition (c)** — a test expectation change grounded in a spec change (INV-T01 / INV-T02). The human records the spec change and the test change together in the Decision Log; the driver does not rewrite the test itself. Step 0b running before Step 0c is what keeps this rare on a first run |
 
-Closing them — an `E2E-NNN`-keyed collision check in `promote-spec`, an E2E-keyed `gc` backstop — adds
-detections — the same open decision as extending the call sites (「Where this is applied」).
+Closing them takes detections keyed on `E2E-NNN` rather than on AC-IDs — a collision check in
+`promote-spec`, a `gc` backstop for a scenario edited after a plan froze it. Neither exists yet. The
+advisory sites above do not close them: they compare a scenario with the requirements beside it, not
+with the version a plan froze.
 
 ---
 
@@ -205,24 +320,37 @@ In the plan's `## Decision Log`, at `create-exec-plan` (and wherever a human res
 
 ```markdown
 - E2E 凍結: `E2E-001`（`docs/01-02_e2e/E2E-001_tag-and-filter.md`）をこのプランの起点として凍結（プラン確定 YYYY-MM-DD）。
-  補完検出: comparison set（行の起点・`US-003` § ゴール像 全体・`満たす AC` 各 AC の US/spec 節）と照合 → 詳細化のみ。
+  補完検出: comparison set（行の起点・`US-003`〔行の US と `由来ジャーニー` の US〕§ ゴール像 全体・`満たす AC` 各 AC の US/spec 節）と照合 → 詳細化のみ。
 ```
 
 or, when a finding was resolved:
 
 ```markdown
   補完検出: 要件の穴 1 件 — 「{シナリオが述べ、US/spec に無い成果}」→ 人の決定: ①昇格（{comparison set 内の節} に追記、
-  ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred}）| ②シナリオから削除（ルーティング: main）
-  | ③要件の見直し（{何を}、ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred}）。
+  ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）| ②シナリオから削除（ルーティング: main）
+  | ③要件の見直し（{何を}、ルーティング: {main | spec/<label> ＋ main で②適用 | spec/<label> ＋ このプランを deferred — 下の `deferred:` 行も記録}）。
   補完検出: 矛盾 1 件 — 「{シナリオの記述}」と {US/spec の節} の「{記述}」→ 人の決定: {どちら} を正とし、
   {もう一方の文書と節} を修正（ルーティング: main — 矛盾の是正）。
+  補完検出: 矛盾 1 件 — 「{シナリオの記述}」と {US/spec の節} の「{記述}」→ 人の決定: 広い側（{文書}）を
+  次バージョンで採用。main では狭い側に合わせて {広い側の文書と節} を修正（ルーティング: main — 矛盾の是正、
+  spec/<label> — 広い側の追加）。
 ```
+
+When the resolution defers the plan, add the deferral as its own bullet, at the start of the line:
+
+```markdown
+- deferred: spec/<label> の昇格まで — `E2E-001` の「{phrase}」（要件の穴、{①|③}を次バージョンで）。
+```
+
+A scenario frozen by a row added after the plan was finalized carries the edit's date
+(「A row added to a plan after it was finalized」); a deferral and its lifting use the two lines in
+「Deferring a plan, and lifting it」.
 
 When `run-exec-plan` halts on it, the HALT entry names the scenario, the phrase, and the row:
 
 ```markdown
 - HALT at AC-NNN (stop condition a). 補完検出: `E2E-001` の「{phrase}」が comparison set
-  （行の起点・`US-003` § ゴール像 全体・`満たす AC` 各 AC の US/spec 節）のどこにも無い（要件の穴）。人の決定: ①昇格 ②削除 ③要件の見直し のいずれか。
+  （行の起点・`US-003`〔行の US と `由来ジャーニー` の US〕§ ゴール像 全体・`満たす AC` 各 AC の US/spec 節）のどこにも無い（要件の穴）。人の決定: ①昇格 ②削除 ③要件の見直し のいずれか。
 ```
 
 ---

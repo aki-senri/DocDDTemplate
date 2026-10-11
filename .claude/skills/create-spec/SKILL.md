@@ -52,9 +52,11 @@ and never proceeds to implementation planning on its own.
 1. Locate and read the approved requirements in `docs/01_requirements/`
 2. If requirements are missing, not yet approved (`status: draft`), or too ambiguous to
    specify against, **halt** and direct the user to approve/define them first (do not guess
-   intent)
+   intent). A missing goal image is not one of these: draft without it and report the mutual
+   check as pending (Step 1)
 3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first), and the
-   required E2E scenarios derived from the US goal image — one file each under `docs/01-02_e2e/`
+   required E2E scenarios derived from the US goal image (or, without one, from the flow the user
+   states) — one file each under `docs/01-02_e2e/`
 4. Trace each spec feature back to the US/AC it satisfies, and each E2E scenario across the set
    of ACs it needs (`E2E-001 → AC-001, AC-003`)
 5. Suggest `/doc-review` for an independent check, then human approval, then `/create-exec-plan`
@@ -71,19 +73,34 @@ and never proceeds to implementation planning on its own.
   (TC/BC/PF/SC) that shape what the app must do.
 - **Read the `## ゴール像` section of each source US file.** Its 完成時にできること,
   主要ユーザージャーニー, and 非ゴール are the input for the E2E scenarios (`docs/01-02_e2e/`)
-  (required) and for Scope & non-goals. If a US file has no `## ゴール像` section — e.g. it was
-  written before that section became required — **halt** and report:
+  (required) and for Scope & non-goals.
+
+  **A US with no `## ゴール像` section does not stop this skill.** Which of the goal image and the
+  scenario is written first cannot decide which one is right (`e2e-interaction.md`「Why this
+  exists」), so neither has to wait for the other. Draft the scenarios from the US's ACs and from
+  the end-to-end flow **the user states** when asked — never from a flow this skill makes up — and
+  list that US on the report's `相互チェック未了` line, together with the flow used, as material
+  for the goal image a human then writes into the US (`/create-requirements` Q4). This skill does
+  not write the US. Still write `由来ジャーニー: US-XXX` on the scenario: it makes the scenario name
+  which US it waits on. DOC-INV-006 reports the line as ❌ (a US without a goal image) until Q4 is
+  done, and the advisory symmetric check skips the scenario until then rather than comparing it on
+  what is left (`e2e-interaction.md`「Where this is applied」).
+
+  The mutual check is deferred, not skipped. Until the goal image is in the US, DOC-INV-006 keeps
+  reporting the US as ❌ — so a PR carrying the draft is held at `pre-pr` ③ — and no plan can freeze
+  the scenario: `create-exec-plan` Q3d compares a
+  scenario against its US's goal image in full (`e2e-interaction.md`「Complement detection」), and
+  without one that comparison cannot run. The order of writing is free; the check closes at the
+  plan.
 
   ```
-  US-XXX に ## ゴール像 節がありません。
-  E2E シナリオはゴール像の主要ユーザージャーニーから起こすため、これが無いと
-  「通しで何ができるようになるか」を仕様側で作文することになります。
-  先に /create-requirements の Q4（完成時にできること / 主要ユーザージャーニー / 非ゴール）を
-  US-XXX に追記してください。
+  US-XXX に ## ゴール像 節がありません。シナリオはお示しいただいた通しの流れから起草しました。
+  相互チェック未了: US-XXX — ゴール像を US に追記するまで（/create-requirements Q4）、
+  このシナリオを起点にしたプランは確定できません（create-exec-plan Q3d の照合にゴール像全体が要るため）。
   ```
 
-  Proceed only once the goal image exists (or the user explicitly confirms drafting without it,
-  in which case record that choice in the report).
+  If the user cannot state an end-to-end flow either, there is nothing to draft a scenario from —
+  report that and stop. Deciding what the finished thing is remains the human's call.
 - **Confirm the requirements are approved before drafting from them.** Check the `status:`
   frontmatter of the relevant US file(s). The spec must be built on *approved* requirements,
   not on in-progress ones. If a US is still `status: draft` (i.e. not yet approved/frozen),
@@ -143,7 +160,8 @@ and never omitted.**
 
 Derive the scenarios from the `## ゴール像` section of the source US file — specifically its
 主要ユーザージャーニー. One scenario per distinct end-to-end path (a normal path at minimum;
-add key alternate/failure paths where the goal image calls for them).
+add key alternate/failure paths where the goal image calls for them). A US without a goal image
+yet: derive them from the flow the user states, and report the mutual check as pending (Step 1).
 
 **One scenario, one file**: `docs/01-02_e2e/E2E-NNN_{slug}.md`. `E2E-NNN` is unique across the
 project — take the next free number, never reuse one. While a spec still has old-layout scenarios,
@@ -162,10 +180,24 @@ status: draft
 
 {One-line plain-text summary of what the user accomplishes in this scenario.}
 
+- 由来ジャーニー: US-003
+- 満たす業務要求: `docs/00_project/overview.md` §「{節名}」
 - 前提: {starting state}
 - 完了条件: {observable end state — what is true when the scenario has succeeded}
 - 満たす AC: AC-001, AC-003, AC-005
 ```
+
+**The two lines above the scenario.** `満たす AC` traces the scenario *across* the ACs below it;
+these two trace it *up*:
+
+| Line | Names | Value | Why |
+|------|-------|-------|-----|
+| `由来ジャーニー:` | The US (or USs, comma-separated) whose `## ゴール像` 主要ユーザージャーニー this scenario realizes | `US-NNN[, US-MMM]` — an ID, not a link | Without it nothing records which journey a scenario came from, so a journey the spec dropped goes unnoticed. DOC-INV-006 checks it in both directions — the US exists and has a goal image, and every US the spec covers is realized by some scenario |
+| `満たす業務要求:` | The **outer anchor**: where the business requirement the scenario answers to is recorded — the business flow the tool changes, usually in `docs/00_project/**` | a path and `§` section in `docs/00_project/**`, or `n/a（理由）` | When a tool changes the business it serves, the requirement *outside* the US can change too. This is the place that change is recorded against. The document it names is background, never a source (`../create-exec-plan/ac-sources.md`「What counts as a source」) |
+
+Both are IDs and paths in prose rather than Markdown links: what makes them traceability is that
+DOC-INV-006 checks them, not that they render as links (a link would be allowed — the scenarios'
+range layer may link to layers 0–2 — but nothing would check what it means).
 
 **Why the scenarios live outside the spec.** The directory name is a range, `01-02`: a scenario
 stands in a two-way relationship with both the requirements (layer 1) and the spec (layer 2), and a
@@ -232,15 +264,17 @@ about *what*, not *how*.
 
 - [ ] Requirements in `docs/01_requirements/` were read and confirmed approved (not
       `status: draft`) — or the skill halted and directed to approve/define them first
-- [ ] The `## ゴール像` section of each source US was read (or the skill halted because it was
-      missing)
+- [ ] The `## ゴール像` section of each source US was read — or, where it was missing, the
+      scenarios were drafted from the flow the user stated and the US is on the report's
+      `相互チェック未了` line (the skill did not halt for it, and did not write the US)
 - [ ] An application spec was drafted under `docs/02_spec/` covering purpose, scope/non-goals,
       features, and behavior — with no **new** scenario added to a `## E2E シナリオ` section. An
       existing old-layout section is left in place (moving it is the human's step) and named in
       the report as a migration candidate
 - [ ] At least one scenario exists for the spec, in either layout, and every scenario this run
       drafted is a file `docs/01-02_e2e/E2E-NNN_{slug}.md` carrying `status: draft`, a
-      `# E2E-NNN:` heading, a Mermaid diagram, 前提, 完了条件, and 満たす AC
+      `# E2E-NNN:` heading, a Mermaid diagram, 由来ジャーニー, 満たす業務要求 (a path in
+      `docs/00_project/**` or `n/a（理由）`), 前提, 完了条件, and 満たす AC
 - [ ] The `E2E-NNN → AC-xxx` mapping is shown in the report, and any AC belonging to no scenario
       was reported
 - [ ] The spec describes *what* the app does, with NO technical design (architecture/data
@@ -263,6 +297,8 @@ AC coverage       : AC-001 → {feature} | AC-002 → {feature} | ...
 E2E シナリオ      : E2E-001 {name} → AC-001, AC-003 | E2E-002 {name} → AC-002, AC-004
 AC not in any E2E : {AC list, or "none"}
 Requirements gaps : {outcomes a scenario needed that the US does not state — for the human to promote, drop or rework; or "none"}
+相互チェック未了  : {US-XXX — no ゴール像; scenarios drafted from the flow the user stated: {flow}.
+                    No plan can freeze them until the goal image is in the US; or "none"}
 
 Next steps (human-gated):
   1. Review  : run /doc-review for an independent check of the spec

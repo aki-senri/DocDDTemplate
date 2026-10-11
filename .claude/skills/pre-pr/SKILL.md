@@ -110,7 +110,11 @@ Run the `check-doc-invariants` skill.
    A DOC-INV-012 finding (an active plan's `## Sources` row that cannot be opened) is **presented to
    the user, not repaired here** — do not repoint the row to a guessed file and do not replace it
    with `n/a`; that is a decision about what the AC condenses
-   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
+   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」). The same holds for
+   DOC-INV-006's scenario findings — the symmetric check (要決定 / 要確認) and the upward-trace lines
+   (`由来ジャーニー` / `満たす業務要求`), even an ❌ among them: present them, and do not drop a
+   scenario step, promote it into the US, or fill in a line to make the check pass. Each is an edit to
+   an approved document, routed by a human (`create-spec/e2e-interaction.md`「Where this is applied」)
 4. If no violations: display "✅ doc-invariants: all passed"
 
 ---

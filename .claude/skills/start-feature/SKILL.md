@@ -51,6 +51,12 @@ List the files in `exec-plans/active/` and confirm the plan to work on with the 
 - If there is only one plan, select it
 - If there are multiple plans, prompt the user to select one
 - If there are no plans, prompt to run the `create-exec-plan` skill and stop
+- If the selected plan is **deferred** — its Decision Log has a bullet beginning `- deferred: spec/`
+  with no later bullet beginning `- deferred 解除:` — present that line to the user before anything else. The plan is waiting on
+  a promotion ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a
+  plan, and lifting it」). The user either lifts it — the promotion has landed, or they decide
+  otherwise — and you record `deferred 解除: YYYY-MM-DD（理由）` in the Decision Log, or picks another
+  plan. Do not prepare a deferred plan as if it were runnable
 
 ### Step 1b: AC readiness check
 
@@ -111,11 +117,19 @@ Open the AC rows you are about to work on and read what they point at — the sa
 autonomous driver reads in its Step 1b, per
 [`../create-exec-plan/ac-sources.md`](../create-exec-plan/ac-sources.md).
 
+**Every unchecked `[E2E]` row, whichever AC you start with.** Open the row of every unchecked `[E2E]`
+AC now and run complement detection on each scenario it names, even if the first task is a
+functional AC. The `[E2E]` test is placed first, red (the implementation order guide below); a
+scenario compared only when its own AC comes up would be compared after its test froze the
+expectation — a gap found then changes a frozen test (stop condition (c) territory,
+`e2e-interaction.md`「Known gaps」). This is the manual counterpart of `run-exec-plan` Step 0b, which
+opens every unchecked AC's sources before Step 0c places the `[E2E]` tests.
+
 | What you find | Action on this path |
 |---------------|--------------------|
 | **Refinement** of the AC line | Use it — it is the granularity to implement and test at |
 | A **separate outcome**, or a **contradiction** with the AC line | Present both readings to the user and let them decide. The human is here, so this is a conversation rather than the HALT the unattended loop takes |
-| The row names an `E2E-NNN` and complement detection ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) — take the comparison set from there) finds a gap or a contradiction | Present it to the user, who decides per that file's verdict table. Record the decision in the plan's **Decision Log** in that file's format — the decisions it offers are spec changes whose routing CLAUDE.md requires there |
+| The row names an `E2E-NNN` and complement detection ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md) — take the comparison set from there) finds a gap or a contradiction, or the set cannot be assembled | Present it to the user, who decides per that file's verdict table — or, for a set that cannot be assembled, per its「Where this is applied」 (no fallback at a gate: complete the trace or edit the scenario). Record the decision in the plan's **Decision Log** in that file's format — the decisions it offers are spec changes whose routing CLAUDE.md requires there |
 | The row names **background material**, or an expected result appears only in background material | Not a source — present it to the user (Step 1b already raised the row). Do not draft a test from it (`ac-sources.md`「What counts as a source」) |
 | The row names a file or section that **cannot be opened** | Present the row to the user — it is theirs to repoint or to replace with `n/a（理由）`. Do not proceed on the AC line as if it were `n/a`, and do not guess which file it meant (`ac-sources.md`「When a source cannot be opened」) |
 | The row says `n/a（理由）`, or the plan has no `## Sources` table | Note it and proceed on the AC text. Do not reconstruct sources from existing code |
@@ -204,8 +218,11 @@ See `docs/04_implementation/patterns.md` for detailed implementation order and p
 - [ ] AC readiness checked for every unchecked AC; any NOT READY criterion was raised with the user
       and their decision recorded in the Progress Log (Step 1b) — except a row naming background
       material, whose decision goes to the Decision Log (promoting its detail is a spec change)
-- [ ] Every `E2E-NNN` a `## Sources` row names went through complement detection (Step 2); any gap or
+- [ ] Every `E2E-NNN` a `## Sources` row names went through complement detection (Step 2) — every
+      unchecked `[E2E]` row before its test was placed, whichever AC came first; any gap or
       contradiction was put to the user and the decision recorded in the plan's Decision Log
+- [ ] A deferred plan was presented to the user at selection (Step 1) and either lifted, with the
+      `deferred 解除:` line recorded, or set aside
 - [ ] Loaded `CONTEXT.md`, `invariants.md`, the selected execution plan, and the US / spec sections
       its `## Sources` names for the ACs being worked on (any conflict between a source and its AC
       line was put to the user)

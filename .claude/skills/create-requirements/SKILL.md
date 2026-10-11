@@ -129,6 +129,27 @@ the flow.
 → This is the material `/create-spec` turns into E2E scenarios, and the reason a plan can carry
   an `[E2E]` acceptance criterion at all.
 
+**When scenarios already exist.** The goal image and the scenarios may be written in either order
+(`../create-spec/e2e-interaction.md`「What this file does not change」) — a US being reworked, or one
+whose scenarios `/create-spec` drafted before it had a goal image, already has them. Before asking
+Q4b, look for scenario files in `docs/01-02_e2e/` that name this US under `由来ジャーニー`, or list one
+of its ACs under `満たす AC`:
+
+```bash
+grep -lE "由来ジャーニー:.*US-XXX|満たす AC:.*AC-NNN" docs/01-02_e2e/*.md 2>/dev/null || true
+# a project not yet migrated keeps scenarios inside the spec (## E2E シナリオ) — look there too
+grep -rnE "由来ジャーニー:.*US-XXX|満たす AC:.*AC-NNN" docs/02_spec/ 2>/dev/null || true
+```
+
+If any exist, show their flows as **candidates** for the journey — the user still answers Q4b, and
+may keep, change or drop what a scenario says. Then put the US and those scenarios on the report's
+`相互チェック未了` line: the journey and the scenarios have not yet been compared. DOC-INV-006's
+advisory symmetric check reports a gap between them at the next document check (`pre-pr` ③, `gc` ③),
+and the comparison that decides happens when a plan freezes a scenario (`create-exec-plan` Q3d). In
+practice this order arises for a US being reworked or one written before the goal image was
+required — for a new US, Q4 comes first as usual. Q4 stays required, and
+its halt below is unchanged — a scenario is a candidate, not an answer the user did not give.
+
 #### Q4c. Non-goals (what this feature will NOT do)
 
 > "この機能で『作らないもの』を挙げてください。スコープ外を明示することで、後の仕様がここを
@@ -294,6 +315,8 @@ Final report output by the agent:
 File    : docs/01_requirements/user_stories/US-XXX_{name}.md
 ACs     : AC-001, AC-002, ... (list all defined)
 ゴール像 : {Q4a in one line} / ジャーニー {n} ステップ / 非ゴール {n} 件
+相互チェック未了: {US-XXX ↔ E2E-NNN, … — existing scenarios shown as Q4b candidates; compared when a
+                 plan freezes them (create-exec-plan Q3d); or "none"}
 Constraints added: {count} (or "none")
 
 Next step: Run /create-spec to draft the application spec (docs/02_spec/) and its E2E scenarios

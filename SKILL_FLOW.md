@@ -22,7 +22,7 @@ flowchart TD
         REQ["/create-requirements\n· Interview on User Story\n· Define goal image (REQUIRED):\n  what the user can do when done /\n  primary journey / non-goals\n· Define AC conditions\n· Generate docs/01_requirements/user_stories/US-XXX.md\n· Update constraints.md"]
         REQ -.->|optional review| DR
         DR["/doc-review\n· Independent agent reviews docs (requirements or spec)\n· AC testability via the shared\n  ac-readiness.md checks (advisory)\n· Process docs: walks 2nd-lap / resume /\n  exemption / dependency backflow\n  (process-walkthrough.md)\n· Checks completeness / reference direction\n· Returns verdict: ✅/⚠️/❌"]
-        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval"]
+        SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n  (no goal image yet: drafts anyway and\n  reports 相互チェック未了)\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Independent review + HUMAN approval"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
@@ -170,11 +170,17 @@ flowchart TD
 > finalized; before that, scenario, US and spec may correct one another in either direction — an
 > approved one still through the routing; approval is per document, the freeze is per plan), and
 > **complement detection**: a scenario stating an outcome nowhere in its comparison set (the row's
-> sources, the goal image, and the US / spec sections of its `満たす AC`) is a detected requirements
+> sources, the goal images of the row's US and of its `由来ジャーニー` USs, and the US / spec
+> sections of its `満たす AC`) is a detected requirements
 > gap, which a human resolves (① promote it, ② drop it, ③ rework thin requirements).
 > `create-exec-plan` (Q3d) resolves it before the freeze, `start-feature` (Step 2) asks the
-> human, and `run-exec-plan` halts with (a) at Step 0b (backstop 0c / 1b / 3a). Extending it to
-> `doc-review`, `gc` or `check-doc-invariants` (DOC-INV-006) is still undecided.
+> human, and `run-exec-plan` halts with (a) at Step 0b (backstop 0c / 1b / 3a) — these gate sites
+> are the only ones that halt. `check-doc-invariants` (DOC-INV-006's symmetric check, via `pre-pr` ③
+> and `gc` ③) and `doc-review` run the same comparison as **advisory** sites: they report
+> (⚠️ 要決定 / ⚠️ 要確認 / ℹ️ deferred), never block and never edit. Each scenario also traces upward —
+> `由来ジャーニー` (the US journey it realizes) and `満たす業務要求` (its outer anchor in
+> `docs/00_project/`, background) — checked by DOC-INV-006. A plan deferred until a promotion is not
+> started by `run-exec-plan`, and `promote-spec` lists it for the human to lift.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first
