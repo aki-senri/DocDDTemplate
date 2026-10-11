@@ -46,7 +46,7 @@ decided by its path and, inside layers 1–2, by the section:
 | Class | Documents | May be read | May supply given / when / then or an expected value |
 |-------|-----------|:-----------:|:---------------------------------------------------:|
 | **Source（起点にしてよい）** | The US file's `### AC-NNN` section (its bullets)・the spec section that describes AC-NNN's behavior (`create-spec` marks it "satisfies AC-NNN" — a feature or a behavior section)・the `E2E-NNN` scenario, for an `[E2E]` AC (`docs/01-02_e2e/E2E-NNN_*.md`, or the old-layout `docs/02_spec/**` § `E2E-NNN` until the project migrates — frozen per [`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md))・`constraints.md` rows the AC must respect・the US `## ゴール像` (for an `[E2E]` AC, whether or not a spec exists; for any AC when `/create-spec` was skipped) | ✅ | ✅ — this is what `## Sources` names |
-| **Background（背景として読んでよい）** | `docs/00_project/**` (overview, glossary, `decisions.md` — the ADRs — and research notes under `research/`)・the rest of layers 1–2: the parts of `docs/01_requirements/**`, `docs/01-02_e2e/**` and `docs/02_spec/**` that are not a source above (`functional/*.md`, `non_functional/*.md`, the spec's purpose and scope, a section describing other ACs or none, a scenario other than the one an `[E2E]` row names — or any scenario, read for a functional AC)・another plan's Decision Log・an issue or discussion thread (a plan may still cite one as the *origin* inside an `n/a（理由）`) | ✅ — to understand *why* the spec says what it does, and to route a fix (current version or next) | ❌ — never |
+| **Background（背景として読んでよい）** | `docs/00_project/**` (overview, glossary, `decisions.md` — the ADRs — and research notes under `research/`; including whatever a scenario names under `満たす業務要求`)・the rest of layers 1–2: the parts of `docs/01_requirements/**`, `docs/01-02_e2e/**` and `docs/02_spec/**` that are not a source above (`functional/*.md`, `non_functional/*.md`, the spec's purpose and scope, a section describing other ACs or none, a scenario other than the one an `[E2E]` row names — or any scenario, read for a functional AC)・another plan's Decision Log・an issue or discussion thread (a plan may still cite one as the *origin* inside an `n/a（理由）`) | ✅ — to understand *why* the spec says what it does, and to route a fix (current version or next) | ❌ — never |
 | **Not read（読まない）** | Existing implementation code・existing tests・`docs/03_design/**` through `docs/07_*/**` (design, implementation, quality, operations, AI context) | ❌ — not for this purpose | ❌ |
 
 **Why layers 3 and below are not read.** They describe *how* the thing is built — the architecture,
@@ -69,6 +69,16 @@ it. Name it, and add the marker when the spec is next edited.
 requirements material — the journey the scenario was derived from — not material a decision was made
 *from*. Naming it beside the scenario (`§ ゴール像／主要ユーザージャーニー`) is how a plan says which
 journey the `[E2E]` AC condenses; the scenario carries the detail.
+
+**Why a scenario's `満たす業務要求` stays background.** A scenario file names two things above it
+(`../create-spec/SKILL.md`): `由来ジャーニー`, the US whose journey it realizes, and `満たす業務要求`,
+its outer anchor — where the business requirement it answers to is recorded, normally in
+`docs/00_project/**`. The first points at source material: that US's goal image is in the
+comparison set (`../create-spec/e2e-interaction.md`) and, for an `[E2E]` AC, a source as above. The
+second does not, and being named by a scenario does not promote it: the anchor records *what the
+requirements were written against*, so a human can see when that itself has changed — the material a
+decision is made from, which is the definition of background. A test is never drafted from it, and
+it is not part of the comparison set.
 
 The implementer's own inference about intent is in none of the classes: it is not a document, and an
 expected result that rests on it is invented, not transcribed.

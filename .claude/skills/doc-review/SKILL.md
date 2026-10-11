@@ -92,6 +92,12 @@ cat docs/01-02_e2e/{referenced-scenario}.md 2>/dev/null || echo "not found"
 # AC coverage check below needs all of them, not only the spec file.
 cat docs/01-02_e2e/E2E-*.md 2>/dev/null || echo "no scenario files (old layout, or no spec yet)"
 
+# For a spec or scenario review: the symmetric comparison in §2b reads each scenario against
+# its comparison set — the US files its 由来ジャーニー names (their ## ゴール像) and the US and
+# spec sections of every AC under 満たす AC — and takes the verdicts from e2e-interaction.md.
+cat .claude/skills/create-spec/e2e-interaction.md
+cat docs/01_requirements/user_stories/US-NNN_*.md 2>/dev/null || echo "not found"   # each US under 由来ジャーニー (or, without the line, owning a 満たす AC entry)
+
 # Project documentation rules
 cat CLAUDE.md
 
@@ -226,6 +232,19 @@ as a migration candidate, see DOC-INV-006 in `check-doc-invariants`):
 - Is each 完了条件 an observable end state, not a restatement of the steps?
 - Do the scenarios' `満たす AC` lines together cover every AC? Flag any AC belonging to no scenario
   — it means either the goal image is missing a path or the AC is not needed for the finished thing.
+- Does each scenario carry `由来ジャーニー` (the US whose journey it realizes) and `満たす業務要求`
+  (its outer anchor in `docs/00_project/`, or `n/a（理由）`), and do they point at something that
+  exists? Is every US the spec covers named by some scenario's `由来ジャーニー`? (DOC-INV-006
+  「Upward trace」)
+- **The other direction — does any scenario say more than the requirements?** Compare each
+  scenario's 前提, steps and 完了条件 against its comparison set
+  (`.claude/skills/create-spec/e2e-interaction.md` — with no plan, its #2 and #3, and for a scenario
+  with no `由来ジャーニー` the advisory-site fallback that file defines in「Where this is applied」;
+  a set that still cannot be assembled is reported as such, not compared on what is left). Report an outcome
+  stated nowhere in the set as a **requirements gap** and a disagreement as a **contradiction**, each
+  for the human to decide (① promote / ② drop / ③ rework, or which side is right). This is an
+  advisory site (「Where this is applied」): report it, do not edit the scenario or the US to agree,
+  and do not treat a refinement as a finding.
 
 **For exec-plans** — the `[E2E]` acceptance criterion:
 - Does the plan have one, and is it traced to an `E2E-NNN` (or to the US goal image)?
@@ -306,6 +325,8 @@ Type: {document type}
 ### Goal image / E2E coverage
 {For US: ゴール像 present? 完成時にできること / 主要ユーザージャーニー / 非ゴール each ✅ / ⚠️ / ❌}
 {For spec / scenario: scenarios present (and in docs/01-02_e2e/, or ⚠️ old layout)? Any AC belonging to no E2E-NNN?}
+{For spec / scenario: 由来ジャーニー / 満たす業務要求 present and resolvable? Any US realized by no scenario?}
+{For spec / scenario: symmetric comparison — 要件の穴 / 矛盾 per scenario, each for the human to decide; or "none"}
 {For exec-plan: [E2E] AC present and traced? / ⚠️ documentation-only, exempt}
 
 ### Process walkthrough (process documents only — omit otherwise)

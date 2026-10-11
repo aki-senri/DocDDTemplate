@@ -176,6 +176,25 @@ Classify the impact of each changed/removed AC:
 > opened」). A moved or renamed file left behind is a DOC-INV-012 ❌ that blocks every PR after the
 > merge, including PRs that have nothing to do with those plans; a retitled section is a ⚠️.
 
+> **Plans deferred until this promotion.** An active plan may be waiting for exactly this `<label>`:
+> a requirements gap in a scenario it froze was judged next-version, and the human deferred the plan
+> rather than drop the step on `main` (`../create-spec/e2e-interaction.md`「Deferring a plan, and
+> lifting it」). List them
+> (`grep -rnE "^- deferred: spec/<label>( |$)" exec-plans/active/ 2>/dev/null || true` — only a
+> bullet that begins this way is a deferral, and `( |$)` keeps `sprint-1` from matching `sprint-12`;
+> skip any followed by a bullet beginning `- deferred 解除:`) and show them in the Step 5 report. Lifting
+> a deferral is the human's: after the merge in Step 6, each owner checks that the promoted
+> documents now state the outcome, then records `deferred 解除: YYYY-MM-DD（理由）` in that plan's
+> Decision Log. This skill does not lift it — without this list, though, nothing reads the deferral
+> once its reason is gone, and the plan stays parked.
+>
+> **Such a plan can also show up above as a 🔴 in-flight collision** — when the gap it waits on is
+> promoted (①) into an AC section the plan itself owns, that AC is CHANGED and active. For a plan
+> deferred until this `<label>`, that collision is the **awaited** change, not one to coordinate
+> around: the advice above (finish the AC first, or defer the promotion) is exactly wrong for it,
+> since the plan cannot proceed until the promotion lands. Report the AC under the deferred list
+> instead of as 🔴, and say why.
+
 > **Precedence when an AC is both in-flight and already completed:** treat it as an in-flight
 > collision (the stricter case) — the active plan owner reconciles it; do **not** also create a
 > separate reconcile plan for it in Step 7.
@@ -227,6 +246,11 @@ Do not proceed to Step 6 without an explicit "yes".
    the human repoints those rows now, as a commit on `main` on top of the merge. This is the only
    point where it works — the new paths exist, and nothing has been pushed. Do not repoint them
    yourself (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」).
+
+   **If Step 4 listed plans deferred until `spec/<label>`**, remind their owners now that the
+   promotion the deferral waits for is merged: each checks that the promoted documents state the
+   outcome and records `deferred 解除: YYYY-MM-DD（理由）` in the plan's Decision Log. Lifting is
+   theirs; this skill neither writes the line nor blocks on it.
 4. **Tag the new target snapshot** (the post-merge `main`):
    ```bash
    git tag spec-target-<label>
@@ -381,6 +405,8 @@ REMOVED : {count}   (AC-009, ...)
 🔵 Target-only          : {count}
 ⚠️ Sources rows this promotion breaks : {count}
   - exec-plans/active/2026-06-search.md:19 → docs/02_spec/app_spec.md (moved) — the human repoints it in Step 6, before pushing
+⏸ Plans deferred until spec/<label> : {count}
+  - exec-plans/active/2026-06-export.md — 「CSV に書き出せる」(E2E-001) — the owner lifts it after the merge (deferred 解除:)
 
 ── Decision required ─────────────────────────
 Promotion changes the development target — confirm to proceed (yes / adjust / cancel).
@@ -391,6 +417,7 @@ New target snapshot tagged  : spec-target-<label>
 Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ... + [E2E] AC-NNN)
 New-AC plans suggested      : /create-exec-plan for AC-015, AC-016
 CONTEXT.md                  : current target updated to <label>
+Deferrals to lift           : exec-plans/active/2026-06-export.md (deferred until spec/<label>) — owner records deferred 解除:
 Spec branch                 : retired (or kept)
 Next action                 : /start-feature on the reconcile plan; /create-exec-plan for NEW ACs
 ```
@@ -404,6 +431,8 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Spec diff classified into NEW / CHANGED / REMOVED at the AC level
 - [ ] Impact analysed against `completed/` and `active/` plans (stale impl + in-flight collisions surfaced)
 - [ ] Active plans whose `## Sources` names a file or section this promotion moves were listed, and their owners asked to repoint the rows
+- [ ] Active plans deferred until `spec/<label>` were listed in the report, and their owners asked to
+      decide whether to lift the deferral after the merge
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`

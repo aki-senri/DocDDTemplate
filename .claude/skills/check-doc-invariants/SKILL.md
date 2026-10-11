@@ -170,13 +170,72 @@ For each `docs/01_requirements/user_stories/US-*.md`:
 
 For the E2E scenarios — one file each, `docs/01-02_e2e/E2E-NNN_{slug}.md` (see `create-spec`):
 - Each file must carry a `# E2E-NNN:` heading whose ID matches its file name, and the lines
-  `前提:`, `完了条件:` and `満たす AC:` — the material an `[E2E]` AC is transcribed from
+  `前提:`, `完了条件:` and `満たす AC:` — the material an `[E2E]` AC is transcribed from. It should
+  also carry `由来ジャーニー: US-NNN` and `満たす業務要求: {docs/00_project/ path § section | n/a（理由）}`
+  (`create-spec`); missing, those two are warnings, not violations (see「Upward trace」)
 - When `docs/02_spec/**/*.md` exists, at least one scenario must exist, in either layout below
 - Every AC referenced by the spec should appear in at least one scenario's `満たす AC`, in either
   layout (warn if an AC belongs to no scenario)
 - An `E2E-NNN` defined in more than one place — two files, or a file and an old-layout section —
   is a warning: the ID is meant to be unique, and the freeze search
   (`../create-spec/e2e-interaction.md`) can no longer tell which definition a plan froze
+- Each scenario's **upward trace** — its `由来ジャーニー:` and `満たす業務要求:` lines — is checked
+  as described under「Upward trace」 below, in both layouts
+- Each scenario is compared against the requirements and spec beside it — the **symmetric check**
+  below. Its findings are advisory and never block
+
+**Upward trace.** `満たす AC` traces a scenario across the ACs; the two lines above it trace it up,
+to the journey it realizes and to the business requirement outside the US (`create-spec`). A line
+that is **missing** is a ⚠️ — a scenario written before the lines existed is not broken, only
+untraced, the same grace the old layout gets. A line that is **present but points nowhere** is a ❌:
+it claims a trace that does not exist, which is worse than claiming none.
+
+**Adding a missing line is an edit to the scenario**, not bookkeeping. `由来ジャーニー` widens
+comparison set #2 for every plan that froze the scenario (`../create-spec/e2e-interaction.md`), so on
+an approved scenario the addition is routed like any other edit (CLAUDE.md「変更のルーティング」) and
+the plans that froze it are searched for (`e2e-interaction.md`「The freeze is per plan」). That is
+also why whoever runs this check — `gc` included — reports a missing line and never fills it in.
+
+| Line | ⚠️ when | ❌ when |
+|------|---------|---------|
+| `由来ジャーニー:` | the line is missing | an ID names no `docs/01_requirements/user_stories/US-NNN_*.md`, or names a US that has no `## ゴール像` |
+| `満たす業務要求:` | the line is missing | the value is neither `n/a（理由）` nor a path under `docs/00_project/`, or the path names no file |
+
+And in the other direction, the check that makes `由来ジャーニー` traceability rather than a
+self-report: when `docs/02_spec/**/*.md` exists, every US with an AC the spec references should be
+named under `由来ジャーニー` by at least one scenario, in either layout. A US that none names is a ⚠️:
+its journey is realized by no scenario — usually a path the spec dropped, or a scenario that forgot
+the line. **Skip a US whose ACs appear only in scenarios that lack the line** — the missing-line ⚠️
+on those scenarios already reports the cause, and a legacy project would otherwise get a second ⚠️ for
+every US it has. The US is checked again once those scenarios carry the line.
+
+**Symmetric check.** The bullets above look only one way: an AC that belongs to no scenario is
+reported, but a scenario step that belongs to no requirement is not, so a scenario that says more than
+the US and the spec passes every gate. This check closes that, by comparing each scenario's 前提,
+steps and 完了条件 against the comparison set that `../create-spec/e2e-interaction.md` defines —
+here without a plan, so its #1 (the plan's row) is n/a, and its #2 (the goal images of the USs under
+`由来ジャーニー`) and #3 (the US and spec sections of each AC under `満たす AC`) are the whole set.
+While a scenario has no `由来ジャーニー` line (already a ⚠️ above), #2 uses the advisory-site
+fallback that file defines (「Where this is applied」 — the goal images of the USs owning its
+`満たす AC` entries), and the report says so. A line that is present but names a US that does not
+exist or has no goal image gets no fallback: the scenario is not compared, and no 要確認 is added —
+the upward-trace ❌ above already names the cause (same section of that file). The
+verdicts are that file's; the report sorts them by **what a human has to do**, because a symmetric
+check rings about twice as often as a one-way one and the count that matters is the decisions it
+asks for:
+
+| Tier | Finding | Who acts, and how |
+|------|---------|-------------------|
+| ⚠️ **要決定** | A requirements gap (an outcome stated nowhere in the set) or a contradiction | A human: ① promote / ② drop / ③ rework for a gap, or a choice of target and the edit that follows for a contradiction (`e2e-interaction.md`) |
+| ⚠️ **要確認** | The set cannot be assembled even with the fallback — a `満たす AC` entry's US or spec section cannot be identified, or no US is found for #2 — so whether a step is stated cannot be decided | A human completes the trace; the comparison runs on the next check |
+| ℹ️ | A finding an active plan's Decision Log records under a `deferred:` line with no later `deferred 解除:` line (`e2e-interaction.md`「Deferring a plan, and lifting it」). Once lifted, a finding still on `main` is 要決定 again | Nobody, for now — the decision was made and is waiting on a promotion |
+
+None of these blocks: the check judges meaning, which a reader can get wrong, and the gates that act
+on a finding — `create-exec-plan` Q3d before a plan freezes the scenario, `run-exec-plan` Step 0b
+after — already exist and are where a halt belongs (`e2e-interaction.md`「Where this is applied」).
+**Whoever runs this check edits nothing**: not the scenario, not the US, not the spec. Each of ①–③
+and a contradiction's edit is a spec change a human routes (CLAUDE.md「変更のルーティング」). A
+refinement — the scenario stating concretely what the set states — is not a finding at all.
 
 **The old layout is still read, during a grace period.** Scenarios used to be a `## E2E シナリオ`
 section inside a spec file, with `### E2E-NNN:` headings. A project generated before the move keeps
@@ -185,7 +244,9 @@ working: its old-layout scenarios count for both checks above, and the section i
 active plan names in `## Sources` breaks that row the moment the scenario moves:
 
 1. Cut each `### E2E-NNN:` block into its own file `docs/01-02_e2e/E2E-NNN_{slug}.md`, with
-   `status:` copied from the spec file and the heading raised to `# E2E-NNN:`. Keep the ID.
+   `status:` copied from the spec file and the heading raised to `# E2E-NNN:`. Keep the ID. Do not
+   add `由来ジャーニー` / `満たす業務要求` as part of the move: the move keeps the content, and adding
+   a line is an edit (「Upward trace」) — do it as a separate, routed change
 2. Remove the section (and its summary table) from the spec file.
 3. Find the plans that name each moved scenario
    (`grep -rn "E2E-NNN" exec-plans/active/ 2>/dev/null || true` — only hits in a `## Sources` row
@@ -222,6 +283,13 @@ For each `exec-plans/active/*.md`:
 | Spec AC belonging to no `E2E-NNN` scenario | ⚠️ Warning |
 | A spec file with an old-layout `## E2E シナリオ` section (migration candidate) | ⚠️ Warning |
 | An `E2E-NNN` defined in more than one place | ⚠️ Warning |
+| A scenario's `由来ジャーニー:` or `満たす業務要求:` line is missing | ⚠️ Warning |
+| `由来ジャーニー:` names no US file, or a US without `## ゴール像` | ❌ Violation |
+| `満たす業務要求:` is neither `n/a（理由）` nor an existing file under `docs/00_project/` | ❌ Violation |
+| A US with an AC the spec references that no scenario names under `由来ジャーニー` | ⚠️ Warning |
+| Symmetric check: a requirements gap or a contradiction (要決定) | ⚠️ Warning — advisory, never repaired by the checker |
+| Symmetric check: the comparison set cannot be assembled (要確認) | ⚠️ Warning |
+| Symmetric check: a finding an active plan records as `deferred:`, not yet lifted | ℹ️ Informational |
 | Active plan with no `[E2E]` AC | ⚠️ Warning |
 | Active plan with `E2E: n/a (documentation-only)` recorded | ℹ️ Informational |
 | Active plan recording `E2E: n/a (documentation-only)` that nonetheless has an `[E2E]` AC | ⚠️ Warning |
@@ -393,7 +461,19 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
 
    If `docs/02_spec/**/*.md` exists and neither layout yielded a scenario → ❌. Report any ID found
    twice (⚠️). Then compare the union of the `満たす AC` lists against the ACs the spec references
-3. For each `exec-plans/active/*.md`: check for at least one `- [ ] AC-NNN: [E2E]` /
+3. For each scenario, in either layout, check the upward trace: `由来ジャーニー:` (missing → ⚠️;
+   an ID with no US file, or a US without `## ゴール像` → ❌) and `満たす業務要求:` (missing → ⚠️;
+   neither `n/a（理由）` nor an existing file under `docs/00_project/` → ❌). If a spec exists,
+   collect the USs owning an AC the spec references, and report each one that no scenario names
+   under `由来ジャーニー` (⚠️) — skipping a US whose ACs appear only in scenarios lacking the line
+4. Run the symmetric check on each scenario: compare its 前提, steps and 完了条件 against
+   comparison set #2 and #3 of `../create-spec/e2e-interaction.md` (#1 is n/a — there is no plan
+   row; without `由来ジャーニー`, #2 is the fallback `e2e-interaction.md`「Where this is applied」
+   defines).
+   Report a gap or a contradiction as ⚠️ 要決定, a set that cannot be assembled as
+   ⚠️ 要確認, and a finding under an active plan's unlifted `deferred:` line as ℹ️ — and edit
+   no document
+5. For each `exec-plans/active/*.md`: check for at least one `- [ ] AC-NNN: [E2E]` /
    `- [x] AC-NNN: [E2E]` line, and for `E2E: n/a` in the `## Decision Log`
 
    | `[E2E]` AC | `E2E: n/a` recorded | Report |
@@ -460,9 +540,29 @@ Exec-plans checked: {count}
 ❌ DOC-INV-006 violations (goal image / E2E): {count}
   - docs/01_requirements/user_stories/US-001_foo.md: no ## ゴール像 section
     Fix: Run /create-requirements Q4, or add 完成時にできること / 主要ユーザージャーニー / 非ゴール
+  - docs/01-02_e2e/E2E-006_report.md: 由来ジャーニー: US-007 — US-007 has no ## ゴール像
+    Fix: Run /create-requirements Q4 on US-007 (the scenario is skipped by the symmetric check until then)
+  - docs/01-02_e2e/E2E-002_export.md: 由来ジャーニー: US-009 — no such US file
+    Fix: Name the US whose journey this scenario realizes (or add the line's US); do not leave a
+         trace that points nowhere
+  - docs/01-02_e2e/E2E-003_audit.md: 満たす業務要求: docs/02_spec/app_spec.md is not under docs/00_project/
+    Fix: Point at where the business requirement is recorded in docs/00_project/, or write n/a（理由）
 
 ⚠️ DOC-INV-006 warnings: {count}
   - docs/02_spec/app_spec.md: AC-004 belongs to no E2E-NNN scenario
+  - docs/01-02_e2e/E2E-007_legacy.md: no 由来ジャーニー: line
+    Fix: Name the US whose journey it realizes — a routed edit to an approved scenario (「Upward trace」)
+  - docs/01-02_e2e/E2E-001_tag-and-filter.md: no 満たす業務要求: line
+    Fix: Add the outer anchor (a docs/00_project/ path and section) or n/a（理由）
+  - docs/01_requirements/user_stories/US-004_share.md: named under 由来ジャーニー by no scenario
+    Fix: Check whether the spec dropped this journey, or a scenario is missing the line
+  - 要決定 docs/01-02_e2e/E2E-001_tag-and-filter.md: 完了条件「CSV に書き出せる」is stated nowhere in
+    the comparison set (US-003 § ゴール像, AC-001 / AC-003 US and spec sections) — requirements gap
+    Decide: ① promote it into the US / spec ② drop it from the scenario ③ rework the US
+            (e2e-interaction.md). Nothing was edited by this check
+  - 要確認 docs/01-02_e2e/E2E-005_import.md: 満たす AC lists AC-012, which no US defines — comparison
+    set #3 cannot be assembled
+    Fix: Correct the 満たす AC entry (an edit to the scenario — routed); the check runs on the next pass
   - docs/02_spec/app_spec.md: ## E2E シナリオ (E2E-001, E2E-002) is in the old layout — migration candidate
     Fix: Cut each scenario into docs/01-02_e2e/E2E-NNN_{slug}.md, remove the section, and repoint
          every active plan's ## Sources row that names it, in the same commit (see DOC-INV-006)
@@ -471,6 +571,8 @@ Exec-plans checked: {count}
   - exec-plans/active/2026-03-docs.md: records E2E: n/a but defines AC-004 [E2E]
     Fix: Restate AC-004 as an ordinary functional AC — the test gates will hold on it otherwise
   ℹ️ exec-plans/active/2026-02-docs.md: documentation-only, E2E exempt
+  ℹ️ docs/01-02_e2e/E2E-004_bulk.md: gap「一括削除」recorded as deferred in
+     exec-plans/active/2026-03-bulk.md (until spec/sprint-12) — not re-raised
 
 {the output of .claude/scripts/check_doc_lint.py, verbatim — DOC-INV-007〜012}
 
