@@ -241,7 +241,7 @@ flowchart TD
 | B6 | Skip manual call to `check-invariants` | INV violations go undetected until just before PR | 🟡 Medium |
 | B7 | Fix failing tests without going through the spec alignment gate | Test changes without spec justification occur (INV-T01 violation) | 🟠 High |
 
-> **Inner-loop automation (issue #11)**: The bypasses above stem partly from the implementation
+> **Inner-loop automation**: The bypasses above stem partly from the implementation
 > loop being a *manual chain* (code → manually invoke CDF/CI/RT). `/run-exec-plan` provides an
 > **opt-in autonomous inner loop** that, within a frozen AC set, runs implement → run-tests →
 > check-invariants → advance without per-step confirmation, while still halting at the
@@ -265,17 +265,16 @@ flowchart TD
 ### 3-6. Goal Quality (a different axis from bypasses)
 
 B1–B11 above are about **skipping gates**. There is a second axis: passing every gate while the
-goal itself is too thin to steer autonomous implementation toward. That axis is tracked in issue
-#28 (G-A … G-F) rather than here; the items already addressed in the flow above are recorded for
-context (an issue closes on merge, not on this table):
+goal itself is too thin to steer autonomous implementation toward. The gaps found on that axis
+(G-A … G-F) are listed below with where the flow above now closes each:
 
 | # | Issue | Status |
 |---|-------|--------|
-| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved (#27, merged) — `create-requirements` goal image (required) → `create-spec` E2E scenarios (required, one file each in `docs/01-02_e2e/`, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
-| G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved (#24, merged) — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
-| G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved (#22, merged) — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
-| G-B / G-D | The goal reaching the driver was one condensed line — the US bullets and the spec section it stands for were never opened (in), and a green run was never checked back against the spec the traceability points at (out) | 🔄 Addressed, pending merge of #23 / #25 — shared `ac-sources.md`: `create-exec-plan` Q3d (`## Sources` table) / `run-exec-plan` Step 1b (read the sources before drafting the test) + Step 3a (spec re-anchor before the box is checked) / `red-first.md` source set / `start-feature` Step 2 / `pre-pr` ⑤c (⚠️) / `docode-review` / `promote-spec` reconcile template |
-| G-E | Mandatory final goal review (independent verification against the goal image, not just the ACs) | 🔄 Addressed, pending merge of #26 — `run-exec-plan` Step 4a runs `docode-review` mandatorily once every AC is `- [x]`, halting (stop condition (f)) on a ❌ verdict instead of handing off to `pre-pr`; the manual `start-feature` path keeps it optional |
+| G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved — `create-requirements` goal image (required) → `create-spec` E2E scenarios (required, one file each in `docs/01-02_e2e/`, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
+| G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
+| G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
+| G-B / G-D | The goal reaching the driver was one condensed line — the US bullets and the spec section it stands for were never opened (in), and a green run was never checked back against the spec the traceability points at (out) | ✅ Resolved — shared `ac-sources.md`: `create-exec-plan` Q3d (`## Sources` table) / `run-exec-plan` Step 1b (read the sources before drafting the test) + Step 3a (spec re-anchor before the box is checked) / `red-first.md` source set / `start-feature` Step 2 / `pre-pr` ⑤c (⚠️) / `docode-review` / `promote-spec` reconcile template |
+| G-E | Mandatory final goal review (independent verification against the goal image, not just the ACs) | ✅ Resolved — `run-exec-plan` Step 4a runs `docode-review` mandatorily once every AC is `- [x]`, halting (stop condition (f)) on a ❌ verdict instead of handing off to `pre-pr`; the manual `start-feature` path keeps it optional |
 
 ---
 

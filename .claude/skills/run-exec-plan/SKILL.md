@@ -27,8 +27,8 @@ disable-model-invocation: true
 >
 > **Purpose**: Provide the missing "Generator" / inner loop of DocDD. Automate only the
 > **execution** of work whose spec (AC) is already frozen — implement, verify, self-repair,
-> advance — while leaving every **governance** decision to the human. This addresses
-> issue #11 (reduce mid-implementation stops) without dissolving DocDD's spec gates.
+> advance — while leaving every **governance** decision to the human. This reduces the
+> mid-implementation stops a manual chain of skills incurs, without dissolving DocDD's spec gates.
 >
 > **Prerequisites**:
 > - An active plan must exist in `exec-plans/active/` with at least one `AC-NNN:` defined

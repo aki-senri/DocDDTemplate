@@ -25,9 +25,9 @@ So the verifiable detail exists — it is just somewhere else:
 Before this file existed, none of it reached the autonomous driver. `run-exec-plan` steered by the
 one-liner and judged green by "tests pass + invariants hold", so two things followed:
 
-- **On the way in** (issue #23): the driver interpreted a condensed line on its own, and the US
+- **On the way in**: the driver interpreted a condensed line on its own, and the US
   bullets that state the actual pass/fail conditions were never consulted.
-- **On the way out** (issue #25): the `AC → spec → code` traceability that `create-spec` writes was
+- **On the way out**: the `AC → spec → code` traceability that `create-spec` writes was
   never read back, so a green run could still miss the behavior the spec describes.
 
 Both are the same defect from opposite ends: the plan file names the AC but not **where the AC came
