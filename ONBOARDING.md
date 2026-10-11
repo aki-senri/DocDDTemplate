@@ -170,7 +170,7 @@ docs/
 
 > **Minimum required files**: `docs/04_implementation/invariants.md` and `docs/07_ai_context/CONTEXT.md`. Without these two, `/start-feature` will not work.
 >
-> **When porting README.md into `overview.md`**, turn its links into the other `docs/` layers into
+> **When porting README.md into `overview.md`**, replace its links to the other `docs/` layers with
 > plain mentions: `docs/00_project/` is the most upstream layer and links to nothing below it
 > (DOC-INV-001 in `.claude/skills/check-doc-invariants/SKILL.md`).
 
