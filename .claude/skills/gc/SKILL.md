@@ -145,6 +145,82 @@ not definitive stale flags — the timestamp signal is heuristic (see caveats in
      reconcile plan per the CLAUDE.md procedure. Do not auto-create — reconciliation scope is a
      human/agent decision.
 
+**E2E backstop (keyed on `E2E-NNN`):**
+
+The spec-drift backstop above is keyed on AC-IDs, so it cannot see two states of an E2E scenario:
+one that no plan ever took up, and one edited after a plan froze it while every AC line stayed the
+same. Both are found here by matching the scenarios against the plans' `## Sources` tables — the
+same rows `create-spec/e2e-interaction.md` uses to decide which plans a scenario is frozen for.
+Results are **candidates for a human**, never auto-filed, like the backstop above.
+
+**There is no ledger file.** Which scenario each plan took up is derived on every run from the
+scenario files and the `## Sources` rows of `exec-plans/active/` and `exec-plans/completed/`. A
+hand-kept index (`E2E-NNN → plan`) would be a second copy that nothing forces anyone to update —
+the reason CLAUDE.md gives for not keeping a separate Spec Drift Log: it goes unscanned and stale.
+
+1. **Collect the scenarios and what names them.** Scenarios: each `docs/01-02_e2e/E2E-*.md`, and
+   each `### E2E-NNN:` block in a spec's old-layout `## E2E シナリオ` section (a block takes the spec
+   file's `status:`). Skip any whose `status:` is `draft` (not approved yet — no plan is expected to
+   take it up) or `deprecated` (retired — no plan should). What names them:
+   - the `## Sources` rows of every plan that name an ID — the only thing that **freezes** a scenario
+     (`create-spec/e2e-interaction.md`「The freeze point」);
+   - in a plan with no `## Sources` table (it predates the convention), its `[E2E]` AC lines
+     (`AC-005: [E2E] E2E-001 のとおり…`). These count as **taking the scenario up** — step 2 only.
+     They do not freeze it, so step 3 (like `promote-spec`'s collision check) ignores them.
+
+   The same ID in a Decision Log or a Progress Log is history, not a claim on the scenario:
+   ```bash
+   grep -rn "E2E-[0-9]\{3\}" exec-plans/active/ exec-plans/completed/ 2>/dev/null || true
+   ```
+2. **Unpicked scenario (candidate).** An approved scenario that nothing collected in step 1 names, in
+   either directory. Every one of its ACs can go green in some plan while the through-flow it
+   describes was never planned as a whole — what a per-plan `[E2E]` check cannot see. Report it; a
+   scenario that is simply not planned *yet* is the common, harmless reading, which is why this is a
+   weekly candidate and not a ⚠️ at every `pre-pr`.
+3. **Scenario edited after a plan froze it (candidate).** For each scenario, take the plans whose
+   `## Sources` row names it, each with its freeze date — the plan's `created:`, or for a row added
+   later the date in its `E2E 凍結（後から追加 YYYY-MM-DD）` record (`e2e-interaction.md`). Find the
+   changes to the scenario as they **landed on `main`**, after the earliest of those dates:
+   ```bash
+   git log main --first-parent --since="<freeze date> 00:00" --format="%h %cd" --date=short -- <scenario file>
+   git diff <commit>^1 <commit> -- <scenario file>   # confirm 前提 / steps / 完了条件 / 満たす AC changed
+   ```
+   `--first-parent` dates each change by the commit that brought it onto `main` (a merge commit, a
+   squash or a rebase-merge, in the PR flow), so a branch commit authored before the freeze but merged
+   after it is not missed. A local fast-forward merge is the exception: it puts the branch's commits
+   on the first-parent chain with their own, earlier dates.
+   `00:00` matters: a bare date is filled in with the current time of day, which would drop the
+   same-day changes this check means to keep. `%cd` is that commit's date, the one `--since`
+   filters on. For a scenario renamed or moved (DOC-INV-006's migration), run it on the old path too.
+   For an old-layout scenario the file is the spec file, so confirm that **this** `### E2E-NNN`
+   block changed, not another part of the file. A change to the frontmatter alone, or a move with
+   unchanged text, is not an edit to what a plan froze.
+
+   Judge **each freezing plan** against the latest change after its own freeze date, then group the
+   result into **one entry per scenario** that lists every plan left untracked:
+
+   | The freezing plan is… | It is tracked when… | Otherwise |
+   |-----------------------|---------------------|-----------|
+   | **completed** | another plan — active or completed, a reconcile plan normally — names the scenario under an `[E2E]` AC in its `## Sources` and was frozen on or after the change (it verifies the new text); or a plan — active or completed — that froze the scenario before the change records the change in its Decision Log, dated on or after it (the in-flight owner that took it on, below — `promote-spec` Step 7's `E2E-NNN は <label> の昇格で変更` is such a record); or a plan — active or completed — has `reconcile: deferred — E2E-NNN` / `reconcile: n/a — E2E-NNN` recorded on or after the change | **Untracked E2E drift (candidate)** — recommend re-opening the `[E2E]` AC in a reconcile plan (CLAUDE.md「現バージョン修正による stale の扱い」) |
+   | **active** | its Decision Log mentions the scenario's ID in an entry about the change, dated on or after it — its own `E2E 凍結` record does not count | **Unrecorded edit to a frozen scenario (candidate)** — the plan's target moved without a record; its owner records it and decides what it means for the frozen `[E2E]` test |
+
+   **In-flight wins**, as in `promote-spec`'s precedence rule: when an active plan froze the scenario
+   before the change, report the active plan's line, and do not recommend a reconcile plan for a
+   completed one — the in-flight owner reconciles the flow. Its record of the change keeps the
+   completed plan tracked even after the in-flight plan itself completes (the second clause of the
+   table), so the precedence does not turn into a weekly candidate once the owner is done. A
+   completed reconcile plan likewise keeps the original plan tracked: the "frozen on or after the change" test is what stops a drift that was
+   already reconciled — and archived — from being raised again every week.
+
+   **Same-day dates** (they carry no time) are resolved on purpose in two directions: a change on the
+   day a plan froze the scenario counts as **after** the freeze (a candidate — a just-frozen scenario
+   edited the same day is worth a look), while a plan frozen on the day of the change counts as
+   **tracking** it (a reconcile plan created the day a promotion merged is the normal flow, not a
+   gap).
+
+   This is the safety net for the search `e2e-interaction.md` asks every editor of a scenario to make
+   by hand. It does not replace that search — it finds the ones that were skipped, a week late.
+
 ### ⑤ CONTEXT.md update
 
 Run the `update-context` skill.
@@ -186,6 +262,13 @@ Run the `update-context` skill.
 - Deleted: {count}
 - Untracked spec drift (in-version stale, candidates): {count}
   - AC-007 (completed: 2026-05-login.md; defining US-003 changed 2026-06-10) — no open reconcile plan; confirm AC block changed
+- E2E backstop (candidates; derived from scenario files × `## Sources` rows — no ledger file):
+  - Unpicked scenarios: {count}
+    - E2E-004 (docs/01-02_e2e/E2E-004_bulk.md, status: active) — named by no plan's ## Sources
+  - Untracked E2E drift (completed plans): {count}
+    - E2E-001 (frozen by completed 2026-05-tagging.md on 2026-05-02; changed 2026-06-14) — no reconcile plan re-opens its [E2E] AC
+  - Unrecorded edits to a frozen scenario (active plans): {count}
+    - E2E-002 (frozen by active 2026-07-export.md on 2026-07-01; changed 2026-07-09) — no record in its Decision Log
 
 ### ⑤ CONTEXT.md
 - Changes: {description of changes}

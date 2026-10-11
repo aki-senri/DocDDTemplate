@@ -177,10 +177,13 @@ E2E シナリオは要件・仕様から一方向に導出されるものでは�
     （行が `n/a（理由）`）はそのまま続行する。
   - 照合は `main` の文書を読むため、プランが進めるのは修正が `main` に入ったときだけ。矛盾の是正は
     常に `main`。①③を次バージョン扱いにするなら、`main` で②を当てるかプランを保留する。
-  - 保留は行頭の `- deferred: spec/<label> …` の箇条で記録し、解除も人が `- deferred 解除:` で記録する。`run-exec-plan` は保留中の
-    プランを開始せず（HALT を重ねない）、`promote-spec` がそのラベルの昇格時に列挙する。
+  - 保留は行頭の `- deferred: spec/<label> …` の箇条で記録し、解除も人が `- deferred 解除:` で
+    記録する。`run-exec-plan` は保留中のプランを開始せず（HALT を重ねない）、`promote-spec` が
+    そのラベルの昇格時に列挙する。
   - 矛盾で広い側を勝たせ、それを次バージョンと判断したら、`main` は狭い側でいま整合させ、広い側を
     `spec/<label>` に置く。保留だけでは矛盾は解消しない。
+  - 次バージョンで戻す行を `main` から消したとき（①③を次版にして②を当てた場合と、上の矛盾の場合）は、
+    行頭の `- E2E 次版戻し: spec/<label> — <ファイル> の「<消した行そのまま>」…` を記録する。
   - 確定済みプランに後から足した行のシナリオは、その編集の時点で凍結し、編集者がその時点で照合する。
 
 凍結地点の定義・4分岐の判定表・記録書式は `.claude/skills/create-spec/e2e-interaction.md` を
@@ -199,10 +202,15 @@ E2E シナリオは要件・仕様から一方向に導出されるものでは�
 | `/check-doc-invariants`（DOC-INV-006 の対称検査。`/pre-pr` ③・`/gc` ③ 経由） | 助言 | 文書の検査のたび | 要件の穴・矛盾を ⚠️ 要決定、照合範囲が組めないものを ⚠️ 要確認、プランが未解除の `deferred:` として記録済みのものを ℹ️ で報告。**ブロックせず、どの文書も直さない**（`/gc` も直さない） |
 | `/doc-review`（E2E シナリオのレビュー） | 助言 | 任意レビュー | 所見として報告し、人の判断に委ねる |
 
-`promote-spec` が AC 行を変えずに凍結済み E2E を書き換えるケースの検出は、`E2E-NNN` を鍵にした検出が
-まだ無いための既知の穴（単一ソースの「Known gaps」。助言地点は凍結時の版と比べないので塞がない）で、
-それまでは編集者（昇格の実行者を含む）が `exec-plans/active/` と `exec-plans/completed/` の
-`## Sources` を ID で探す（active はそのプランの Decision Log、completed は reconcile へ）。
+凍結済み E2E を編集する人（昇格の実行者を含む）は `exec-plans/active/` と `exec-plans/completed/` の
+`## Sources` を ID で探す（active はそのプランの Decision Log、completed は reconcile へ）。AC 行が
+変わらない編集も見逃さないよう、検出は `E2E-NNN` を鍵にする: `promote-spec` はシナリオを E2E 単位で
+NEW / CHANGED / REMOVED に分類して凍結したプランとの衝突（in-flight E2E collision・stale E2E）を報告し、
+stale な `[E2E]` AC を reconcile プランで再オープンする。昇格以外の編集の取りこぼしは `/gc` の E2E
+backstop が週次で候補として拾う（どのプランにも拾われていない E2E も同じ。消化台帳はファイルとして
+持たず `## Sources` から導出する）。`- E2E 次版戻し:` の行は、`promote-spec` が昇格前に `spec/<label>` に
+残っているかを確かめ、消えていれば人が戻すまで昇格を止める（`main` の取り込みで黙って消えるため。
+戻さないと決めたら人が `- E2E 次版戻し 取消:` で取り消す）。
 
 **作成順は固定しない**。`create-spec` は US にゴール像が無くても人が示した通しの流れからシナリオを起草し、
 `create-requirements` は既存シナリオを Q4b の候補として示し、どちらも `相互チェック未了` として報告する。
@@ -361,8 +369,8 @@ DocDD 自身の規約（ループ・再開・停止条件・ゲート・免除�
   当月2本目以降が要るのは、同じ月に前サイクルの reconcile が完了・archive 済みの場合。完了時に `completed/` で同名衝突するため、同名で起こしてはならない。
 
   **サフィックスが `<topic>` か `<label>` かの判別**: `<label>` は昇格ラベルであり、`spec/<label>` ブランチと `spec-target-<label>` タグに一致する語**でなければならない**。一致するものが無ければそれは in-version の `<topic>`。ファイル名だけで迷う場合は、そのプランの Goal & Scope とルーティング記録（`main` の不備修正か昇格追従か）が正であり、ファイル名は目印にすぎない。
-- 当面 reconcile しないと判断した場合は、その active プランの Decision Log に `reconcile: deferred`（または `reconcile: n/a`）と記録する。これにより `/gc` backstop の再フラグを抑止する。
-- 起票漏れは `/gc` の spec-drift backstop が週次で検出する（結果は確認候補であり確定ではない）。
+- 当面 reconcile しないと判断した場合は、その active プランの Decision Log に `reconcile: deferred`（または `reconcile: n/a`）と記録する（E2E シナリオについては `reconcile: deferred — E2E-NNN` のように ID を添える。`/gc` の E2E backstop はその変更以後の記録だけを認める）。これにより `/gc` backstop の再フラグを抑止する。
+- 起票漏れは `/gc` の spec-drift backstop（AC-ID が鍵）と E2E backstop（`E2E-NNN` が鍵。AC 行を変えずに凍結済みシナリオが変わった場合）が週次で検出する（結果は確認候補であり確定ではない）。
 
 ### 昇格（promotion）
 

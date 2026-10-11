@@ -116,6 +116,46 @@ git rev-list --count spec/<label>..main   # commits on main not yet in the spec 
   in a hunk that does not overlap the removed section merges cleanly and lands back in the old
   layout. So after the merge, check `git diff main...spec/<label> -- docs/02_spec/` for added
   `### E2E-` headings and move each into its own file the same way.
+- **Lines dropped on `main` for this version.** A gap or a contradiction resolved as next-version
+  may have been handled by removing a line on `main` — a scenario step (②), or the broader side of a
+  contradiction — on the understanding that this version brings it back
+  (`../create-spec/e2e-interaction.md`「When `main` drops text the next version should bring back,
+  record it」). Merging `main` into `spec/<label>` removes it from the branch too, silently, wherever
+  the branch had not touched that line. Both checks below run **every time**, after the branch is
+  current — whether this run merged `main` or an earlier merge did (a count of 0 above does not mean
+  a line survived):
+  1. **The deletion review.** List the lines `main` has removed from `docs/` since `spec/<label>` was
+     branched from it, so the human can spot one the next version still wants — including one no plan
+     recorded (a gap resolved from an advisory finding has no Decision Log to hold a marker). The base
+     is the fork point — the first parent of the branch's first commit — which also covers a version
+     branch opened before the previous promotion:
+     ```bash
+     git log --reverse --topo-order --format=%H main..spec/<label> | head -1   # → <first>; base = <first>^1
+     git -c core.quotePath=false diff <first>^1 main -- docs/ | grep -E "^(\+\+\+ |-)" | grep -vE "^--- (\"?a/|/dev/null)" || true
+     ```
+     The greps keep each file's `+++ b/<file>` line, so every removed line shows which file it came
+     from, and every removed line itself — a removed Markdown bullet shows in a diff as `-- …`, so a
+     filter on `^-[^-]` would drop exactly the scenario steps and AC bullets this review is for. They
+     drop only the `--- a/<file>` headers. `core.quotePath=false` keeps a non-ASCII path readable.
+     The list includes ordinary in-version deletions; the human looks for the ones the next version
+     meant to keep, and checks whether each is still on `spec/<label>`. Show it, grouped by file, in
+     the Step 5 report.
+  2. **The markers.** Check each marker for this label in active **and** completed plans:
+     ```bash
+     grep -rnE "^- E2E 次版戻し: spec/<label>( |$)" exec-plans/active/ exec-plans/completed/ 2>/dev/null || true
+     grep -rnE "^- E2E 次版戻し 取消: spec/<label>( |$)" exec-plans/active/ exec-plans/completed/ 2>/dev/null || true
+     git show spec/<label>:<file named in the marker> | grep -Fx -- "<the removed line, verbatim>" || echo "missing on spec/<label>"
+     ```
+     `-x` matches the whole line, so a reworded line that merely contains the old text does not pass
+     as present. A file the branch has since moved (for example in the layout migration above) also
+     reports "missing", and so can a whitespace difference — trailing spaces, or CRLF stored in the
+     repository. Each errs toward stopping; the human looks before re-adding anything.
+     A marker with a matching `取消` bullet is withdrawn and skipped. For the rest, a line missing on
+     the branch **stops the promotion here**, like an out-of-date branch: a human re-adds it on
+     `spec/<label>` (or withdraws the marker), then re-runs `/promote-spec` — Steps 3–4 must see the
+     branch as it will be promoted. Which line, and where, is a spec decision. Show every marker and
+     its result in the Step 5 report. Only a bullet that begins this way is a marker; `( |$)` keeps
+     `sprint-1` from matching `sprint-12`.
 
 ### Step 3: Diff & classify spec changes
 
@@ -135,6 +175,22 @@ bare version number cannot give):
 
 Build a per-AC table. For CHANGED, capture *which* AC-IDs changed (diff the `## 受け入れ条件`
 sections and `ac_ids:` frontmatter), not just which files changed.
+
+**Classify the E2E scenarios too, by `E2E-NNN`.** A promotion can change a scenario's 前提, steps,
+完了条件 or `満たす AC` while leaving every AC line alone, and a per-AC table then shows nothing —
+yet every plan that froze the scenario has had its target moved
+(`../create-spec/e2e-interaction.md`「The freeze is per plan」). Build a second table:
+
+| Class | How to detect | Meaning |
+|-------|---------------|---------|
+| **NEW** | A new `docs/01-02_e2e/E2E-NNN_*.md` (or a new `### E2E-NNN:` block in an old-layout section) | A new through-flow. No plan has frozen it |
+| **CHANGED** | The scenario's 前提, steps, 完了条件 or `満たす AC` differ (the frontmatter alone, or a move with unchanged text, is not a change) | Moves the target of every plan that froze it |
+| **REMOVED** | The scenario file (or block) is gone | A plan that froze it now names nothing |
+
+```bash
+git diff --name-status main..spec/<label> -- docs/01-02_e2e/
+git diff main..spec/<label> -- docs/01-02_e2e/ docs/02_spec/   # old layout: ### E2E-NNN blocks
+```
 
 ### Step 4: Impact analysis (find stale impl + in-flight collisions)
 
@@ -165,6 +221,32 @@ Classify the impact of each changed/removed AC:
 > or (b) deferring promotion so it does not land on an AC under active implementation. Do not
 > promote over an in-flight collision without the user's explicit acknowledgement.
 
+**Then do the same for each CHANGED and REMOVED scenario**, keyed on `E2E-NNN` — the collision the
+per-AC check cannot see. Only a hit inside a plan's `## Sources` row counts — that is what freezes a
+scenario (`../create-spec/e2e-interaction.md`「The freeze point」). The same ID in a Decision Log is
+history, and an `[E2E]` AC line in a plan with no `## Sources` table does not freeze it either (`gc`
+counts such a line only as having taken the scenario up):
+
+```bash
+# Replace <NNN> with the 3-digit scenario ID before running.
+grep -rn "E2E-<NNN>" exec-plans/active/    2>/dev/null || true   # frozen by an in-flight plan?
+grep -rn "E2E-<NNN>" exec-plans/completed/ 2>/dev/null || true   # frozen by a completed plan?
+```
+
+| Impact | Condition | Attention |
+|--------|-----------|-----------|
+| **In-flight E2E collision** | A CHANGED or REMOVED scenario that an active plan's `## Sources` row names — its `[E2E]` test may already be frozen red against the old text | 🔴 Critical — same handling as an in-flight AC collision: finish under the current scenario first, or defer the promotion; never promote over it without the user's acknowledgement. A REMOVED one is also a row this promotion breaks (below) |
+| **Stale E2E** | A **CHANGED** scenario that a completed plan's `## Sources` row names — the through-flow it verified is no longer the target | 🟠 High — re-opened in the reconcile plan (Step 7) |
+| **Removed E2E** | A **REMOVED** scenario that a completed plan's `## Sources` row names — the flow it verified is no longer wanted | 🟡 Medium — nothing to re-open; suggest retiring its `[E2E]` test (a human's call, like deprecating code for a REMOVED AC) and note it in the promotion record (Step 7). It does not by itself call for a reconcile plan |
+| **Target-only** | No plan names it | 🔵 Low |
+
+A scenario can collide while none of its ACs does; report it even then — that is the case this check
+exists for. A **REMOVED** scenario that an active plan's row names is also a row this promotion
+breaks: list it with the moved sources below, so the human repoints the row (to a successor
+scenario) or writes `n/a（理由）` in Step 6, after the merge and before the push. When the same plan
+collides on both an AC and the scenario, report both lines; the precedence rule below (in-flight
+wins over completed) applies to scenarios the same way.
+
 > **Sources that move are a collision this table does not show.** The analysis above is per AC, so
 > a promotion that keeps every AC but moves a spec file or retitles a section raises no in-flight
 > collision — and still breaks the `## Sources` rows of active plans that name it. List them here
@@ -188,12 +270,13 @@ Classify the impact of each changed/removed AC:
 > Decision Log. This skill does not lift it — without this list, though, nothing reads the deferral
 > once its reason is gone, and the plan stays parked.
 >
-> **Such a plan can also show up above as a 🔴 in-flight collision** — when the gap it waits on is
-> promoted (①) into an AC section the plan itself owns, that AC is CHANGED and active. For a plan
-> deferred until this `<label>`, that collision is the **awaited** change, not one to coordinate
-> around: the advice above (finish the AC first, or defer the promotion) is exactly wrong for it,
-> since the plan cannot proceed until the promotion lands. Report the AC under the deferred list
-> instead of as 🔴, and say why.
+> **Such a plan can also show up above as a 🔴 in-flight collision** — an AC collision when the gap
+> it waits on is promoted (①) into an AC section the plan itself owns, or an E2E collision when the
+> promotion edits the scenario it froze (① written as a new AC adds it to `満たす AC`, which edits
+> the scenario). For a plan deferred until this `<label>`, either collision is the **awaited**
+> change, not one to coordinate around: the advice above (finish first, or defer the promotion) is
+> exactly wrong for it, since the plan cannot proceed until the promotion lands. Report the AC or the
+> scenario under the deferred list instead of as 🔴, and say why.
 
 > **Precedence when an AC is both in-flight and already completed:** treat it as an in-flight
 > collision (the stricter case) — the active plan owner reconciles it; do **not** also create a
@@ -278,12 +361,13 @@ Do not proceed to Step 6 without an explicit "yes".
 > it while `main` still holds the old spec would put `exec-plans/active/` out of sync with the
 > current target.
 >
-> If there are **no CHANGED/REMOVED ACs** (a purely additive promotion), skip the reconcile plan
-> entirely — only the NEW-AC `/create-exec-plan` suggestions below apply.
+> If there are **no CHANGED/REMOVED ACs and no stale E2E** (a purely additive promotion), skip the
+> reconcile plan entirely — only the NEW-AC `/create-exec-plan` suggestions below apply.
 
-1. **Create a reconciliation exec-plan** for every **stale impl** AC, so implementation can catch
-   up to the new spec. Re-open the *same* AC-IDs — for **CHANGED** ACs the ID still traces to its
-   US `ac_ids:`, so DOC-INV-004 stays satisfied (this does **not** hold for REMOVED ACs; see below):
+1. **Create a reconciliation exec-plan** for every **stale impl** AC and every **stale E2E**, so
+   implementation can catch up to the new spec. Re-open the *same* AC-IDs — for **CHANGED** ACs the
+   ID still traces to its US `ac_ids:`, so DOC-INV-004 stays satisfied (this does **not** hold for
+   REMOVED ACs; see below):
 
    `exec-plans/active/YYYY-MM-reconcile-<label>.md`
    ```markdown
@@ -357,6 +441,31 @@ Do not proceed to Step 6 without an explicit "yes".
      behavior is unchanged. Grounding the test change in the promoted spec is what keeps this from
      being an INV-T01 violation, so name the promotion label and AC-ID in the Decision Log entry.
 
+   - **Stale E2E** (Step 4): for each completed plan whose frozen scenario CHANGED, re-open its
+     `[E2E]` AC in this reconcile plan, with its `## Sources` row pointing at the post-promotion
+     scenario file. The ID follows「Which ID to use」 above — normally the completed plan's own
+     `[E2E]` AC-ID, which already traces to a US AC; never a new one. It is the reconcile plan's
+     `[E2E]` AC when the scenario covers the re-opened functional ACs; a re-opened scenario whose ACs
+     did not change still gets its own `[E2E]` line — the flow moved even though no fragment did.
+     Name the promotion label and the scenario in the Decision Log entry, as for a stale AC.
+   - **In-flight E2E collision promoted with the user's acknowledgement** (Step 4): the active plan's
+     frozen scenario has now moved. **Remind its owner** to record it in that plan's Decision Log —
+     `E2E-NNN は <label> の昇格で変更 — {凍結済み [E2E] テストへの影響と人の判断}` — in a follow-up
+     commit (Step 6.5 has already pushed the promotion). The judgement half is the owner's; this skill
+     does not write it, as it does not write `deferred 解除:`. This is the record
+     `../create-spec/e2e-interaction.md`「The freeze is per plan」 requires for a hit in `active/`,
+     and what keeps `gc`'s E2E backstop from raising it a week later. Remind the owner of a plan
+     deferred until this `<label>` whose scenario the promotion edited (the awaited change) the same
+     way. What the change means for the frozen `[E2E]` test is the owner's call — a changed
+     expectation is stop condition (c) territory, not something this skill decides.
+   - **REMOVED scenario**: the active plans whose rows name it were repaired by the human in Step 6
+     (listed in Step 4 with the rows this promotion breaks). A scenario removed under a completed plan
+     is a **Removed E2E** (Step 4): note it, and the suggestion to retire its `[E2E]` test, in the
+     promotion record (item 2 below) — it re-opens nothing. Remind each active plan's owner to record
+     the removal in its Decision Log (`E2E-NNN は <label> の昇格で削除 — 行は {後継シナリオ | n/a（理由）}
+     に`), in the same follow-up commit. Do not repoint or blank a row yourself
+     (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」).
+
    - **NEW** ACs are *not* auto-planned — they need scoping. Suggest the user run
      `/create-exec-plan` for them.
    - **REMOVED** ACs: the AC-ID no longer exists in any US `ac_ids:`, so any `active/` plan still
@@ -391,6 +500,11 @@ Output the result report (below).
 
 Spec branch : spec/<label>   →   target: main
 Drift guard : ✅ up to date  /  ⚠️ main is N commits ahead (bring branch current first)
+次版戻し    : {count} — docs/01-02_e2e/E2E-001_tag-and-filter.md「- 完了条件: 一覧を CSV に書き出せる」
+              (2026-06-export.md) ✅ present on spec/<label>  /  ❌ missing — stopped; re-add on the branch
+              (or withdraw: 次版戻し 取消) and re-run  /  ➖ withdrawn
+削除の確認  : {n} lines main removed from docs/ since the fork point <first>^1 — listed by file below, reviewed by the human (Step 2)
+  - docs/01-02_e2e/E2E-001_tag-and-filter.md: "- 完了条件: 一覧を CSV に書き出せる" — ✅ still on spec/<label> / ❌ gone
 
 ── Spec changes ──────────────────────────────
 NEW     : {count}   (US-012, AC-015, AC-016, ...)
@@ -403,8 +517,16 @@ REMOVED : {count}   (AC-009, ...)
 🟠 Stale impl           : {count}
   - AC-003  (completed: 2026-05-login.md; tracks src/auth/**) — needs reconciliation
 🔵 Target-only          : {count}
+🔴 In-flight E2E collisions : {count}
+  - E2E-001 CHANGED (active: exec-plans/active/2026-06-search.md, [E2E] AC-005 frozen) — no AC line changed; coordinate before promoting
+  - E2E-003 REMOVED (active: exec-plans/active/2026-06-export.md) — also listed under Sources rows this promotion breaks
+🟠 Stale E2E            : {count}
+  - E2E-002 CHANGED (completed: 2026-05-login.md, [E2E] AC-004) — re-opened in the reconcile plan
+🟡 Removed E2E          : {count}
+  - E2E-006 REMOVED (completed: 2026-04-import.md, [E2E] AC-002) — suggest retiring its [E2E] test
 ⚠️ Sources rows this promotion breaks : {count}
   - exec-plans/active/2026-06-search.md:19 → docs/02_spec/app_spec.md (moved) — the human repoints it in Step 6, before pushing
+  - exec-plans/active/2026-06-export.md:21 → docs/01-02_e2e/E2E-003_export.md (removed) — successor scenario or n/a（理由）, in Step 6
 ⏸ Plans deferred until spec/<label> : {count}
   - exec-plans/active/2026-06-export.md — 「CSV に書き出せる」(E2E-001) — the owner lifts it after the merge (deferred 解除:)
 
@@ -428,8 +550,15 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 
 - [ ] The target `spec/*` branch was identified and the working tree was clean
 - [ ] Drift guard checked (branch current with `main`, or user brought it current)
+- [ ] With the branch current, the lines `main` removed from `docs/` since the branch's fork point
+      were shown to the human, by file; and every `- E2E 次版戻し: spec/<label>` marker in active and completed plans not
+      withdrawn by a `取消` bullet was checked against `spec/<label>` — a missing line stopped the run
+      until a human re-added it (or withdrew the marker)
 - [ ] Spec diff classified into NEW / CHANGED / REMOVED at the AC level
 - [ ] Impact analysed against `completed/` and `active/` plans (stale impl + in-flight collisions surfaced)
+- [ ] E2E scenarios classified by `E2E-NNN` (NEW / CHANGED / REMOVED) and matched against the plans'
+      `## Sources` rows — in-flight E2E collisions and stale E2E reported even where no AC line changed;
+      a stale E2E's `[E2E]` AC re-opened in the reconcile plan, and a removed scenario's rows left to the human
 - [ ] Active plans whose `## Sources` names a file or section this promotion moves were listed, and their owners asked to repoint the rows
 - [ ] Active plans deferred until `spec/<label>` were listed in the report, and their owners asked to
       decide whether to lift the deferral after the merge
