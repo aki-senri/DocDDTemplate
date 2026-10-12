@@ -72,8 +72,16 @@ Run the `check-doc-invariants` skill against all documents in the repository.
   reported to a human, not repaired: repointing it to the file it "probably meant", or writing
   `n/a` in its place, is a decision about what that AC condenses
   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
+- For a DOC-INV-001 or DOC-INV-003 hit involving a research note (`docs/00_project/research/`) — a
+  note linking below layer 0, or a document linking to a deprecated note: the only fix is to turn the
+  link into the **same** path in backticks, which changes no meaning
+  (`../init-project/research-note-format.md`「Rechecking」, what may change). **Never repoint** it to
+  another document, in particular not to a deprecated note's successor: that would silently change
+  which observation a decision rests on. A link to a deprecated note stays reported by the research-note backstop below
+  until the human records what it means
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
-  record the decision if leaving ASCII art intentionally
+  record the decision if leaving ASCII art intentionally. In a research note, report it and do not
+  convert: a note is not rewritten (`../init-project/research-note-format.md`「Rechecking」)
 - For the DOC-INV-006 migration warning (scenarios still in a spec's `## E2E シナリオ` section):
   **report it, do not move them**. Moving a scenario breaks every active plan's `## Sources` row
   that names it, and repointing those rows is a human's call — the same reason DOC-INV-012 is not
@@ -93,15 +101,15 @@ Review the status of each document according to the following `status:` transiti
 |------------|---------|
 | (new) → `draft` | On file creation |
 | `draft` → `active` | On PR merge, or when reviewed within 7 days of creation |
-| `active` → `deprecated` | When the corresponding code/feature is deleted, or when a successor document becomes `active` |
-| `deprecated` → (deleted) | Can be deleted 30 days after becoming `deprecated` |
+| `active` → `deprecated` | When the corresponding code/feature is deleted, or when a successor document becomes `active` — except a research note, which is deprecated only by a recheck that found a change ([`../init-project/research-note-format.md`](../init-project/research-note-format.md)「Rechecking」) |
+| `deprecated` → (deleted) | Can be deleted 30 days after becoming `deprecated` — except a research note under `docs/00_project/research/`, which is kept: the superseded decisions still name it ([`research-note-format.md`](../init-project/research-note-format.md)「Rechecking」) |
 
 
 | Check item | Criteria | Action |
 |-----------|----------|--------|
 | `draft` older than 7 days | Determined from `created:` date | Update to `active`, or continue with a recorded reason |
 | `active` but corresponding code deleted | `tracks:` files do not exist | Change to `deprecated` |
-| `deprecated` older than 30 days | Determined from `status: deprecated` date | Delete (or prompt for confirmation) |
+| `deprecated` older than 30 days | Determined from `status: deprecated` date | Delete (or prompt for confirmation) — never a research note (`docs/00_project/research/`) |
 | All acceptance criteria in `exec-plans/active/` are complete | Review checklist | Suggest running `complete-exec-plan` |
 
 **Spec-drift backstop (in-version stale):**
@@ -221,6 +229,15 @@ the reason CLAUDE.md gives for not keeping a separate Spec Drift Log: it goes un
    This is the safety net for the search `e2e-interaction.md` asks every editor of a scenario to make
    by hand. It does not replace that search — it finds the ones that were skipped, a week late.
 
+**Research-note backstop (premises due for a recheck):**
+
+Apply [`../init-project/research-note-format.md`](../init-project/research-note-format.md)「The `gc`
+backstop」 (steps 1–6): research notes due for a recheck that a current decision cites, and current
+decisions still resting on a deprecated note. Results are **candidates for a human**, like the
+backstops above. **Do not edit** a note, its dates, or any citing document: whether the outside world
+changed is found by looking at it, and what follows from a change is a routing decision (CLAUDE.md
+「変更のルーティング」) — neither is this skill's.
+
 ### ⑤ CONTEXT.md update
 
 Run the `update-context` skill.
@@ -269,6 +286,12 @@ Run the `update-context` skill.
     - E2E-001 (frozen by completed 2026-05-tagging.md on 2026-05-02; changed 2026-06-14) — no reconcile plan re-opens its [E2E] AC
   - Unrecorded edits to a frozen scenario (active plans): {count}
     - E2E-002 (frozen by active 2026-07-export.md on 2026-07-01; changed 2026-07-09) — no record in its Decision Log
+- Research notes due for a recheck (candidates; cited by a current decision): {count}
+  - docs/00_project/research/payment-law.md (recheck_by 2026-09-30) — cited by ADR-007 (採用), US-004 ## 関連
+  - docs/00_project/research/vendor-api.md (再確認日なし: collected 2026-03-01 + 180 days) — cited by docs/02_spec/app_spec.md ## 関連
+  - docs/00_project/research/old-survey.md (判定不能: no recheck_by, no collected) — cited by ADR-002 (採用)
+- Decisions resting on a superseded observation (candidates): {count}
+  - ADR-007 (採用) cites docs/00_project/research/payment-law.md (deprecated 2026-10-01: 変化あり → payment-law-2026.md) — no 影響 line, or 未決
 
 ### ⑤ CONTEXT.md
 - Changes: {description of changes}

@@ -230,14 +230,25 @@ Handle each item by where it lives:
 
 | The material is… | Write in `## 関連` |
 |------------------|--------------------|
-| **In the repository** — an ADR, a research note under `docs/00_project/research/`, a constraint | `- 根拠: {path or ID} — {which part of this requirement it supports}` |
-| **Outside the repository only** — the conversation, a chat or ticket, an external tool, a URL, someone's notes | First ask: "この資料を `docs/00_project/research/{topic}.md` として残しますか？" **Yes** → draft the note (below) and write `- 根拠: docs/00_project/research/{topic}.md — {…}`. **No** → write the source as it is: `- 根拠: {URL / document name / ヒアリング（YYYY-MM-DD、相手）} — {…}` |
+| **In the repository** — an ADR, a research note under `docs/00_project/research/`, a constraint | `` - 根拠: `{path}` `` or `- 根拠: {ID}` — {which part of this requirement it supports} (a path in backticks, never a Markdown link) |
+| **Outside the repository only** — the conversation, a chat or ticket, an external tool, a URL, someone's notes | First ask: "この資料を `docs/00_project/research/{topic}.md` として残しますか？" **Yes** → draft the note (below) and write `` - 根拠: `docs/00_project/research/{topic}.md` — {…} ``. **No** → write the source as it is: `- 根拠: {URL / document name / ヒアリング（YYYY-MM-DD、相手）} — {…}` |
 | A related decision or constraint that is not a basis | `- 関連: {path or ID}` (as before) |
 
-**Drafting a research note.** Use the research-note frontmatter in
-[`../init-project/SKILL.md`](../init-project/SKILL.md)「Document frontmatter」 with `status: draft`,
-`collected:` the date the material was gathered (ask if it is not today) and `references:` where it came
-from. In the body, write only what the user gave: what was looked into, the options compared, the one
+**Drafting a research note.** Use the frontmatter in
+[`../init-project/research-note-format.md`](../init-project/research-note-format.md) with
+`status: draft`, `collected:` the date the material was gathered (ask if it is not today) and
+`references:` where it came from. Ask for `recheck_by` too:
+
+> "この資料は今後変わりうるものですか？ 変わりうるなら、いつ外部を確かめ直しますか？
+> （既定の提案: collected から180日後。法令や他社製品なら短く。終わった比較や過去の事実など
+> 変わりようのない情報なら `n/a（理由）`）"
+
+The date is the user's: how fast the outside world moves is a judgement about the material, and the
+weekly `gc` backstop reports a due note only while a current decision cites it. If the user gives no
+answer, leave the field out — never write it empty; the backstop then reports the note as
+`再確認日なし` when it is due.
+
+In the body, write only what the user gave: what was looked into, the options compared, the one
 rejected and why, and the source. Do not add material of your own — a note filled in by the agent
 records the agent's reasoning, not the basis the human decided on. The note is layer 0: it links
 nothing below `docs/00_project/` (DOC-INV-001 in `../check-doc-invariants/SKILL.md`), so it does not
@@ -322,7 +333,7 @@ tracks:
 
 ## 関連
 
-- 根拠: {Q6 — in-repo path / ID, or the source as given} — {which part of this requirement it supports}
+- 根拠: {Q6 — in-repo path in backticks / ID, or the source as given} — {which part of this requirement it supports}
 - 関連: {Q6 — related decision or constraint}
 {omit the section if Q6 was skipped}
 ```
@@ -352,7 +363,8 @@ tracks:
       完成時にできること (Q4a) / 主要ユーザージャーニー (Q4b, Mermaid) / 非ゴール (Q4c)
 - [ ] `constraints.md` updated if new constraints were defined in Q5
 - [ ] Every item Q6 named is in `## 関連` — in-repo material by path or ID, outside material either as
-      a drafted research note (`status: draft`, `collected`, `references`) or as the source given
+      a drafted research note (`status: draft`, `collected`, `references`, and `recheck_by` — a date or
+      `n/a（理由）` — as the user answered) or as the source given
 
 Final report output by the agent:
 
