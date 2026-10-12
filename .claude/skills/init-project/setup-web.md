@@ -244,13 +244,13 @@ The agent only asks the following. The tech stack is already fixed and should no
    ├── BE: Create in order: Controller → Service → Repository (80%+ coverage for Service and Controller)
    └── FE: Create in order: api/ → hooks/ → components/ → pages/ (main logic of hooks and components)
         ↓
-5. Self-review with docs/05_quality/review_checklist.md
+5. Self-review with docs/05_quality/review_checklist.md and update the progress log in exec-plans/active/
         ↓
-6. Create PR → Review → Merge
+6. Create PR → Review (a human confirms every AC of the plan — or before the PR, by checking the commits)
    ├── CI-BE: dotnet build + dotnet test + Roslyn analyzers
    └── CI-FE: tsc + eslint + vitest
         ↓
-7. Update progress log in exec-plans/active/
+7. /complete-exec-plan on the same branch (the complete commit) → Merge
 ```
 
 ---

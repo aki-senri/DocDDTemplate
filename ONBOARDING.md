@@ -338,8 +338,8 @@ flowchart TD
     C --> D{Does the AI HALT?}
     D -->|Stop conditions a–f| E["④ Human decides<br/>add spec / test expectations / irreversible ops / review findings, etc."]
     E --> C
-    D -->|All ACs done| F["⑤ Review & PR<br/>pre-pr → code review → create/merge PR"]
-    F --> G["⑥ Wrap-up<br/>complete-exec-plan"]
+    D -->|All ACs done| F["⑤ Review & confirm<br/>pre-pr → confirm every AC (commits or PR review)"]
+    F --> G["⑥ Complete & merge<br/>complete-exec-plan (complete commit on the branch) → merge"]
 ```
 
 Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–f in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
@@ -351,7 +351,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 | Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY; decide which reading wins when a source and its AC line disagree | Elicit through dialogue, write the draft, record each AC's sources, and run the readiness check (it never rewrites an AC or picks between two frozen documents on its own) |
 | Implementation / verification | (Instruction is the AC number only) | Autonomously run read the sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC; run `run-tests` / `check-*` internally |
 | Spec change / test expectations | Decide whether the change is allowed (outer gate) | Detect that a change is needed and stop to present it |
-| Review / PR | Review the code and approve/merge the PR | Run the consolidated checks via `pre-pr` |
+| Review / PR | Confirm every AC of the plan (checking the commits, or in PR review), then merge once the complete commit is on the branch | Run the consolidated checks via `pre-pr`; with the human's confirmation in hand (their words or a PR approval), make the complete commit via `complete-exec-plan` — never on its own judgement |
 | Promotion / GC | Decide whether to run `promote-spec` / `gc` | Assist with diff analysis and post-processing |
 
 > For the full detailed flow including skill dependencies, see [`SKILL_FLOW.md`](SKILL_FLOW.md).
@@ -383,8 +383,11 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
                           Checks with the human only when hitting a stop condition (a–f)
 4. /pre-pr              → Consolidated pre-PR checks
-5. Create PR → review → merge
-6. /complete-exec-plan  → Move the plan to completed/
+5. Confirm every AC     → by checking the commits, or in PR review (create the PR before or after)
+6. /complete-exec-plan  → Record the confirmation, move the plan to completed/, and make the
+                          complete commit on the same branch (the boundary) → merge
+                          One PR carries implementation and completion; the plan is sized so one
+                          branch and one confirmation cover every AC (create-exec-plan Q3f)
 ```
 
 > `/run-exec-plan` is opt-in. If you want to proceed one step at a time manually, you can replace

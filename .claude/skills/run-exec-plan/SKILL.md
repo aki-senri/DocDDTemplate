@@ -31,7 +31,11 @@ disable-model-invocation: true
 > mid-implementation stops a manual chain of skills incurs, without dissolving DocDD's spec gates.
 >
 > **Prerequisites**:
-> - An active plan must exist in `exec-plans/active/` with at least one `AC-NNN:` defined
+> - An active plan must exist in `exec-plans/active/` with at least one `AC-NNN:` defined. A plan
+>   this branch already completed (moved to `exec-plans/completed/` by its complete commit) is not
+>   picked up from there: reopening it withdraws the human's confirmation, so the human reopens it
+>   first ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+>   「Reopening before the merge」)
 > - `start-feature` should already have run (baseline green, branch chosen, docs loaded)
 > - `docs/05_quality/test_strategy.md` must have `test_command` set (used by `run-tests`)
 
@@ -87,7 +91,11 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ### Step 0: Preconditions
 
-- Confirm exactly one target plan. If several active plans exist, ask the user which one
+- Confirm exactly one target plan. If the current branch already implements a different plan (it
+  ticked that plan's ACs or changed code for it), stop and say so: one implemented plan per branch
+  ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+  「When part of a plan has to merge before the rest」) — the user switches branches.
+  If several active plans exist, ask the user which one
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
 - **If the plan is deferred, do not start.** A plan whose Decision Log has a bullet beginning
   `- deferred: spec/` with no later bullet beginning `- deferred 解除:` is waiting on a promotion
@@ -438,6 +446,12 @@ overriding the halt, not by the driver reasoning "it was already reviewed.")
 When all ACs are `- [x]` (and, on this path, Step 4a's verdict is ✅ or ⚠️), stop the loop and report
 (see format below). **Do not create a PR.** Hand off to `pre-pr` as a separate, human-reviewed step.
 
+**Do not complete the plan either.** Completion is the human confirming every AC, recorded, then
+`complete-exec-plan` making the complete commit on this branch before the merge
+([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)).
+The driver's green run and the Step 4a verdict are what that confirmation is added to, not the
+confirmation itself — name the step in the handoff, and leave it to the human.
+
 ---
 
 ## Stop conditions (halt and ask the human)
@@ -528,7 +542,8 @@ When the budget is exhausted, halt with stop-condition (b).
       verdict recorded in the Decision Log **before** handoff; a ❌ verdict halted with stop
       condition (f) instead of handing off (a run that stopped early on another stop condition does
       not need this — `docode-review` stays optional there)
-- [ ] No PR was created by this skill (handoff to `pre-pr` only)
+- [ ] No PR was created by this skill (handoff to `pre-pr` only), and the plan was not completed by
+      it (completion needs the human's confirmation)
 
 Final report output by the agent:
 
@@ -547,6 +562,7 @@ docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ C
                          | n/a (loop stopped before every AC was checked — see Stopped at)
 Stopped at: {none | AC-NNN, stop condition <id>: <reason> | ⏸ not started — deferred: <the line>}
 
-Next action: {run /pre-pr for the completed ACs | human decision needed for the HALT
+Next action: {run /pre-pr for the completed ACs; then confirm every AC yourself and run
+             /complete-exec-plan on this branch before the merge | human decision needed for the HALT
              | lift the deferral (deferred 解除:) once the promotion it waits for has landed}
 ```

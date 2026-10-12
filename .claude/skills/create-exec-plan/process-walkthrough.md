@@ -212,7 +212,7 @@ file exists to replace. Name the lap, and name why the others do not apply.
 | `doc-review` | Optional review of a process document | Walk laps 2 / 3 / 4 / **7** against the diff; report findings (advisory) |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Same laps, against the diff — an independent reader is more likely to notice a state the author assumed away, and lap 7 is where that matters most: the author knows which sites they *meant* to change, which is exactly the knowledge that hides the sites they did not |
 | `pre-pr` | Before the PR | ⚠️ Report a plan in scope whose Decision Log has no walkthrough record. Does **not** block |
-| `complete-exec-plan` | After the merge | **Deliberately not checked here.** Unlike red-first evidence — a claim about *how tests came to exist*, worth one last audit before the plan is archived — the walkthrough's finding is either already fixed in this diff or it is not, and completion happens after the PR merged, where re-reporting changes nothing. `pre-pr` is the gate |
+| `complete-exec-plan` | After the human's confirmation, before the merge | **Deliberately not checked here.** The walkthrough's finding is either already fixed in this diff or it is not, and `pre-pr` reports a missing record on the same branch; completion records the human's confirmation and re-runs only the blocking checks. `pre-pr` is the gate |
 
 **When a lap finds something the plan cannot fix.** Some contradictions are only resolvable by
 changing a rule the plan never scoped. That is a scope decision, not execution: `run-exec-plan` halts

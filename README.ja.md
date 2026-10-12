@@ -68,7 +68,9 @@ Claude Code で以下を実行します：
    （手動で進める場合: その AC のテストを書いて赤を確認 → コードを書く
      → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
-/complete-exec-plan  ← 計画を完了に移動
+（人が全 AC を確認 — コミットを見て、または PR レビューで）
+/complete-exec-plan  ← 確認を記録し、同じブランチに complete コミットを積んでからマージ
+                       （1 PR で完結。移動だけの PR は作らない）
 ```
 
 > 最小ループに必須なのは `create-exec-plan` 以降のみ。`create-requirements` / `create-spec` は
@@ -104,8 +106,8 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、**`## Sources`**（その AC が凝縮した US bullet と spec 該当節）を記録する。DocDD のプロセスを変えるプランには**周回を辿る**検証 AC を置く |
 | `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度） |
 | `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in） |
-| `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新） |
-| `complete-exec-plan` | 実行計画を `active/` から `completed/` へ移動 |
+| `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新 / 完了の境界） |
+| `complete-exec-plan` | 人が全 AC を確認した記録を入口条件に、実行計画を `active/` から `completed/` へ移動し、実装ブランチに **complete コミット**（AI の作業と人の確認の境界）を積む。マージ前・実装と同じ PR |
 | `promote-spec` | 次バージョン仕様（`spec/<label>` ブランチ）を現ターゲットへ昇格（スプリント境界） |
 | `gc` | 定期ガベージコレクション（ドキュメント・アーキテクチャの健全性チェック。週次） |
 
@@ -268,7 +270,7 @@ describe('AC-001: 無効なパスワードでのログイン', () => {
 | `start-feature` 開始時 | ベースライン確認（グリーン状態で実装を始める） |
 | 実装中（随時） | `/run-tests` で随時確認 |
 | `pre-pr` | PR前の最終確認（失敗・未カバー AC があれば保留） |
-| `complete-exec-plan` | 全 AC-ID テスト通過を完了の必須条件とする |
+| `complete-exec-plan` | 全 AC-ID テスト通過を完了の必須条件とする（人の確認記録とあわせて） |
 
 ---
 

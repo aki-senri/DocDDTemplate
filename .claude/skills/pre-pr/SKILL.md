@@ -2,7 +2,9 @@
 name: pre-pr
 description: |
   Comprehensive pre-PR check skill run before creating a pull request.
-  Runs invariant checks, document freshness checks, review checklist, tests, and exec-plan progress update all at once.
+  Runs invariant checks, document freshness checks, review checklist, tests, exec-plan progress update,
+  and the completion-boundary check (is the plan completed; did implementation change after the
+  complete commit) all at once.
 disable-model-invocation: true
 ---
 
@@ -33,20 +35,42 @@ Runs the following steps in order. If all pass, PR creation is allowed.
                           and red-first evidence (⚠️ only)
 ⑤b process walkthrough  → For a plan that changed a process: evidence check (⚠️ only)
 ⑤c AC sources           → ## Sources present + spec re-anchor recorded per AC (⚠️ only)
-⑤d docode-review evidence → For a plan completed by run-exec-plan: verdict recorded? (⚠️ only)
+⑤d docode-review evidence → For a plan whose ACs run-exec-plan finished: verdict recorded? (⚠️ only)
 ⑥ exec-plan update      → Record progress in log
+⑦ completion boundary   → Plan completed? (❌ only for implementation changed after the complete
+                          commit, or an unchecked AC inside the completed plan)
 ```
 
-> **Changes made with no exec-plan.** ⑤ (red-first evidence), ⑤b, ⑤c, ⑤d and ⑥ all read or write a
+> **Which plan.** "The plan" in ⑤–⑦ is the one this branch implements. Before the complete commit
+> it is in `exec-plans/active/`; when this skill is run again after the complete commit, it is the
+> one this branch moved into `exec-plans/completed/`. Look in both places as
+> [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+> 「Finding the plan of this branch」 describes. On both paths that file allows, this skill normally
+> runs **before** the complete commit.
+>
+> **When it is re-run after the complete commit,** every step reports what it finds instead of
+> fixing it — ①/② that would rewrite code or documents, ④ "requires fix", a failing test at ⑤: a fix
+> is an implementation change after the boundary, so it would turn ⑦ into ❌ by this skill's own
+> hand. If a fix is wanted, it goes through a reopen.
+
+> **Changes made with no exec-plan.** ⑤ (red-first evidence), ⑤b, ⑤c, ⑤d, ⑥ and ⑦ all read or write a
 > plan file. A change made under the `exec-plans/.spec-override` exception has none — its evidence
 > lives in the branch's commit messages instead. Note that CLAUDE.md has the override file **deleted
 > once implementation completes**, which is before this skill runs: do not expect to find it. Check
-> `git log main..HEAD` for the evidence before reporting ⚠️ for any of the five. Evidence recorded
+> `git log main..HEAD` for the evidence before reporting ⚠️ for any of ⑤–⑤d. Evidence recorded
 > outside a plan file is a `➖`, not a missing record, and ⑥ has nothing to update. With no plan and
-> no such record anywhere, the ⚠️ stands.
+> no such record anywhere, the ⚠️ stands. ⑦ is `➖` when the change is plan-less by the rule below —
+> there is no plan to complete.
 >
-> This does **not** relax ⑤'s blocking parts. Failing tests, uncovered ACs and uncovered `[E2E]` ACs
-> block a plan-less change exactly as they block any other.
+> This does **not** relax ⑤'s blocking parts for what the change itself is answerable for: failing
+> tests block a plan-less change exactly as they block any other. The ACs of the plans in `active/`
+> are not its work, so their coverage is not held against it — **provided the change is plan-less**:
+> it changed nothing outside `exec-plans/` and `docs/`, or a commit message carries the
+> `Spec-Override:` trailer. A branch that changed code, touched no plan and carries no trailer is not
+> taken as plan-less: ask the human which plan it implements; until they answer, ⑤ holds on every
+> active plan's coverage and ⑦ reports ⚠️ "プランが特定できない". An answer of "none — it was an
+> override" is recorded as the trailer (an empty commit), after which the change is plan-less
+> (`../complete-exec-plan/completion-boundary.md`「A change with no plan」).
 
 ---
 
@@ -120,7 +144,9 @@ plans' rows look like this PR's). This is the only site that passes it.
    deleted or renamed — block as before; the rows listed under **"In other plans — not blocking this
    PR"** do not. Present the second group as a note for each plan's **owner** (name the plan file and
    row, and say the owner repoints it), not as something to fix in this PR — and do not repair those
-   rows here either. Nothing is lost by not blocking: they still block their own plan's PR, and
+   rows here either. Nothing is lost by not blocking: they still block their own plan's PR while that
+   plan is in `active/` (once its branch completes it, `complete-exec-plan` has already checked the
+   rows, and ⑦ reports a Sources file a later merge of `main` moved), and
    `gc` ③ reports them as ❌ until they are repointed. If the script reports that it could not
    determine this PR's plans, every DOC-INV-012 ❌ blocks; fix the cause it names (a missing base
    branch, say) rather than dropping `--base`. The same holds for
@@ -147,7 +173,10 @@ Load `docs/05_quality/review_checklist.md` and verify each item.
 Run the `run-tests` skill.
 
 1. All tests must pass
-2. Every AC-ID must have a corresponding test (coverage check)
+2. Every AC-ID of **this branch's plan** must have a corresponding test (coverage check) — `run-tests`
+   narrows to it when called from here; a plan the branch has **not started** (⑦'s ➖ row — no box
+   ticked and nothing changed outside `exec-plans/` and `docs/`) is reported, not held, for its
+   functional and `[E2E]` ACs alike
 3. **Every `[E2E]` AC must have a test that exists and passed** (E2E coverage check)
 4. If there are changes to test files, confirm the changes are grounded in a spec (AC-ID)
 
@@ -167,6 +196,7 @@ Two situations, two outcomes (same split as `run-tests`):
 | Situation | Outcome |
 |-----------|---------|
 | The plan **has** a `[E2E]` AC, but its test is missing / did not run / failed | ❌ **blocks PR creation** — same weight as a failing test |
+| The plan **has** a `[E2E]` AC, but the branch has **not started** the plan (⑦'s ➖ row) | ➖ **report as not started, does not block** — nothing of the through-flow is built yet |
 | The plan has **no** `[E2E]` AC at all | ⚠️ **report only, does not block** |
 
 The second case has legitimate causes (the plan predates the E2E requirement, or it is
@@ -285,7 +315,7 @@ means inferring them from the code, which is the one reading `ac-sources.md` for
 absence; if the plan is still active, the rows are written at the plan from the US and spec — the
 `create-exec-plan` path — never from the diff in front of you.
 
-### ⑤d docode-review evidence for autonomous completions (⚠️ report only)
+### ⑤d docode-review evidence when run-exec-plan finished the ACs (⚠️ report only)
 
 `run-exec-plan` Step 4a makes `docode-review` **mandatory** once every AC in a plan reaches `- [x]`
 (it halts with stop condition (f) on a ❌ verdict rather than handing off — see
@@ -324,7 +354,48 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 
 1. Check off completed tasks (`- [x]`)
 2. Append today's date and a description of what was done to the progress log
-3. If all acceptance criteria are met, guide the user to run the `complete-exec-plan` skill
+3. If all acceptance criteria are met, say what comes next — the merge waits for it: the human
+   confirms every AC (by checking the commits, or in PR review), then `complete-exec-plan` makes the
+   complete commit **on this branch, before the merge**
+   ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+   「Order relative to the PR」)
+
+If the plan is already in `exec-plans/completed/` (this skill re-run after the complete commit),
+there is nothing to update: ⑥ is `➖`. Do not edit a completed plan here — progress after the
+boundary belongs to a reopened plan.
+
+### ⑦ Completion boundary
+
+Where the branch stands relative to the human confirmation
+([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)).
+
+| State of the plan | Outcome |
+|-------------------|---------|
+| The branch has **not started** the plan — it only adds it, or re-opens ACs in it with the spec fix that re-opens them: no AC goes to `- [x]` **and** nothing changed outside `exec-plans/` and `docs/` (「A plan this branch has not started」 — both checks, working tree included) | ➖ nothing to confirm yet — not an intermediate state. A branch that changed code but ticked no box is not this row, and neither is a documentation-only plan whose branch changed `docs/` with no box ticked: both are the ⚠️ row below |
+| No plan found, the branch changed something outside `exec-plans/` and `docs/`, and no commit message carries a `Spec-Override:` trailer | ⚠️ **does not block by itself** — "プランが特定できない". Ask the human which plan the change implements; until then ⑤ covers every active plan (「A change with no plan」) |
+| In `active/`, every AC `- [x]` | ℹ️ **not completed yet — does not block.** PR creation is fine (the second path completes after review); the merge waits for the human confirmation and the complete commit on this branch |
+| In `active/`, some ACs still `- [ ]` | ⚠️ **intermediate state — does not block PR creation**, but the branch is not merged like this. Finish the plan, or the human splits it (「When part of a plan has to merge before the rest」) |
+| Moved to `completed/` in the working tree but **not committed** | ℹ️ **does not block.** A `complete-exec-plan` run stopped before its commit; resume it (its Step 1) — there is no boundary to check against yet |
+| Moved to `completed/` on this branch, no implementation change after the boundary | ✅ |
+| Moved to `completed/` on this branch, **and the branch changed implementation after the boundary, or the complete commit itself carries an implementation change** (「After the boundary」 — committed or uncommitted, merges of `main` not counted) | ❌ **blocks.** The human confirmation does not cover the branch as it stands. The human reopens the plan (「Reopening before the merge」) and confirms again |
+| Moved to `completed/` on this branch, **and the completed plan has an unchecked AC** (a re-opened AC that a merge of `main` carried into it) | ❌ **blocks.** Nobody would implement it once merged. The human reopens the plan |
+| Moved to `completed/` on this branch, and a merge of `main` after the boundary changed, moved or renamed a file the plan's `## Sources` names (checked with `--no-renames`, so a rename shows its old path) | ⚠️ **does not block.** Whether the named section changed is a reading: the human decides whether the confirmation still holds or the plan is reopened |
+
+```
+Completion boundary:
+  ℹ️ 2026-10-login.md → 全 AC 完了・未 complete（マージ前に人の確認 → /complete-exec-plan）
+  ⚠️ 2026-10-login.md → AC-004 が未完了（途中状態ではマージしない）
+  ✅ 2026-10-login.md → complete 9876fed（確認: <確認者>, PR #12 のレビュー）以降の実装変更なし
+  ❌ 2026-10-login.md → complete 9876fed の後に src/auth.ts を変更（再オープンして確認をやり直す）
+```
+
+Only the two ❌ rows block, and they are the mechanical ones: the boundary, the changes after it and
+an unchecked box are read from git and the plan file, not judged from prose. The ℹ️ rows and the
+first ⚠️ row do not block because running this skill before the complete commit is the normal order,
+and the plan's state then is exactly what they describe; the second ⚠️ needs a reading of the section.
+
+**Do not reopen the plan or write a confirmation record here.** Report; reopening withdraws the
+human's confirmation and is theirs to decide, and the record is theirs to give.
 
 ---
 
@@ -353,7 +424,15 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
                      / ➖ n/a (起点なし)
 ⑤d docode-review   : ✅ verdict 記録あり  / ⚠️ run-exec-plan 完了の痕跡ありだが記録なし (does not block)
                      / ⚠️ 直近の verdict が ❌ のまま (does not block) / ➖ n/a (手動実装)
-⑥ exec-plan        : ✅ Progress updated
+⑥ exec-plan        : ✅ Progress updated  / ➖ plan already completed on this branch
+⑦ completion       : ✅ complete {sha} 以降の実装変更なし  / ℹ️ 未 complete — マージ前に人の確認 → /complete-exec-plan
+                     / ⚠️ AC-NNN 未完了（途中状態ではマージしない） (does not block)
+                     / ❌ complete {sha} の後に実装変更あり — 再オープン (blocks)
+                     / ❌ completed のプランに未チェックの AC-NNN — 再オープン (blocks)
+                     / ⚠️ main の取り込みで ## Sources のファイルが変更 — 再オープンの要否を人が判断 (does not block)
+                     / ⚠️ プランが特定できない — どのプランの実装かを人に確認 (does not block)
+                     / ➖ 確認対象なし（プランの追加・AC の再オープンのみ）
+                     / ➖ n/a (プラン無しの変更)
 
 ---
 {If there are issues, list specific fix instructions here}
@@ -366,7 +445,7 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 
 ## Completion criteria
 
-- [ ] All checks ① through ⑥ (including ⑤b and ⑤c) are complete
+- [ ] All checks ① through ⑦ (including ⑤b, ⑤c and ⑤d) are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation — except a DOC-INV-012
       row, which the user repoints (③); it is neither repaired by the agent nor marked N/A
 - [ ] ③ was run with `--base`, and any DOC-INV-012 row listed under another plan was presented as
@@ -384,5 +463,7 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
       checked and any absence reported (⚠️ — does not block, and `docode-review` is not run here to
       fill the gap)
 - [ ] If test files were changed, the reason is recorded in the decision log
-- [ ] The progress log in exec-plan has been updated
+- [ ] The progress log in exec-plan has been updated (or ⑥ is `➖` because the plan is already completed)
+- [ ] The completion boundary was checked (⑦): an implementation change after the complete commit is
+      ❌; a plan not yet completed, or one with ACs left, was reported and the merge condition stated
 - [ ] Output shows "PR creation status: ✅ No issues"

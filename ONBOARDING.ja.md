@@ -338,8 +338,8 @@ flowchart TD
     C --> D{AI が HALT?}
     D -->|停止条件 a〜f| E["④ 人が判断<br/>仕様追記 / テスト期待値 / 不可逆操作 / レビュー指摘 など"]
     E --> C
-    D -->|全 AC 完了| F["⑤ レビュー & PR<br/>pre-pr → コードレビュー → PR 作成・マージ"]
-    F --> G["⑥ 後始末<br/>complete-exec-plan"]
+    D -->|全 AC 完了| F["⑤ レビュー & 確認<br/>pre-pr → 全 AC を確認（コミット or PR レビュー）"]
+    F --> G["⑥ 完了 & マージ<br/>complete-exec-plan（ブランチに complete コミット）→ マージ"]
 ```
 
 上図のボックス ①②③④⑤⑥ はいずれも人が起動する操作（③ は機能ごとに一度 `start-feature` で準備してから `run-exec-plan` を起動する）。ただし ③ で起動した後の「起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜f）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
@@ -351,7 +351,7 @@ flowchart TD
 | 要件・仕様 | User Story / AC を定義・凍結する。readiness 検査で NOT READY となった AC を書き直す。起点と AC 行が食い違うときにどちらが正かを決める | 対話で引き出し、ドラフトを書き、各 AC の起点を記録し、readiness 検査を実行する（AC を独断で書き換えたり、食い違う2つの凍結文書のどちらかを独断で選んだりはしない） |
 | 実装・検証 | （指示は AC 番号のみ） | 起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC を自走、`run-tests` / `check-*` を内部実行 |
 | 仕様変更・テスト期待値 | 変更可否を判断する（外側ゲート） | 変更が必要だと検知したら停止・提示する |
-| レビュー・PR | コードをレビューし PR を承認・マージする | `pre-pr` で総合チェックを実行する |
+| レビュー・PR | plan の全 AC を確認し（コミットを見て、または PR レビューで）、complete コミットがブランチに積まれてからマージする | `pre-pr` で総合チェックを実行する。人の確認（発言または PR approve）を根拠に `complete-exec-plan` で complete コミットを作る（自分の判断では作らない） |
 | 昇格・GC | `promote-spec` / `gc` の実行可否を判断する | 差分解析・後処理を支援する |
 
 > スキルの依存関係を含む全体の詳細フローは [`SKILL_FLOW.md`](SKILL_FLOW.md) を参照。
@@ -381,8 +381,11 @@ flowchart TD
                           内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
                           停止条件（a〜f）に当たったときだけ人に確認
 4. /pre-pr              → PR 前の総合チェック
-5. PR 作成 → レビュー → マージ
-6. /complete-exec-plan  → 計画を completed/ へ移動
+5. 全 AC を確認         → コミットを見て、または PR レビューで（PR はこの前でも後でもよい）
+6. /complete-exec-plan  → 確認を記録し、計画を completed/ へ移動して同じブランチに
+                          complete コミット（境界）を積む → マージ
+                          実装と完了を 1 PR で運ぶ。plan は 1 ブランチ・1 回の確認で
+                          全 AC を賄える大きさで組む（create-exec-plan Q3f）
 ```
 
 > `/run-exec-plan` は opt-in。1 つずつ手動で進めたい場合は、Step 3 を「その AC の起点を読む →

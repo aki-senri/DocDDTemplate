@@ -50,7 +50,12 @@ List the files in `exec-plans/active/` and confirm the plan to work on with the 
 
 - If there is only one plan, select it
 - If there are multiple plans, prompt the user to select one
-- If there are no plans, prompt to run the `create-exec-plan` skill and stop
+- If there are no plans, prompt to run the `create-exec-plan` skill and stop — unless the work is a
+  fix to a plan **this branch already completed** (its complete commit is on the branch, not yet
+  merged). Then the plan is reopened, not re-created: present
+  [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+  「Reopening before the merge」 to the user — reopening withdraws their confirmation, so it is their
+  call — and continue with the reopened plan
 - If the selected plan is **deferred** — its Decision Log has a bullet beginning `- deferred: spec/`
   with no later bullet beginning `- deferred 解除:` — present that line to the user before anything else. The plan is waiting on
   a promotion ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a
@@ -150,6 +155,11 @@ so a test drafted red-first comes from the AC line and its sources, never from t
 ### Step 3: Determine the branch name
 
 Suggest a branch name following the "branch strategy" rule in CONTEXT.md.
+
+**One implemented plan per branch.** Start the plan on a branch of its own — not on a branch already
+implementing another plan. The checks that decide "this branch's plan" and whether it has started
+judge the whole branch, so a second plan's code would make the first read as unconfirmed work
+(`../complete-exec-plan/completion-boundary.md`「When part of a plan has to merge before the rest」).
 
 - Standard pattern: `feature/{exec-plan-name}`
 - Example: `feature/user-auth`

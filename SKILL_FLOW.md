@@ -66,18 +66,22 @@ flowchart TD
     DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes\n⑦ Completion boundary: not completed → ℹ️,\n   ACs left → ⚠️, implementation changed\n   after the complete commit → ❌"]
     end
 
-    PREPR --> PR
-    PR["Create PR → Review → Merge"]
-    PR --> COMPLETE
+    PREPR --> CONFIRM
+    CONFIRM{"HUMAN confirms every AC of the plan\n(checking the commits before a PR,\nor in PR review)"}
+    CONFIRM -->|findings| IMPL
 
-    subgraph COMPLETE_PHASE["Completion (after PR merge)"]
-        COMPLETE["/complete-exec-plan\n① Confirm all AC checkboxes\n② run-tests (final check)\n③ AC coverage check,\n   incl. [E2E] AC passing (else hold)\n   + red-first evidence (⚠️ only)\n④ Move active/ → completed/\n⑤ Update CONTEXT.md priority tasks"]
+    subgraph COMPLETE_PHASE["Completion (on the implementation branch, before the merge — same PR)"]
+        COMPLETE["/complete-exec-plan\n① Human confirmation record?\n   (the human's words or a PR approval,\n   transcribed — else stop and ask)\n② All AC checkboxes + run-tests:\n   tests, AC coverage, [E2E] passing (else hold)\n③ Move active/ → completed/\n④ Update CONTEXT.md priority tasks\n⑤ The complete commit = the boundary\n   between the agent's work and the\n   human's confirmation"]
     end
 
-    COMPLETE --> NEXT
+    CONFIRM -->|confirmed| COMPLETE
+    COMPLETE --> PR
+    PR["Create the PR, or push to the open one → Merge\n(merge only with the complete commit and\nno implementation change after it)"]
+    PR -->|"finding before the merge:\nhuman reopens the plan → active/"| IMPL
+    PR --> NEXT
     NEXT{Next plan exists?}
     NEXT -->|Yes| PLAN
     NEXT -->|No| GC_WAIT
@@ -101,7 +105,7 @@ flowchart TD
     GC --> UC
 ```
 
-> **Note**: `complete-exec-plan` updates `CONTEXT.md` **directly** in its own Step 4; it does not invoke the `update-context` skill. Only `gc` calls `update-context` internally.
+> **Note**: `complete-exec-plan` updates `CONTEXT.md` **directly** in its own Step 5; it does not invoke the `update-context` skill. Only `gc` calls `update-context` internally.
 
 ---
 
@@ -123,6 +127,7 @@ flowchart TD
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
+| `complete-exec-plan` | `check-doc-invariants` | Internal call (DOC-INV-012 on the plan alone, before it moves out of `active/`) |
 | `complete-exec-plan` | —— | Updates `CONTEXT.md` directly (does not call `update-context`) |
 | `gc` | `check-doc-freshness` | Internal call (full scan) |
 | `gc` | `check-invariants` | Internal call (full scan) |
@@ -187,6 +192,18 @@ flowchart TD
 > naming one is NOT READY), and **not read** (the code, the tests, and `docs/03_design/**` down).
 >
 > **Shared reference file (not a skill):**
+> [`.claude/skills/complete-exec-plan/completion-boundary.md`](.claude/skills/complete-exec-plan/completion-boundary.md)
+> — what `completed` means (a human confirmed every AC of the plan, and the record of it is in the
+> plan's Decision Log — not "the PR merged"), the **complete commit** that marks the boundary between
+> the agent's work and that confirmation on the implementation branch, the merge condition (no
+> intermediate state; a plan is sized for one branch and one confirmation, `create-exec-plan` Q3f),
+> how to find the boundary and the implementation changes after it, and reopening before the merge.
+> `complete-exec-plan` applies it (entry condition, commit, reopen), `pre-pr` ⑦ reports against it
+> (❌ only for implementation changed after the complete commit, or an unchecked AC inside the
+> completed plan), `docode-review` and `pre-pr` find
+> the plan in `completed/` through it, and `run-exec-plan`, `start-feature` and `gc` point at it.
+>
+> **Shared reference file (not a skill):**
 > [`.claude/skills/create-spec/e2e-interaction.md`](.claude/skills/create-spec/e2e-interaction.md)
 > — when an `E2E-NNN` scenario **freezes** (when the exec-plan that names it in `## Sources` is
 > finalized; before that, scenario, US and spec may correct one another in either direction — an
@@ -208,8 +225,8 @@ flowchart TD
 > [`.claude/skills/run-tests/red-first.md`](.claude/skills/run-tests/red-first.md) — the red-first
 > procedure (INV-T02): write the test from the AC before its implementation, observe a **valid** red,
 > record it (which freezes the expectation), then implement. `run-exec-plan` (Step 0c / Step 2a),
-> `run-tests` (red-first run), `start-feature` (implementation order), `pre-pr` /
-> `complete-exec-plan` (evidence check, ⚠️ only) and `docode-review` all reference it. The action on
+> `run-tests` (red-first run), `start-feature` (implementation order), `pre-pr` (evidence check, ⚠️
+> only) and `docode-review` all reference it. The action on
 > failure differs by site — HALT for the unattended loop, ask the human on the manual path, report
 > only after the fact — for the same reason as readiness below: deciding an expected result the AC
 > does not state is an outer-gate call.
@@ -281,7 +298,7 @@ flowchart TD
 
 | # | Bypass | Result | Severity |
 |---|--------|--------|----------|
-| B10 | Do not run `complete-exec-plan` after PR merge | Zombie plans remain in `exec-plans/active/`; CONTEXT.md goes stale | 🟡 Medium |
+| B10 | Merge a branch whose plan was not completed (no complete commit, or implementation changed after it) | The merge carries implementation no human confirmation covers; the plan stays in `exec-plans/active/` on `main` and CONTEXT.md goes stale. `pre-pr` ⑦ blocks the second case (❌) and reports the first (ℹ️ / ⚠️); `gc` ④ reports an all-`[x]` plan left in `active/` on `main` | 🟡 Medium |
 | B11 | Skip weekly `gc` runs | Drift accumulates, increasing future correction cost | 🟡 Medium |
 
 ### 3-6. Goal Quality (a different axis from bypasses)
@@ -294,7 +311,7 @@ goal itself is too thin to steer autonomous implementation toward. The gaps foun
 |---|-------|--------|
 | G-F | No layer defined the finished picture, so a spec could satisfy every requirement and still be the wrong thing; and per-AC greens never proved the through-flow | ✅ Resolved — `create-requirements` goal image (required) → `create-spec` E2E scenarios (required, one file each in `docs/01-02_e2e/`, `E2E-NNN → AC-xxx`) → `create-exec-plan` `[E2E]` AC → `run-tests` / `pre-pr` / `complete-exec-plan` E2E coverage gate |
 | G-C | AC testability was only judged **inside** the loop, subjectively, after implementation had begun | ✅ Resolved — shared `ac-readiness.md` (R1–R5) applied at `create-exec-plan` Q3c / `start-feature` Step 1b / `run-exec-plan` Step 0b (NOT READY → loop never starts) / `doc-review` §2 |
-| G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` + `complete-exec-plan` evidence (⚠️) / `docode-review` tests-vs-ACs check |
+| G-A | The acceptance test was written by the implementer, at the same time as the implementation, so it recorded the code's behavior rather than the AC — a green run proved nothing | ✅ Resolved — shared `red-first.md` (INV-T02): `run-exec-plan` Step 0c ([E2E] test placed red before the loop) / Step 2a (per-AC test red before implementing) / `run-tests` valid-vs-invalid red / `start-feature` order guide / `pre-pr` evidence (⚠️) / `docode-review` tests-vs-ACs check |
 | G-B / G-D | The goal reaching the driver was one condensed line — the US bullets and the spec section it stands for were never opened (in), and a green run was never checked back against the spec the traceability points at (out) | ✅ Resolved — shared `ac-sources.md`: `create-exec-plan` Q3d (`## Sources` table) / `run-exec-plan` Step 1b (read the sources before drafting the test) + Step 3a (spec re-anchor before the box is checked) / `red-first.md` source set / `start-feature` Step 2 / `pre-pr` ⑤c (⚠️) / `docode-review` / `promote-spec` reconcile template |
 | G-E | Mandatory final goal review (independent verification against the goal image, not just the ACs) | ✅ Resolved — `run-exec-plan` Step 4a runs `docode-review` mandatorily once every AC is `- [x]`, halting (stop condition (f)) on a ❌ verdict instead of handing off to `pre-pr`; the manual `start-feature` path keeps it optional |
 
@@ -315,9 +332,10 @@ flowchart TD
   L -.->|manual path| DCR["docode-review\n(mandatory if run-exec-plan\ncompleted every AC; optional\non the manual path)"]
   L ==>|run-exec-plan completes\nevery AC — Step 4a| DCR
   DCR --> P["pre-pr (optional)"]
-  P --> M[Create PR → Merge]
-  M --> Q["complete-exec-plan (optional)"]
-  Q --> G["gc (optional, weekly)"]
+  P --> H{"Human confirms every AC\n(before the PR, or in its review)"}
+  H --> Q["complete-exec-plan (optional)\ncomplete commit on the branch"]
+  Q --> M[Create PR / push → Merge]
+  M --> G["gc (optional, weekly)"]
   G --> Z[Done]
 ```
 
@@ -331,8 +349,9 @@ All skills are manually invoked, and hooks do not block execution.
 > skills themselves unskippable; it means those checks are not optional for anyone who runs the gate.
 >
 > **Red-first is the deliberate exception to that pattern.** Inside `run-exec-plan` it blocks (a test
-> that cannot be transcribed halts the loop; an invalid red stops implementation), but at `pre-pr` and
-> `complete-exec-plan` it is ⚠️ only. The evidence is a hand-written Decision Log entry, so after the
+> that cannot be transcribed halts the loop; an invalid red stops implementation), but at `pre-pr` it
+> is ⚠️ only (and `complete-exec-plan`, run on the same branch after `pre-pr`, does not report it
+> again). The evidence is a hand-written Decision Log entry, so after the
 > fact a missing line cannot be told apart from a missed note — and blocking there would mainly teach
 > people to write the line retroactively, destroying the very evidence. It is enforced where it can
 > still be observed, and merely reported where it cannot.
@@ -380,4 +399,4 @@ All skills are manually invoked, and hooks do not block execution.
 | Improvement | Approach |
 |-------------|----------|
 | **Change hook warnings to blocking** | Return `exit 1` from `post-tool-notify.py` to block Write/Edit and force user confirmation (use `exit 2` for a softer block if full blocking is too aggressive) |
-| **`complete-exec-plan` reminder** | Prompt users to run `complete-exec-plan` via a post-merge hook or message |
+| **Merge-condition check in CI** | Fail a PR whose branch implements a plan that is still in `exec-plans/active/` (no complete commit) or changed implementation after its complete commit — the same mechanical check as `pre-pr` ⑦, run where the merge actually happens |

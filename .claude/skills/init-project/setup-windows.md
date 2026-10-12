@@ -146,12 +146,12 @@ The agent only asks the following. The tech stack is already fixed and should no
    └── Create in order: View → ViewModel → Service → Repository
    └── 80%+ coverage for ViewModel and Service layers
         ↓
-6. Self-review with docs/05_quality/review_checklist.md
+6. Self-review with docs/05_quality/review_checklist.md and update the progress log in exec-plans/active/
         ↓
-7. Create PR → Review → Merge
+7. Create PR → Review (a human confirms every AC of the plan — or before the PR, by checking the commits)
    └── CI (GitHub Actions): dotnet build + dotnet test + Roslyn analyzers
         ↓
-8. Update progress log in exec-plans/active/
+8. /complete-exec-plan on the same branch (the complete commit) → Merge
 ```
 
 ---

@@ -115,7 +115,8 @@ Review the status of each document according to the following `status:` transiti
 | `draft` older than 7 days | Determined from `created:` date | Update to `active`, or continue with a recorded reason |
 | `active` but corresponding code deleted | `tracks:` files do not exist | Change to `deprecated` |
 | `deprecated` older than 30 days | Determined from `status: deprecated` date | Delete (or prompt for confirmation) — never a research note (`docs/00_project/research/`) |
-| All acceptance criteria in `exec-plans/active/` are complete | Review checklist | Suggest running `complete-exec-plan` |
+| A plan in `exec-plans/active/` on `main` whose acceptance criteria are all `- [x]` | Review checklist | It was merged without its complete commit — the merge condition in [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md) was skipped. Report it; suggest that the human confirm every AC and run `complete-exec-plan` (do not write the confirmation record or complete it here) |
+| A plan in `exec-plans/completed/` with an unchecked AC (`^- \[ \] AC-NNN:`) | Review checklist | A re-opened AC reached it after its confirmation (completion-boundary.md「After the boundary」). Report it so the human re-opens that AC in a reconcile plan; the spec-drift backstop below would otherwise count it as delivered |
 
 **Spec-drift backstop (in-version stale):**
 
