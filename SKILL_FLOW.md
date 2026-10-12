@@ -181,8 +181,9 @@ flowchart TD
 > writes the table, `promote-spec` writes it for reconcile plans against the *new* spec (and has rows
 > a promotion breaks repointed before pushing), `pre-pr` (⑤c) reports a missing table or re-anchor
 > record (⚠️ only), `check-doc-invariants` (DOC-INV-012) blocks on a file an active plan's row names
-> that does not exist (❌), and `docode-review` judges the diff against the sources rather than the
-> one-liner. It exists because the AC line is a condensation by design —
+> that does not exist (❌ — before a PR, only rows in a plan the PR changed or added, or naming a file
+> it deleted or renamed; other plans' rows are listed apart for their owners, and `gc` blocks on
+> all), and `docode-review` judges the diff against the sources rather than the one-liner. It exists because the AC line is a condensation by design —
 > `spec-gate.py` parses `AC-(\d{3}):`, so the verifiable detail stays in the US and the spec, and
 > without a pointer it never reaches the implementer. Documents are in three classes there: sources
 > (a test may be drafted from them), **background** (`docs/00_project/**` — ADRs and research notes —

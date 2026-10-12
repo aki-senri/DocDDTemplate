@@ -1382,5 +1382,366 @@ class TestSourcesE2ERangeLayout(SourcesRepo):
         self.assertIn("E2E-001", findings[0].message)
 
 
+# =========================================================================== Issue #45
+# AC-IDs below refer to exec-plans/active/2026-10-doc-inv-012-pr-scope.dev.md.
+# Written from the AC lines before `--base` existed (red-first / INV-T02).
+
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+
+GIT = shutil.which("git")
+
+
+def git(root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(root), *args], check=True, capture_output=True, text=True, encoding="utf-8"
+    ).stdout
+
+
+BROKEN = "| AC-001 | `docs/gone-{name}.md` § AC-001 | n/a（x） |"
+
+
+@unittest.skipUnless(GIT, "git is not available")
+class PrScopeRepo(SourcesRepo):
+    """A repository whose `main` holds three active plans, then a branch that works on one of them.
+
+    plan A — the branch edits it (it is the PR's plan); plan B — untouched by the branch;
+    plan C — names a file the branch deletes.
+    """
+
+    def setUp(self):
+        super().setUp()
+        git(self.root, "init", "-q", "-b", "main")
+        git(self.root, "config", "user.email", "t@example.com")
+        git(self.root, "config", "user.name", "t")
+        git(self.root, "config", "core.autocrlf", "false")
+        write(self.root, "docs/02_spec/moved.md", "# moved\n\n## Old\n\nx\n")
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-001 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-001 | n/a（x） |", rel="exec-plans/active/2026-10-b.md")
+        self.plan("| AC-001 | `docs/02_spec/moved.md` § Old | n/a（x） |", rel="exec-plans/active/2026-10-c.md")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "base")
+        git(self.root, "checkout", "-q", "-b", "feature")
+
+    def break_plan(self, name: str):
+        self.plan(BROKEN.format(name=name), rel=f"exec-plans/active/2026-10-{name}.md")
+
+    def break_b_on_main(self):
+        """B's row breaks through a change that reached `main` without this PR (a promotion, say)."""
+        git(self.root, "checkout", "-q", "main")
+        self.break_plan("b")
+        git(self.root, "commit", "-q", "-am", "main: B's source moved")
+        git(self.root, "checkout", "-q", "feature")
+        git(self.root, "merge", "-q", "--no-edit", "main")
+
+    def run_main(self, *extra: str):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = lint.main(["--root", str(self.root), "--only", "C6", *extra])
+        return code, buffer.getvalue()
+
+
+class TestPrScopeAC001BlockingSide(PrScopeRepo):
+    """#45 AC-001: --base では (a) 変更・追加されたプランの行 (b) 削除・改名されたファイルを名指す行 の ❌
+    だけが exit 1 にする。それ以外のプランの ❌ は exit code に数えない。"""
+
+    def test_other_plans_broken_row_alone_does_not_block(self):
+        self.break_b_on_main()
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-002 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 0)
+        self.assertIn("2026-10-b.md", report)
+
+    def test_the_prs_own_plan_blocks_when_committed_on_the_branch(self):
+        self.break_plan("a")
+        git(self.root, "commit", "-q", "-am", "work on A")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+
+    def test_the_prs_own_plan_blocks_when_only_changed_in_the_working_tree(self):
+        self.break_plan("a")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+
+    def test_a_new_untracked_plan_is_the_prs_plan(self):
+        self.break_plan("new")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+
+    def test_a_gitignored_plan_is_the_prs_plan(self):
+        write(self.root, ".gitignore", "exec-plans/active/*.dev.md\n")
+        git(self.root, "add", ".gitignore")
+        git(self.root, "commit", "-q", "-m", "ignore dev plans")
+        self.plan(BROKEN.format(name="dev"), rel="exec-plans/active/2026-10-x.dev.md")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+
+    def test_a_row_naming_a_file_the_branch_deleted_blocks_in_any_plan(self):
+        git(self.root, "rm", "-q", "docs/02_spec/moved.md")
+        git(self.root, "commit", "-q", "-m", "drop moved.md")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        self.assertIn("2026-10-c.md", report)
+
+    def test_a_row_naming_a_file_the_branch_renamed_blocks_in_any_plan(self):
+        (self.root / "docs/02_spec/elsewhere").mkdir()
+        git(self.root, "mv", "docs/02_spec/moved.md", "docs/02_spec/elsewhere/moved.md")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+
+
+class TestPrScopeAC002Undetermined(PrScopeRepo):
+    """#45 AC-002: 判定できなければ全 ❌ がブロックし、判定できなかった旨が出る。"""
+
+    def test_an_unknown_ref_blocks_everything_and_says_so(self):
+        self.break_b_on_main()
+
+        code, report = self.run_main("--base", "no-such-branch")
+
+        self.assertEqual(code, 1)
+        self.assertIn("could not determine", report)
+
+    def test_outside_a_git_repository_blocks_everything_and_says_so(self):
+        shutil.rmtree(self.root / ".git", onerror=lambda f, p, e: (os.chmod(p, 0o700), f(p)))
+        self.break_plan("b")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        self.assertIn("could not determine", report)
+
+    def test_a_branch_that_changes_nothing_is_not_told_apart_from_main(self):
+        git(self.root, "checkout", "-q", "main")
+        self.break_plan("b")
+        git(self.root, "commit", "-q", "-am", "main: B's source moved")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        self.assertIn("could not determine", report)
+
+    def test_a_branch_that_changes_no_plan_is_still_told_apart(self):
+        """Walkthrough lap 4 (exemption), as the human decided after review: a PR changing no active
+        plan (a plan-less change) is split like any other — it blocks only on rows it broke."""
+        self.break_b_on_main()
+        write(self.root, "docs/02_spec/other.md", "# other\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "docs only")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 0)
+        self.assertIn("2026-10-b.md", report)
+
+    def test_a_branch_with_no_commits_behind_a_moved_base_is_still_told_apart(self):
+        """Review round 2 (R1): run-exec-plan does not commit, so pre-pr often sees a branch with no
+        commits of its own while the base has moved ahead. Its diff is exact — the split is made."""
+        self.break_b_on_main()
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-002 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+        git(self.root, "checkout", "-q", "main")
+        write(self.root, "docs/02_spec/later.md", "# later\n")
+        git(self.root, "add", "docs/02_spec/later.md")
+        git(self.root, "commit", "-q", "-m", "unrelated work lands on main")
+        git(self.root, "checkout", "-q", "feature")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 0)
+        self.assertIn("2026-10-b.md", report)
+
+    def test_a_change_made_only_of_new_untracked_files_is_told_apart(self):
+        """Review round 2 (R3): a plan-less change consisting only of new, untracked files differs
+        from the base — it is split like any other change."""
+        self.break_b_on_main()
+        write(self.root, "docs/02_spec/new.md", "# new\n")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 0)
+        self.assertIn("2026-10-b.md", report)
+
+    def test_an_option_like_base_is_refused(self):
+        """Review finding 6: a value starting with `-` would reach git as an option."""
+        self.break_b_on_main()
+
+        code, report = self.run_main("--base=--all")
+
+        self.assertEqual(code, 1)
+        self.assertIn("could not determine", report)
+
+    def test_git_not_installed_blocks_everything_and_says_so(self):
+        """Review finding 8: AC-002's "git が無い" case."""
+        from unittest import mock
+
+        self.break_b_on_main()
+        with mock.patch.object(lint.subprocess, "run", side_effect=FileNotFoundError("git")):
+            code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        self.assertIn("could not determine", report)
+
+
+class TestPrScopeCaseInsensitivePaths(PrScopeRepo):
+    """Review finding 1: on a case-insensitive file system a row may name a file in a different case
+    from git's path. It resolves, so DOC-INV-012 passes it — and when the PR deletes that file, the
+    row must still be the PR's to block."""
+
+    def setUp(self):
+        super().setUp()
+        probe = self.root / "CaseProbe.tmp"
+        probe.write_text("x", encoding="utf-8")
+        insensitive = (self.root / "caseprobe.tmp").exists()
+        probe.unlink()
+        if not insensitive:
+            self.skipTest("file system is case-sensitive")
+
+    def test_a_row_naming_a_deleted_file_in_another_case_blocks(self):
+        git(self.root, "checkout", "-q", "main")
+        write(self.root, "docs/02_spec/Upper.md", "# Upper\n\n## Old\n\nx\n")
+        self.plan("| AC-001 | `docs/02_spec/upper.md` § Old | n/a（x） |", rel="exec-plans/active/2026-10-b.md")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "main: Upper.md, B names it in lower case")
+        git(self.root, "checkout", "-q", "feature")
+        git(self.root, "merge", "-q", "--no-edit", "main")
+        git(self.root, "rm", "-q", "docs/02_spec/Upper.md")
+        git(self.root, "commit", "-q", "-m", "drop Upper.md")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        self.assertNotIn("not blocking", report)
+
+
+class TestPrScopeAC003DefaultUnchanged(PrScopeRepo):
+    """#45 AC-003: --base を渡さなければ従来どおり全 ❌ がブロックする。"""
+
+    def test_without_base_another_plans_row_blocks(self):
+        self.break_b_on_main()
+
+        code, report = self.run_main()
+
+        self.assertEqual(code, 1)
+        self.assertNotIn("not blocking", report)
+
+
+class TestPrScopeAC004Report(PrScopeRepo):
+    """#45 AC-004: 他のプランの ❌ は ❌ のまま別枠。⚠️ と混ぜない。担当への通知を促す。Overall に別件数。"""
+
+    def test_other_plans_rows_are_a_separate_block_marked_as_errors(self):
+        self.break_b_on_main()
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-009 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+
+        _, report = self.run_main("--base", "main")
+
+        b_line = report_line(self, report, "2026-10-b.md")
+        self.assertFalse(b_line.lstrip().startswith("⚠️"), b_line)
+        lines = report.splitlines()
+        b_index = lines.index(b_line)
+        heading = next((l for l in reversed(lines[:b_index]) if "not blocking" in l), "")
+        self.assertIn("❌", heading)
+        self.assertIn("owner", report)
+
+    def test_overall_line_counts_them_apart(self):
+        self.break_b_on_main()
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-002 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+
+        _, report = self.run_main("--base", "main")
+
+        overall = report_line(self, report, "Overall:")
+        self.assertIn("1 in other plans", overall)
+        self.assertIn("not blocking", overall)
+
+
+class TestPrScopeAC005Documents(unittest.TestCase):
+    """#45 AC-005: Step 8 が --base を定義し呼び出し地点は1つ。pre-pr ③ は PR モード、gc ③ は backstop。"""
+
+    def test_step_8_defines_base_and_who_passes_it(self):
+        text = (REPO_ROOT / ".claude/skills/check-doc-invariants/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### Step 8", ("### ", "## "))
+        self.assertIn("--base", section)
+        self.assertIn("pre-pr", section)
+
+    def test_pre_pr_3_runs_in_pr_mode_and_presents_other_plans(self):
+        text = (REPO_ROOT / ".claude/skills/pre-pr/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### ③", ("### ",))
+        self.assertIn("--base", section)
+        self.assertIn("owner", section)
+
+    def test_gc_3_is_the_backstop_without_base(self):
+        text = (REPO_ROOT / ".claude/skills/gc/SKILL.md").read_text(encoding="utf-8")
+        section = _section(text, "### ③", ("### ",))
+        self.assertIn("--base", section)
+        self.assertIn("backstop", section)
+
+
+class TestPrScopeAC006NoLongerClaimsUnrelatedPrsStop(unittest.TestCase):
+    """#45 AC-006: 「無関係な PR も止める」と述べる地点を追従させる。"""
+
+    def test_sites_no_longer_say_every_pr_is_blocked(self):
+        for rel, phrase in (
+            ("CLAUDE.md", "そのプランと無関係な PR も含む"),
+            (".claude/skills/promote-spec/SKILL.md", "including PRs that have nothing to do with those plans"),
+            (".claude/skills/create-exec-plan/ac-sources.md", "blocks every\nPR after it"),
+        ):
+            with self.subTest(rel):
+                text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+                self.assertNotIn(phrase, text)
+
+
+class TestPrScopeAC008EndToEnd(PrScopeRepo):
+    """#45 AC-008 [E2E]: A（ブランチが変更）・C（ブランチが削除したファイルを名指す）・B（無関係）が壊れている。
+    --base main の1回で A と C が ❌（exit 1）、B は別枠。B だけなら exit 0。--base なしは3件とも ❌。"""
+
+    def test_one_run_splits_the_three_plans(self):
+        self.break_b_on_main()
+        self.break_plan("a")
+        git(self.root, "rm", "-q", "docs/02_spec/moved.md")
+        git(self.root, "commit", "-qam", "work on A, drop moved.md")
+
+        code, report = self.run_main("--base", "main")
+
+        self.assertEqual(code, 1)
+        lines = report.splitlines()
+        split = next(
+            (i for i, l in enumerate(lines) if "not blocking" in l and l.lstrip().startswith("❌")),
+            len(lines),
+        )
+        blocking, other = "\n".join(lines[:split]), "\n".join(lines[split:])
+        self.assertIn("2026-10-a.md", blocking)
+        self.assertIn("2026-10-c.md", blocking)
+        self.assertIn("2026-10-b.md", other)
+        self.assertNotIn("2026-10-b.md", blocking)
+
+        code, report = self.run_main()
+
+        self.assertEqual(code, 1)
+        for name in ("a", "b", "c"):
+            self.assertIn(f"2026-10-{name}.md", report)
+        self.assertNotIn("not blocking", report)
+
+    def test_only_another_plans_row_exits_zero(self):
+        self.break_b_on_main()
+        self.plan(f"| AC-001 | `{US_PATH}` § AC-002 | n/a（x） |", rel="exec-plans/active/2026-10-a.md")
+        git(self.root, "commit", "-qam", "work on A")
+
+        code, _ = self.run_main("--base", "main")
+
+        self.assertEqual(code, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
