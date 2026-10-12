@@ -84,7 +84,7 @@ flowchart TD
 
     subgraph GC_PHASE["Periodic Maintenance (weekly)"]
         GC_WAIT["Standby"]
-        GC["/gc\n① Full scan: check-doc-freshness\n② Full scan: check-invariants\n③ Full scan: check-doc-invariants\n④ Document lifecycle cleanup\n⑤ update-context\n⑥ Generate GC report"]
+        GC["/gc\n① Full scan: check-doc-freshness\n② Full scan: check-invariants\n③ Full scan: check-doc-invariants\n④ Document lifecycle cleanup\n  (+ research notes due for a recheck\n  that a current decision cites — candidates)\n⑤ update-context\n⑥ Generate GC report"]
         GC_WAIT -->|Weekly or after large merge| GC
         GC --> GC_WAIT
     end
@@ -145,6 +145,15 @@ flowchart TD
 > the fact. `create-requirements` (Q6) and `create-spec` (Step 2b) are the matching entry for the
 > material itself: `## 関連`, and a research note under `docs/00_project/research/` for material that
 > exists only outside the repository. All of it is background, never a source.
+>
+> **Shared reference file (not a skill):**
+> [`.claude/skills/init-project/research-note-format.md`](.claude/skills/init-project/research-note-format.md)
+> — a research note is an observation of the outside world as of `collected`, never rewritten and
+> never turned into an ADR. Material that can change carries `recheck_by` (the human sets it at
+> `create-requirements` Q6; `n/a（理由）` for what cannot change). `gc` ④ reports, as candidates, the
+> notes due for a recheck that a current decision still cites; the human looks at the outside world
+> again, appends the result, and — if it changed — writes a new note and routes any decision change
+> separately. Deprecated notes are never deleted.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/create-exec-plan/process-walkthrough.md`](.claude/skills/create-exec-plan/process-walkthrough.md)

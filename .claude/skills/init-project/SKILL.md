@@ -183,7 +183,7 @@ A complete list of documents managed by the project. `Required` items are always
 | `docs/00_project/overview.md` | Required | Always |
 | `docs/00_project/glossary.md` | Optional | When there is a risk of terminology misunderstanding |
 | `docs/00_project/decisions.md` | Required | Always (records ADRs in the format of [`adr-format.md`](adr-format.md) — technology decisions from Q2 first; later, the requirement and spec decisions that `create-spec` and `promote-spec` ask about) |
-| `docs/00_project/research/{topic}.md` | Optional | When material a decision is made from — an investigation, a comparison, a rejected option, an external source — is worth keeping. Background only: readable from every layer, never a test's source (`../create-exec-plan/ac-sources.md`) |
+| `docs/00_project/research/{topic}.md` | Optional | When material a decision is made from — an investigation, a comparison, a rejected option, an external source — is worth keeping. Background only: readable from every layer, never a test's source (`../create-exec-plan/ac-sources.md`). Format: [`research-note-format.md`](research-note-format.md) |
 | `docs/01_requirements/functional/common.md` | Optional | When multiple platforms exist |
 | `docs/01_requirements/functional/{platform}.md` | Required | Always (one file per platform) |
 | `docs/01_requirements/non_functional/common.md` | Optional | When multiple platforms exist |
@@ -231,17 +231,11 @@ tracks:          # (optional) glob pattern of corresponding code
 ---
 ```
 
-A research note under `docs/00_project/research/` should additionally record when and from where
-the material was gathered, so a later reader can judge whether it still holds:
-
-```yaml
----
-status: active
-collected: YYYY-MM-DD    # when the material was gathered
-references:              # where it came from (URL, document, interview)
-  - https://example.com/...
----
-```
+A research note under `docs/00_project/research/` additionally records when and from where the
+material was gathered, and when to look at the outside world again — `collected`, `references`,
+`recheck_by` (a date, or `n/a（理由）` for information that cannot change) and `rechecked`. The fields,
+and how a note is rechecked without being rewritten, are defined in
+[`research-note-format.md`](research-note-format.md).
 
 `docs/05_quality/test_strategy.md` should additionally have the following fields:
 
@@ -295,8 +289,8 @@ describe('AC-001: Login with invalid password', () => {
 |------------|---------|
 | (new) → `draft` | On file creation |
 | `draft` → `active` | On PR merge, or when reviewed within 7 days of creation |
-| `active` → `deprecated` | When the corresponding code/feature is deleted, or when a successor document becomes `active` |
-| `deprecated` → (deleted) | Can be deleted 30 days after becoming `deprecated` |
+| `active` → `deprecated` | When the corresponding code/feature is deleted, or when a successor document becomes `active` — except a research note, which is deprecated only by a recheck that found a change ([`research-note-format.md`](research-note-format.md)「Rechecking」) |
+| `deprecated` → (deleted) | Can be deleted 30 days after becoming `deprecated` — except a research note under `docs/00_project/research/`, which is kept: the superseded decisions still name it ([`research-note-format.md`](research-note-format.md)「Rechecking」) |
 
 ---
 
