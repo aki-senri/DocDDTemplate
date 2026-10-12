@@ -127,9 +127,14 @@ infers or composes the fact of confirmation. None of these is a confirmation:
 **An approval covers the commit it was given on.** If the approval's commit is older than the
 branch's last implementation change (the same check as **After the boundary** below, run from the
 approval's commit instead of the boundary), it does not cover what came after; ask for a new
-confirmation. And it must still stand: the reviewer's **latest** review in
-`gh pr view NN --json reviews` is `APPROVED` — a later `CHANGES_REQUESTED`, or an approval since
-dismissed, is not a confirmation.
+confirmation. And it must still stand: among the reviewer's reviews in
+`gh pr view NN --json reviews`, the latest **decisive** one — `APPROVED` or `CHANGES_REQUESTED`;
+a `COMMENTED` review decides nothing and is skipped — is `APPROVED`, and it has not been dismissed.
+
+**Whose approval counts.** A person the project recognizes as a reviewer: `authorAssociation` is
+`OWNER`, `MEMBER` or `COLLABORATOR`, and the author is not a bot or an app. GitHub accepts an
+approval from anyone who can see the PR, so an approval outside this — or one you are unsure about —
+is not transcribed; ask the human instead.
 
 **When no record and no evidence is in hand, completion stops** and asks the human whether they
 have confirmed every AC, and how. Their answer is the evidence (`発言「…」`). Asking is not the
@@ -184,13 +189,17 @@ two places, so that they work both before and after the complete commit:
 # plans in active/ that this branch added or edited (another active plan is not this branch's;
 # AM leaves out the old path of a plan the branch has since moved to completed/)
 git diff --name-only --diff-filter=AM main...HEAD -- exec-plans/active/ 2>/dev/null || true
-git status --porcelain -- exec-plans/active/ 2>/dev/null || true
+git diff --name-only --diff-filter=AM -- exec-plans/active/ 2>/dev/null || true     # edited, not committed
+git ls-files --others -- exec-plans/active/ 2>/dev/null || true   # new, untracked — gitignored ones included
 # plans this branch moved into completed/ (rename or add) — the complete commit
 git diff --name-only --diff-filter=AR main...HEAD -- exec-plans/ 2>/dev/null | grep '^exec-plans/completed/' || true
 # a move into completed/ not committed yet (an interrupted complete-exec-plan run) — matched on the
 # destination; a move out of completed/ is an interrupted reopen, and its plan is the one in active/
-git status --porcelain -- exec-plans/ 2>/dev/null | grep -E '^(A|\?\?) +exec-plans/completed/|^R.* -> exec-plans/completed/' || true
+git status --porcelain -uall -- exec-plans/ 2>/dev/null | grep -E '^(A|\?\?) +exec-plans/completed/|^R.* -> exec-plans/completed/' || true
 ```
+
+The `active/` queries match what `check-doc-invariants` counts as this PR's plans in PR mode (it, too, lists
+untracked files including gitignored ones), so `pre-pr` ③ and ⑤–⑦ read the same plan.
 
 A file without an `## Acceptance Criteria` section is not a plan — a `/gc` report
 (`exec-plans/completed/YYYY-MM-gc.md`) is the usual one; leave it out.
@@ -225,6 +234,15 @@ git status --porcelain -- . ':(exclude)exec-plans/' ':(exclude)docs/07_ai_contex
 Any output means the confirmation does not cover the branch as it stands. **Reopen** the plan (below)
 and confirm again. Documents count too: a spec edit after the boundary can change what an AC means.
 
+**The boundary itself** must carry only the completion. Anything else folded into it was never
+before the boundary, so the confirmation did not cover it:
+
+```bash
+git show --format= --name-only <boundary> -- . ':(exclude)exec-plans/' ':(exclude)docs/07_ai_context/CONTEXT.md'
+```
+
+Any output is the same finding as a change after the boundary.
+
 What this does not see: an implementation edit made while resolving a conflict inside a merge commit
 (`--no-merges` skips it), and an edit to the completed plan's own AC lines (`exec-plans/` is
 excluded so that the plan's records can be added to; only an unchecked box is caught, below). Both
@@ -235,7 +253,7 @@ counted by the command above. Two things it can bring in still matter, and both 
 
 | What came in from `main` | Why it matters | Check |
 |--------------------------|----------------|-------|
-| A change to a file the plan's `## Sources` names | The human confirmed against a target that has since moved. Whether the named *section* changed is a reading, so it is reported, not blocked | `git diff --name-only <boundary> HEAD` intersected with the `## Sources` paths → the human decides whether to reopen |
+| A change to a file the plan's `## Sources` names — including its move or rename | The human confirmed against a target that has since moved. Whether the named *section* changed is a reading, so it is reported, not blocked. This is also the only check that sees a Sources row broken after the complete commit: DOC-INV-012 reads `active/` plans only | `git diff --name-only --no-renames <boundary> HEAD` (so a renamed file shows its **old** path) intersected with the `## Sources` paths → the human decides whether to reopen |
 | An unchecked AC inside the completed plan | A fix on `main` appended a re-opened AC to this plan while it was in flight. CLAUDE.md closes a reconcile plan to appends once its implementation has started, but from `main` that is not always visible — this branch's plan was still in `active/` there. Git carries the appended line into the moved file, and a completed plan with an unchecked AC is one nobody will implement | `grep -nE '^- \[ \] AC-[0-9]{3}:' exec-plans/completed/<plan>.md` → reopen |
 
 In either case reopen the plan in this branch and record why, the same as a stale in-progress plan

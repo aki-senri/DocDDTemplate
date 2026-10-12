@@ -125,10 +125,14 @@ Expected reds (red-first, AC not implemented yet):
 
 If all tests pass — or only **expected reds** (Step 2c) remain — verify AC-ID coverage.
 
-1. Load execution plans in `exec-plans/active/` — plus, when called from `pre-pr` re-run after the
-   complete commit, the plan this branch moved into `exec-plans/completed/`
-   ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
-   「Finding the plan of this branch」) — and list the AC-XXX items in `## Acceptance Criteria`
+1. Load the execution plans to cover, and list the AC-XXX items in `## Acceptance Criteria`:
+   - **Called from `pre-pr` or `complete-exec-plan`**: the plan(s) this branch implements —
+     [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+     「Finding the plan of this branch」, which also finds a plan the branch already moved into
+     `exec-plans/completed/`. Another plan in `active/` that came from `main` is not this branch's
+     work, and holding on its uncovered ACs would block every branch while any plan is open. When
+     the commands find nothing, fall back to every plan in `exec-plans/active/`
+   - **Otherwise** (standalone, `start-feature`, `run-exec-plan`): every plan in `exec-plans/active/`
 2. Split them into **functional ACs** and **E2E ACs** — an E2E AC is one whose description starts
    with the `[E2E]` marker (`- [ ] AC-005: [E2E] ...`)
 3. Read test files and verify that a test exists for each AC-ID, and report the two groups separately
@@ -146,6 +150,9 @@ E2E acceptance criteria coverage:
 
 - If any AC-IDs are uncovered, issue a warning and prompt to create tests
 - If called from `pre-pr` or `complete-exec-plan`, put processing on hold if there are uncovered AC-IDs
+  — except in a plan whose ACs this branch checked none of (it only adds the plan, or re-opens ACs
+  in it; `pre-pr` ⑦'s ➖ row): nothing in it is implemented yet, so its ACs are reported as
+  not started, not held
 
 E2E acceptance criteria are checked separately, because a per-AC coverage check cannot see the
 failure mode they exist for: every functional AC green while the through-flow does not work. So

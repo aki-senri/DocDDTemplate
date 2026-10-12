@@ -338,8 +338,11 @@ references), which ask whether a reference resolves *right now* — skip `exec-p
 | DOC-INV-012 (the one pointer check that reads plans) | — | — | `active/**`, `## Sources` table only |
 
 A plan is a working note, not a reference document. This repository's own convention already says so:
-a completed plan is archived and *not referenced* — which is why a reconcile record goes to the
-**active** plan rather than the completed one (CLAUDE.md「現バージョン修正による stale の扱い」). A
+a completed plan on `main` is archived and *not referenced* — which is why a reconcile record goes
+to the **active** plan rather than the completed one (CLAUDE.md「現バージョン修正による stale の扱い」).
+(Between its complete commit and the merge, a plan in `completed/` is still read — by `pre-pr` ⑦,
+`run-tests` and `docode-review` — and its rows are covered there, not here:
+`../complete-exec-plan/completion-boundary.md`.) A
 stale pointer inside a plan therefore has almost no downstream consumer. Against that, a ❌ there
 would block the PR of the very work the plan describes, and it would fire hardest at the start,
 because an unchecked AC names what it is *about to* create and can only point at something that does
@@ -399,7 +402,10 @@ them from the diff), so pass the branch the PR merges into and nothing else.
 
 A run without `--base` — `gc` ③'s full scan, a standalone run — blocks on every ❌, as it always
 has. That is the **backstop**: a row one PR listed under another plan stays an ❌ in every `gc`
-report until it is repointed, and it always blocks its own plan's PR (first row above).
+report until it is repointed, and it blocks its own plan's PR (first row above) while that plan is
+in `active/`. A plan its branch has completed is out of this check's range; `complete-exec-plan`
+checks its rows before moving it, and `pre-pr` ⑦ reports a Sources file a later merge of `main`
+moved (`../complete-exec-plan/completion-boundary.md`「After the boundary」).
 
 **What these checks deliberately do not decide.** Each exclusion exists because the check would
 otherwise report something that is not a defect:
@@ -548,6 +554,10 @@ python3 .claude/scripts/check_doc_lint.py
   ❌ blocks there. Do not pass it to make a run pass: if the split cannot be made the script blocks
   on everything and says why — fix that cause, not the flag
 - `--only C1,C4` restricts the run; `--root <path>` checks another checkout
+- **One plan's rows only** — `complete-exec-plan` Step 3 runs DOC-INV-012 on the plan it is about to
+  move out of `active/`, the last point at which the check still reads it:
+  `python3 .claude/scripts/check_doc_lint.py --only C6 exec-plans/active/<plan>.md`. Every ❌ there
+  blocks the completion (no `--base`: the plan is the completing branch's own)
 
 Do not restate the checks inline anywhere else, and do not add a second call site: the reason this
 is one script called from one skill is that a duplicated list is what went stale before

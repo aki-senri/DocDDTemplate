@@ -69,15 +69,18 @@ FIX_HINTS = {
 OTHER_PLAN_HINT = (
     "this PR neither works on these plans nor broke these rows. Repointing a row is that plan's "
     "owner's call (ac-sources.md「When a source cannot be opened」) — tell them; do not repair it "
-    "here. It still blocks that plan's own PR, and /gc reports it as ❌ until it is repointed."
+    "here. It still blocks that plan's own PR while the plan is active, and /gc reports it as ❌ "
+    "until it is repointed."
 )
 
 # DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
 # a reference resolves right now. They skip `exec-plans/**` entirely.
 #
 # A plan is a working note, not a reference document. CLAUDE.md already treats it that way — a
-# completed plan is archived and "参照されない", which is why reconcile records go to the active plan
-# instead — so a stale pointer inside one has almost no downstream consumer. Against that, a ❌ on a
+# completed plan on `main` is archived and "参照されない", which is why reconcile records go to the
+# active plan instead — so a stale pointer inside one has almost no downstream consumer. (A plan in
+# `completed/` on a branch that has not merged yet is still read; complete-exec-plan checks its
+# `## Sources` rows before the move and pre-pr ⑦ covers the rest — completion-boundary.md.) Against that, a ❌ on a
 # plan would block the PR of the very work the plan describes, and it would fire hardest at the
 # start: an unchecked AC names what it is *about to* create, so it can only point at something that
 # does not exist yet. Letting archived material drift is the cheaper trade; drift inside a plan is
@@ -937,7 +940,8 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
 #   (b) the row names a file the PR deleted or renamed away — in any plan, since the PR broke it.
 #
 # Every other ❌ becomes "other": reported apart, as an ❌, and not counted by the exit code. It still
-# blocks its own plan's PR, by (a), and `gc` ③ — which passes no `--base` — keeps reporting it as an
+# blocks its own plan's PR, by (a), while that plan is active (complete-exec-plan checks the rows
+# before moving a plan out of range), and `gc` ③ — which passes no `--base` — keeps reporting it as an
 # ❌ until someone repoints it. When the split cannot be made, nothing is downgraded: the risk this
 # guards against is the PR's own broken row slipping through as "someone else's".
 

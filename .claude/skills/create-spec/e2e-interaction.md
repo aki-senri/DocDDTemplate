@@ -98,8 +98,11 @@ scenario is frozen for, search the `## Sources` tables of `exec-plans/active/` *
 `exec-plans/completed/` for its ID
 (`grep -rn "E2E-001" exec-plans/active/ exec-plans/completed/ 2>/dev/null || true`). The grep also
 matches Decision Log and Progress Log prose; only a hit inside a `## Sources` row counts. A hit in
-`active/` is recorded in that plan's Decision Log; a hit in `completed/` is re-opened in a reconcile
-plan — the two branches of the table above. This search is the editor's job — a promotion included,
+`active/` is recorded in that plan's Decision Log; a hit in `completed/` on `main` is re-opened in a
+reconcile plan — the two branches of the table above. A plan in `completed/` on a branch that has not
+merged yet (its complete commit is there, the merge is not) is still in progress: it is reopened on
+that branch (`../complete-exec-plan/completion-boundary.md`「Reopening before the merge」), not
+re-opened in a reconcile plan. This search is the editor's job — a promotion included,
 where `promote-spec` Steps 3–4 run it by `E2E-NNN` for the person promoting. The `gc` E2E backstop
 (`../gc/SKILL.md` ④) is the safety net behind it: weekly, it reports a scenario changed after a plan
 froze it with no record in that plan (active) or no reconcile plan re-opening its `[E2E]` AC

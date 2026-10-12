@@ -51,10 +51,13 @@ merge** at the end.
 
 ### Step 1: Confirm the target plan
 
-List the files in `exec-plans/active/` and confirm which plan to complete.
+Find the plan this branch implements with the commands in
+[`completion-boundary.md`](completion-boundary.md)「Finding the plan of this branch」 — not every
+file in `exec-plans/active/`, which can hold other plans that came from `main`. When they find
+nothing, fall back to listing `exec-plans/active/`.
 
-- If there is only one file, select it
-- If there are multiple files, prompt the user to select one
+- If there is only one candidate, confirm it with the user
+- If there are multiple, prompt the user to select one
 - **Resuming an interrupted run**: if `git status` shows a plan already moved into
   `exec-plans/completed/` but not committed, an earlier run stopped before its commit (Step 6), and
   the checks of Step 3 no longer describe the tree as it is now. Undo the uncommitted completion and
@@ -92,7 +95,12 @@ walkthrough, `## Sources`, `docode-review` record) are reported by `pre-pr` and 
     ([`completion-boundary.md`](completion-boundary.md)「When part of a plan has to merge before the
     rest」「When an AC is no longer wanted」 — both the human's decision, recorded in the decision
     log). Do not complete with unchecked criteria
-- Run the `run-tests` skill and verify:
+- Check that the plan's `## Sources` rows still resolve, while the plan is still in `active/` —
+  after the move DOC-INV-012 no longer reads it: run `check-doc-invariants`' DOC-INV-012 on this plan
+  alone (its Step 8, "One plan's rows only"). An ❌ holds the completion; present the row to the user, who repoints it (do not repair it here —
+  `../create-exec-plan/ac-sources.md`「When a source cannot be opened」)
+- Run the `run-tests` skill — for **this plan's** ACs (it narrows to the plan this branch implements
+  when called from here) — and verify:
   - All tests pass
   - All AC-IDs have corresponding tests (AC coverage)
   - **Every `[E2E]` AC has a test that exists and passed** (E2E coverage) — a plan whose functional
@@ -211,6 +219,7 @@ this skill again for a new complete commit.
       `PR #NN approve（…）` or `本人記入`) — is in the plan's Decision Log, and none was written from
       anything else
 - [ ] Every AC is `- [x]` (or the plan was split by the human and the remaining ACs are all `- [x]`)
+- [ ] The plan's `## Sources` rows resolve (DOC-INV-012 on this plan, before the move)
 - [ ] Ran `run-tests` and all tests pass
 - [ ] All AC-IDs have corresponding tests
 - [ ] Every `[E2E]` AC has a passing test (or its absence was reported / recorded in the decision log)

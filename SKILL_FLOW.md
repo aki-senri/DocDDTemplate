@@ -105,7 +105,7 @@ flowchart TD
     GC --> UC
 ```
 
-> **Note**: `complete-exec-plan` updates `CONTEXT.md` **directly** in its own Step 4; it does not invoke the `update-context` skill. Only `gc` calls `update-context` internally.
+> **Note**: `complete-exec-plan` updates `CONTEXT.md` **directly** in its own Step 5; it does not invoke the `update-context` skill. Only `gc` calls `update-context` internally.
 
 ---
 
@@ -198,7 +198,8 @@ flowchart TD
 > intermediate state; a plan is sized for one branch and one confirmation, `create-exec-plan` Q3f),
 > how to find the boundary and the implementation changes after it, and reopening before the merge.
 > `complete-exec-plan` applies it (entry condition, commit, reopen), `pre-pr` ⑦ reports against it
-> (❌ only for implementation changed after the complete commit), `docode-review` and `pre-pr` find
+> (❌ only for implementation changed after the complete commit, or an unchecked AC inside the
+> completed plan), `docode-review` and `pre-pr` find
 > the plan in `completed/` through it, and `run-exec-plan`, `start-feature` and `gc` point at it.
 >
 > **Shared reference file (not a skill):**
