@@ -312,7 +312,7 @@ to drift.
 | DOC-INV-009 | C3 label reference existence | A label reference (`Q3d`, `Step 0b`, `§2c`, `⑤c`, `DOC-INV-NNN`, `INV-TNN`) absent from the file named just before it | ❌ Violation |
 | DOC-INV-010 | C4 Mermaid label quoting | An unquoted Mermaid label containing `(`, `)`, `[`, `]`, `{` or `}` — one is enough to stop the parser, and the renderer reports only the first | ❌ Violation |
 | DOC-INV-011 | C5 shell-snippet robustness | A multi-path `grep` in a `bash` fence without both `2>/dev/null` and `\|\| true`, which dies under `set -e` on a missing path or a no-match | ⚠️ Warning |
-| DOC-INV-012 | C6 AC sources resolution | A file an **active** plan's `## Sources` row names that does not exist — every source in a cell is resolved, and `同上 § …` with no file above it to inherit is one too. A section (`§`) that cannot be matched, or a row naming a file with no section, is a ⚠️. The forms are defined in `../create-exec-plan/ac-sources.md`「Rules for the table」 | ❌ Violation (section: ⚠️) |
+| DOC-INV-012 | C6 AC sources resolution | A file an **active** plan's `## Sources` row names that does not exist — every source in a cell is resolved, and `同上 § …` with no file above it to inherit is one too. A section (`§`) that cannot be matched, or a row naming a file with no section, is a ⚠️. The forms are defined in `../create-exec-plan/ac-sources.md`「Rules for the table」 | ❌ Violation (section: ⚠️). For a PR, only the rows the PR is answerable for block — see「Which ❌ blocks which run」 |
 
 DOC-INV-011 is a warning rather than a violation because a snippet may legitimately want the
 non-zero exit; the other checks have no such case, so they block. DOC-INV-012 blocks only on what is
@@ -361,6 +361,44 @@ A DOC-INV-012 finding is **reported, never repaired by whoever runs this check**
 a driver. Repointing a row, or deciding there is nothing to read after all, is a decision about what
 the AC condenses, and it belongs to a human (`../create-exec-plan/ac-sources.md`「When a source cannot
 be opened」). The fix hint the script prints says the same.
+
+**Which ❌ blocks which run.** DOC-INV-012 reads every active plan, but a PR is answerable for only
+some of them. A row can break through a change that never passes `pre-pr` — a promotion pushed in
+`promote-spec` Step 6, a fix made directly on `main` — and if every ❌ blocked every PR, each PR after
+it would stop on a plan it never touched. So the run made for a PR (`pre-pr` ③) passes
+`--base <the PR's base branch>` (Step 8), and an ❌ blocks that PR only in the first two rows:
+
+| The row | In PR mode | Why |
+|---------|-----------|-----|
+| is in a plan the branch changed or added since its merge-base with the base — committed, in the working tree, or untracked (a new plan, or a gitignored one) | ❌ blocks | It is the PR's own work: the row is about to be read, or has just been written |
+| names a file the branch deleted or renamed away — in **any** plan | ❌ blocks | The PR broke it. Repointing belongs in the same change as the move (`../create-exec-plan/ac-sources.md`, "Moving a source breaks rows elsewhere") |
+| anything else | ❌ listed apart, under "In other plans — not blocking this PR"; the exit code ignores it | Another plan's row, broken by a change that is already in the base. It is presented so that plan's owner is told — and, like every DOC-INV-012 finding, not repaired by whoever runs the check |
+
+**When the split cannot be made, nothing is downgraded** — git is unavailable, the base does not
+resolve (or looks like an option), `--root` is not the top of the repository, or the working tree
+does not differ from the base at all. The report says which, and every ❌ blocks. That is the direction to err in: misplacing the PR's own row
+as "someone else's" would let the PR go ahead on a row nobody can open, which is the path this check
+exists to close. Paths are compared the way the file system resolves them — case-folded where it
+ignores case, and Unicode-normalized — since a row that names `docs/a.md` opens `docs/A.md` there,
+and the PR that deletes `docs/A.md` has broken it.
+
+A change with no plan (the spec-override exception) is split like any other: it changes no plan, so
+it blocks only on rows naming a file it deleted or renamed. A PR that repoints another plan's row —
+as `../create-exec-plan/ac-sources.md` requires ("Moving a source breaks rows elsewhere") — changes that plan, so it becomes answerable for that plan's other
+broken rows too; that errs toward blocking, and the fix is the same repointing.
+
+**Pass an up-to-date base.** The split is only as good as the merge-base. A local `main` that is
+behind — in a worktree it usually is — puts changes already on the base into the diff, so another
+plan's rows broken by them look like this PR's and block (safely, but for nothing). Fetch first and
+pass the remote-tracking branch (`origin/main`); without a remote, the local base branch. A branch
+with no commits of its own — `run-exec-plan` does not commit — is fine behind a base that has moved
+on: the merge-base is its HEAD and the diff is exactly its working tree. What the script cannot catch
+is a base that is not the PR's target at all (one that already holds the branch's commits hides
+them from the diff), so pass the branch the PR merges into and nothing else.
+
+A run without `--base` — `gc` ③'s full scan, a standalone run — blocks on every ❌, as it always
+has. That is the **backstop**: a row one PR listed under another plan stays an ❌ in every `gc`
+report until it is repointed, and it always blocks its own plan's PR (first row above).
 
 **What these checks deliberately do not decide.** Each exclusion exists because the check would
 otherwise report something that is not a defect:
@@ -493,7 +531,8 @@ Run the single script entity once, from the repository root:
 python3 .claude/scripts/check_doc_lint.py
 ```
 
-- Exit code `1` means at least one ❌ violation: **blocking**
+- Exit code `1` means at least one ❌ violation: **blocking**. In PR mode (below), DOC-INV-012 ❌s
+  listed under "In other plans — not blocking this PR" do not count toward it
 - Exit code `0` means no ❌. Any ⚠️ lines present are report-only — DOC-INV-011, DOC-INV-012's
   unmatched sections, and with `--mermaid-parser` a DOC-INV-010 warning when the parser could not run
   (see below). The exit code is what decides blocking; the invariant a ⚠️ is filed under does not
@@ -501,6 +540,12 @@ python3 .claude/scripts/check_doc_lint.py
   It is opt-in so the checks never require a Node toolchain; when those are unavailable, or the
   parser run itself fails, the finding is a **⚠️ under DOC-INV-010** and the exit code is unchanged
   — a check that could not run is not a passing check, and not a violation either
+- `--base <ref>` is **PR mode**, and only `pre-pr` ③ passes it — `<ref>` is the up-to-date branch
+  the PR will merge into: after a fetch, `origin/main` (unless the PR targets another branch; see
+  "Pass an up-to-date base" above). It changes which DOC-INV-012 ❌s block, and
+  nothing else (「Which ❌ blocks which run」 above). `gc` ③ and a standalone run omit it, so every
+  ❌ blocks there. Do not pass it to make a run pass: if the split cannot be made the script blocks
+  on everything and says why — fix that cause, not the flag
 - `--only C1,C4` restricts the run; `--root <path>` checks another checkout
 
 Do not restate the checks inline anywhere else, and do not add a second call site: the reason this
@@ -578,6 +623,7 @@ Exec-plans checked: {count}
 
 ---
 Overall: ✅ All passed / ❌ {count} violation(s) / ⚠️ {count} warning(s)
+         [/ ❌ {count} in other plans (not blocking) — PR mode only, DOC-INV-012]
 ```
 
 ---
@@ -588,6 +634,7 @@ Overall: ✅ All passed / ❌ {count} violation(s) / ⚠️ {count} warning(s)
 - [ ] DOC-INV-001 through DOC-INV-006 checked
 - [ ] DOC-INV-007 through DOC-INV-011 checked by running `.claude/scripts/check_doc_lint.py`
       (its wider range covers `.claude/skills/**/*.md` and the root `*.md` as well)
-- [ ] DOC-INV-012 checked by the same run, over `exec-plans/active/**` `## Sources` tables only
+- [ ] DOC-INV-012 checked by the same run, over `exec-plans/active/**` `## Sources` tables only —
+      with `--base` when the run is `pre-pr` ③'s, and without it otherwise
 - [ ] All violations reported with specific file paths, line numbers, and fix instructions
 - [ ] Result report output

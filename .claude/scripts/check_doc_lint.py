@@ -17,6 +17,11 @@ Implements DOC-INV-007 through DOC-INV-012 (see
 | C6    | DOC-INV-012  | A file an active plan's `## Sources` row names that   | ❌    |
 |       |              | does not exist (⚠️ when only the § section is missing) |       |
 
+With `--base <ref>` (PR mode — `pre-pr` ③ only), a DOC-INV-012 ❌ blocks only when the PR is
+answerable for it: the row is in a plan the branch changed or added, or names a file the branch
+deleted or renamed. Other plans' ❌ are listed apart and do not set the exit code; when the split
+cannot be made, every ❌ blocks. Without `--base` (`gc`, a standalone run) every ❌ blocks.
+
 What it deliberately does not check is listed in the skill: pointers inside `exec-plans/**` (a plan
 is a working note, and an archived one is not a reference document) — except an active plan's
 `## Sources` table, which DOC-INV-012 checks because it is read while the work is in flight —
@@ -35,6 +40,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -59,6 +65,12 @@ FIX_HINTS = {
     "deciding there is nothing to read, is a decision about what the AC condenses "
     "(ac-sources.md「When a source cannot be opened」). Do not guess the moved file or write n/a.",
 }
+
+OTHER_PLAN_HINT = (
+    "this PR neither works on these plans nor broke these rows. Repointing a row is that plan's "
+    "owner's call (ac-sources.md「When a source cannot be opened」) — tell them; do not repair it "
+    "here. It still blocks that plan's own PR, and /gc reports it as ❌ until it is repointed."
+)
 
 # DOC-INV-007 (links) and DOC-INV-009 (label references) are the *pointer* checks: they ask whether
 # a reference resolves right now. They skip `exec-plans/**` entirely.
@@ -85,10 +97,13 @@ def pointer_checks_apply(path) -> bool:
 @dataclass
 class Finding:
     check: str
-    level: str  # "error" (blocks) or "warn" (report only)
+    # "error" (blocks), "warn" (report only), or "other" — a DOC-INV-012 error in a plan this PR
+    # neither works on nor broke, reported apart and not blocking (`--base`, see `classify_by_pr`)
+    level: str
     path: Path
     line: int
     message: str
+    target: str | None = None  # DOC-INV-012: the missing file, repository-relative, when there is one
 
 
 # --------------------------------------------------------------------------- line structure
@@ -898,7 +913,8 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
                     elif not target.is_file():
                         problem = f"source file does not exist: {written}"
                     if problem:
-                        findings.append(Finding("C6", "error", Path(path), row.number, problem))
+                        missing = target.relative_to(root).as_posix() if target.is_relative_to(root) else None
+                        findings.append(Finding("C6", "error", Path(path), row.number, problem, missing))
                         resolved = _UNRESOLVED
                     else:
                         resolved = target
@@ -906,6 +922,123 @@ def check_sources(path: Path, text: str, repo_root: Path) -> list[Finding]:
                 if position == 0:
                     primary = resolved
             previous[column] = primary
+    return findings
+
+
+# --------------------------------------------------------------------------- PR scope (DOC-INV-012)
+#
+# DOC-INV-012 reads every active plan, so a row broken by a change that reached `main` without a PR
+# (a promotion, a fix made directly on `main`) would otherwise stop every later PR, including PRs that
+# have nothing to do with that plan. With `--base <ref>` — passed only for a PR (`pre-pr` ③, through
+# `check-doc-invariants` Step 8) — a ❌ still blocks when the PR is answerable for it:
+#
+#   (a) the row is in a plan the PR changed or added since the merge-base with <ref> — committed,
+#       in the working tree, or untracked (a new plan, or a gitignored `*.dev.md` one);
+#   (b) the row names a file the PR deleted or renamed away — in any plan, since the PR broke it.
+#
+# Every other ❌ becomes "other": reported apart, as an ❌, and not counted by the exit code. It still
+# blocks its own plan's PR, by (a), and `gc` ③ — which passes no `--base` — keeps reporting it as an
+# ❌ until someone repoints it. When the split cannot be made, nothing is downgraded: the risk this
+# guards against is the PR's own broken row slipping through as "someone else's".
+
+
+@dataclass
+class PrScope:
+    plans: set[str]  # repository-relative plan paths the PR changed or added (path_key form)
+    removed: set[str]  # repository-relative paths the PR deleted or renamed away (path_key form)
+    ignorecase: bool  # the file system folds case, so a row may name a path in another case
+
+    def path_key(self, path: str | None) -> str | None:
+        """A path in the form both sides are compared in.
+
+        A row resolves through the file system, a git path is as git stores it: on a case-insensitive
+        file system (Windows, macOS by default) `docs/a.md` opens `docs/A.md`, and on macOS a
+        Japanese name may come back decomposed. Comparing them as written would let a row the PR
+        broke pass as another plan's, so both sides are folded the way the file system folds them.
+        """
+        if path is None:
+            return None
+        path = unicodedata.normalize("NFC", path)
+        return path.casefold() if self.ignorecase else path
+
+
+def pr_scope(repo_root: Path, base: str) -> PrScope | str:
+    """What the PR changed since its merge-base with `base`, or why that cannot be told."""
+    root = Path(repo_root).resolve()
+    if base.startswith("-"):
+        return f"{base!r} is not a branch name"  # it would reach git as an option
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(root), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        ).stdout
+
+    try:
+        toplevel = Path(git("rev-parse", "--show-toplevel").strip()).resolve()
+        if toplevel != root:
+            return f"{root} is not the top of its git repository ({toplevel})"
+        git("rev-parse", "--verify", "--quiet", f"{base}^{{commit}}")
+        merge_base = git("merge-base", base, "HEAD").strip()
+        ignorecase = subprocess.run(
+            ["git", "-C", str(root), "config", "--bool", "core.ignorecase"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        ).stdout.strip() == "true"
+        changes = git("diff", "-z", "--name-status", "-M", merge_base, "--").split("\0")
+        untracked = git("ls-files", "-z", "--others", "--", "exec-plans/active").split("\0")
+        new_files = git("ls-files", "-z", "--others", "--exclude-standard").split("\0")
+    except FileNotFoundError:
+        return "git is not available"
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = (getattr(error, "stderr", "") or "").strip().splitlines()
+        return f"git failed{': ' + detail[0] if detail else ''} (is {base!r} a branch here?)"
+
+    plans: set[str] = {path for path in untracked if path}
+    removed: set[str] = set()
+    tokens = iter(token for token in changes if token)
+    for status in tokens:
+        if status[0] in "RC":
+            old, new = next(tokens, ""), next(tokens, "")
+            if status[0] == "R":
+                removed.add(old)
+            plans.add(new)
+        elif status[0] == "D":
+            removed.add(next(tokens, ""))
+        else:
+            plans.add(next(tokens, ""))
+    plans = {path for path in plans if path.startswith("exec-plans/active/")}
+    if not plans and not any(changes) and not any(new_files):
+        return f"the working tree does not differ from {base} — nothing tells this PR's plans apart"
+    scope = PrScope(set(), set(), ignorecase)
+    scope.plans = {scope.path_key(path) for path in plans}
+    scope.removed = {scope.path_key(path) for path in removed}
+    return scope
+
+
+def classify_by_pr(findings: list[Finding], repo_root: Path, base: str) -> list[Finding]:
+    """Downgrade the DOC-INV-012 errors this PR is not answerable for to "other" (see above)."""
+    if not any(f.check == "C6" and f.level == "error" for f in findings):
+        return findings
+    scope = pr_scope(repo_root, base)
+    root = Path(repo_root).resolve()
+    if isinstance(scope, str):
+        note = f"--base {base}: could not determine this PR's plans ({scope}) — every DOC-INV-012 ❌ blocks"
+        return findings + [Finding("C6", "warn", root, 0, note)]
+    for finding in findings:
+        if finding.check != "C6" or finding.level != "error":
+            continue
+        try:
+            plan = Path(finding.path).resolve().relative_to(root).as_posix()
+        except ValueError:
+            continue  # not a path this split can place: it keeps blocking
+        if scope.path_key(plan) in scope.plans or scope.path_key(finding.target) in scope.removed:
+            continue
+        finding.level = "other"
     return findings
 
 
@@ -932,7 +1065,12 @@ def default_paths(repo_root: Path) -> list[Path]:
 
 
 def lint_paths(
-    paths, *, repo_root: Path, mermaid_parser: bool = False, only: tuple[str, ...] = ()
+    paths,
+    *,
+    repo_root: Path,
+    mermaid_parser: bool = False,
+    only: tuple[str, ...] = (),
+    base: str | None = None,
 ) -> list[Finding]:
     selected = tuple(only) or tuple(CHECKS)
     findings: list[Finding] = []
@@ -978,6 +1116,8 @@ def lint_paths(
                 findings.append(
                     Finding("C4", "warn", Path(repo_root), 0, f"mermaid parser run failed: {error}")
                 )
+    if base is not None and "C6" in selected:
+        findings = classify_by_pr(findings, Path(repo_root), base)
     return sorted(findings, key=lambda f: (f.check, str(f.path), f.line))
 
 
@@ -998,29 +1138,39 @@ def format_report(findings, *, repo_root: Path, checked: int) -> str:
             return "" if rel.as_posix() in (".", "") else rel.as_posix()
         return f"{rel.as_posix()}:{finding.line}"
 
+    def entry(prefix: str, finding: Finding) -> str:
+        where = location(finding)
+        return f"{prefix}{where}: {finding.message}" if where else f"{prefix}{finding.message}"
+
     out = ["=== Document lint results (DOC-INV-007〜012) ===", "", f"Files checked: {checked}", ""]
     for check, (invariant, title) in INVARIANTS.items():
-        rows = [f for f in findings if f.check == check]
+        rows = [f for f in findings if f.check == check and f.level != "other"]
+        others = [f for f in findings if f.check == check and f.level == "other"]
         errors = [f for f in rows if f.level == "error"]
         warnings = [f for f in rows if f.level == "warn"]
         mark = "❌" if errors else ("⚠️" if warnings else "✅")
         label = "warnings" if warnings and not errors else "violations"
-        out.append(f"{mark} {invariant} {label} ({title}): {len(rows)}")
+        aside = f" (+{len(others)} in other plans, listed below)" if others else ""
+        out.append(f"{mark} {invariant} {label} ({title}): {len(rows)}{aside}")
         for finding in rows:
-            prefix = "  - " if finding.level == "error" else "  ⚠️ "
-            where = location(finding)
-            out.append(f"{prefix}{where}: {finding.message}" if where else f"{prefix}{finding.message}")
+            out.append(entry("  - " if finding.level == "error" else "  ⚠️ ", finding))
         # The hint tells a reader how to clear a violation; a run-wide note has nothing to clear.
         if errors or any(f.line for f in warnings):
             out.append(f"    Fix: {FIX_HINTS[check]}")
+        if others:
+            out.append(f"  ❌ In other plans — not blocking this PR: {len(others)}")
+            out.extend(entry("  - ", finding) for finding in others)
+            out.append(f"    Tell the owner: {OTHER_PLAN_HINT}")
         out.append("")
 
     errors = [f for f in findings if f.level == "error"]
     warnings = [f for f in findings if f.level == "warn"]
+    others = [f for f in findings if f.level == "other"]
+    aside = f" / ❌ {len(others)} in other plans (not blocking)" if others else ""
     if errors:
-        summary = f"❌ {len(errors)} violation(s)" + (f" / ⚠️ {len(warnings)} warning(s)" if warnings else "")
-    elif warnings:
-        summary = f"✅ No violations / ⚠️ {len(warnings)} warning(s)"
+        summary = f"❌ {len(errors)} violation(s)" + aside + (f" / ⚠️ {len(warnings)} warning(s)" if warnings else "")
+    elif warnings or others:
+        summary = "✅ No violations" + aside + (f" / ⚠️ {len(warnings)} warning(s)" if warnings else "")
     else:
         summary = "✅ All passed"
     out.extend(["---", f"Overall: {summary}"])
@@ -1044,6 +1194,15 @@ def main(argv=None) -> int:
         help="additionally run mermaid's own parser (needs node + mermaid + jsdom; "
         "skipped with a warning when unavailable)",
     )
+    parser.add_argument(
+        "--base",
+        default=None,
+        metavar="REF",
+        help="PR mode, for pre-pr only: a DOC-INV-012 ❌ blocks only when the row is in a plan this "
+        "branch changed or added since its merge-base with REF, or names a file it deleted or "
+        "renamed; other plans' ❌ are listed apart and do not set the exit code. When that cannot "
+        "be told, every ❌ blocks. Omitted (gc, standalone): every ❌ blocks",
+    )
     args = parser.parse_args(argv)
 
     repo_root = Path(args.root).resolve()
@@ -1054,7 +1213,7 @@ def main(argv=None) -> int:
 
     paths = [Path(p) for p in args.paths] if args.paths else default_paths(repo_root)
     findings = lint_paths(
-        paths, repo_root=repo_root, mermaid_parser=args.mermaid_parser, only=only
+        paths, repo_root=repo_root, mermaid_parser=args.mermaid_parser, only=only, base=args.base
     )
     print(format_report(findings, repo_root=repo_root, checked=len(paths)))
     return exit_code(findings)
