@@ -85,7 +85,7 @@ one and fail the other.
 | Answer | Action here |
 |--------|-------------|
 | Fits | Continue |
-| Does not fit | Agree with the user which criteria move out, and run this skill again for them as a separate plan. Record the split in this plan's `## Decision Log` (`- 分割: AC-… を <別プラン名> へ — <理由>`). Each plan that implements functionality keeps its own `[E2E]` AC |
+| Does not fit | Agree with the user which criteria move out, and run this skill again for them as a separate plan — implemented on a branch of its own, not alongside this one (`completion-boundary.md`「When part of a plan has to merge before the rest」). Record the split in this plan's `## Decision Log` (`- 分割: AC-… を <別プラン名> へ — <理由>`). Each plan that implements functionality keeps its own `[E2E]` AC |
 
 Which criteria a plan delivers is the user's decision; propose a split, do not make it.
 

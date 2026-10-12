@@ -63,7 +63,10 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 >
 > This does **not** relax ⑤'s blocking parts for what the change itself is answerable for: failing
 > tests block a plan-less change exactly as they block any other. The ACs of the plans in `active/`
-> are not its work, so their coverage is not held against it
+> are not its work, so their coverage is not held against it — **provided the override is recorded
+> in the commit messages**. A branch that changed code, touched no plan and records no override is not
+> taken as plan-less: ask the human which plan it implements; until they answer, ⑤ holds on every
+> active plan's coverage and ⑦ reports ⚠️ "プランが特定できない"
 > (`../complete-exec-plan/completion-boundary.md`「A change with no plan」).
 
 ---
@@ -365,7 +368,8 @@ Where the branch stands relative to the human confirmation
 
 | State of the plan | Outcome |
 |-------------------|---------|
-| The branch has **not started** the plan — it only adds it, or re-opens ACs in it with the spec fix that re-opens them: no AC goes to `- [x]` **and** nothing changed outside `exec-plans/` and `docs/` (「A plan this branch has not started」 — both checks, working tree included) | ➖ nothing to confirm yet — not an intermediate state. A branch that changed code but ticked no box is not this row: it is the ⚠️ row below |
+| The branch has **not started** the plan — it only adds it, or re-opens ACs in it with the spec fix that re-opens them: no AC goes to `- [x]` **and** nothing changed outside `exec-plans/` and `docs/` (「A plan this branch has not started」 — both checks, working tree included) | ➖ nothing to confirm yet — not an intermediate state. A branch that changed code but ticked no box is not this row, and neither is a documentation-only plan whose branch changed `docs/` with no box ticked: both are the ⚠️ row below |
+| No plan found, the branch changed something outside `exec-plans/` and `docs/`, and no spec-override is recorded in its commit messages | ⚠️ **does not block by itself** — "プランが特定できない". Ask the human which plan the change implements; until then ⑤ covers every active plan (「A change with no plan」) |
 | In `active/`, every AC `- [x]` | ℹ️ **not completed yet — does not block.** PR creation is fine (the second path completes after review); the merge waits for the human confirmation and the complete commit on this branch |
 | In `active/`, some ACs still `- [ ]` | ⚠️ **intermediate state — does not block PR creation**, but the branch is not merged like this. Finish the plan, or the human splits it (「When part of a plan has to merge before the rest」) |
 | Moved to `completed/` in the working tree but **not committed** | ℹ️ **does not block.** A `complete-exec-plan` run stopped before its commit; resume it (its Step 1) — there is no boundary to check against yet |
@@ -423,6 +427,7 @@ human's confirmation and is theirs to decide, and the record is theirs to give.
                      / ❌ complete {sha} の後に実装変更あり — 再オープン (blocks)
                      / ❌ completed のプランに未チェックの AC-NNN — 再オープン (blocks)
                      / ⚠️ main の取り込みで ## Sources のファイルが変更 — 再オープンの要否を人が判断 (does not block)
+                     / ⚠️ プランが特定できない — どのプランの実装かを人に確認 (does not block)
                      / ➖ 確認対象なし（プランの追加・AC の再オープンのみ）
                      / ➖ n/a (プラン無しの変更)
 

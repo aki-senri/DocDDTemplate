@@ -90,7 +90,8 @@ Run only the checks that **block** completion — the ⚠️ evidence checks (re
 walkthrough, `## Sources`, `docode-review` record) are reported by `pre-pr` and not repeated here.
 
 - Confirm every criterion has `- [x]`
-  - If any criterion is unchecked, the plan cannot be completed: finish it, split the plan, or — if
+  - If any criterion is unchecked, the plan cannot be completed: finish it, split the plan (the
+    new plan goes to a change and a branch of its own), or — if
     the human no longer wants it — have them withdraw it
     ([`completion-boundary.md`](completion-boundary.md)「When part of a plan has to merge before the
     rest」「When an AC is no longer wanted」 — both the human's decision, recorded in the decision

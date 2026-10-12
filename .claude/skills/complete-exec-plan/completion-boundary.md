@@ -72,6 +72,12 @@ sources questions), records the split in both plans' Decision Logs, and the rema
 confirmed and completed as a whole. Splitting is a decision about what this plan delivers, so it is
 the human's — not the agent's, and not a reason to merge with unchecked ACs.
 
+**The new plan does not ride on this branch.** It is added by a change of its own (or after this
+branch merges), and implemented on a branch of its own. A branch that carries one plan's
+implementation and a second plan's unfinished ACs has no way to tell the checks below which code
+belongs to which plan, so it would read as an intermediate state; keeping one implemented plan per
+branch is what lets "this branch's plan" stay unambiguous.
+
 ---
 
 ## Plan size
@@ -218,13 +224,22 @@ git diff --name-only "$(git merge-base main HEAD)" -- . ':(exclude)exec-plans/' 
 git ls-files --others --exclude-standard -- . ':(exclude)exec-plans/' ':(exclude)docs/' 2>/dev/null || true
 ```
 
-No output from all three means not started. (b) cannot separate the work of a documentation-only
-plan from a spec fix, since both live in `docs/`; for such a plan only (a) tells them apart, so its
-boxes are ticked as the work is done.
+No output from all three means not started. This judges the whole branch, which is why a branch
+carries one implemented plan at most (「When part of a plan has to merge before the rest」).
 
-**A change with no plan** (the `exec-plans/.spec-override` exception) finds nothing above. It
-implements none of the plans in `active/`, so their ACs are not held against it either: its tests
-must pass, and that is all.
+(b) cannot separate the work of a **documentation-only** plan (its Decision Log records
+`E2E: n/a (documentation-only)`) from a spec fix, since both live in `docs/`. For such a plan, a
+branch that changed `docs/` and ticked no box is **not** taken as not started: it is reported as an
+intermediate state (⚠️), so documentation work cannot pass unconfirmed by leaving its boxes empty.
+
+**A change with no plan** — the `exec-plans/.spec-override` exception — implements none of the plans
+in `active/`, so their ACs are not held against it: its tests must pass, and that is all. It counts
+as plan-less only when **the branch's commit messages record the override** (`git log main..HEAD`,
+as `pre-pr`'s note on plan-less changes describes — the override file itself is deleted before the
+PR). Finding nothing is not enough: a branch can implement a plan that is already on `main` without
+ever editing the plan file. So when the branch changed something outside `exec-plans/` and `docs/`,
+no plan was found and no override is recorded, ask the human which plan the change implements;
+until they answer, hold on the coverage of every plan in `active/`, as if each might be it.
 
 Use the branch the PR merges into in place of `main`, and make sure it is current (`git fetch`, then
 `origin/main` if the local `main` lags): a stale `main` makes plans completed there look like this
