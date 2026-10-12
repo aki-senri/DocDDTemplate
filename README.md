@@ -99,8 +99,8 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | Skill | Purpose |
 |-------|---------|
 | `init-project` | Project initialization (Phase 0 → Phase 1). Run once at adoption |
-| `create-requirements` | Define User Stories, the **goal image** (what the user can do when done / primary journey / non-goals), acceptance conditions, and constraints (`docs/01_requirements/`) |
-| `create-spec` | Draft the application spec — *what* the app does — plus **E2E scenarios** (`E2E-001 → AC-001, AC-003` cross-cutting traceability) from approved requirements (`docs/02_spec/` and one file per scenario in `docs/01-02_e2e/`, `status: draft`; needs human approval) |
+| `create-requirements` | Define User Stories, the **goal image** (what the user can do when done / primary journey / non-goals), acceptance conditions, constraints, and the material the decision was made from (`## 関連`; material outside the repo is offered as a research note) (`docs/01_requirements/`) |
+| `create-spec` | Draft the application spec — *what* the app does — plus **E2E scenarios** (`E2E-001 → AC-001, AC-003` cross-cutting traceability) from approved requirements (`docs/02_spec/` and one file per scenario in `docs/01-02_e2e/`, `status: draft`; needs human approval). Records the material behind the spec's decisions in `## 関連` and asks which decisions to keep as ADRs (`decisions.md`) |
 | `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) and given a **`## Sources`** row naming the US bullets and spec section it condenses. A plan that changes a DocDD process carries a **process-walkthrough** verification AC |
 | `start-feature` | Pre-implementation review, AC readiness re-check, loading of the US / spec sections in `## Sources`, and branch name decision (once per feature) |
 | `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), place the `[E2E]` test red, then autonomously implement ACs one by one (**read the AC's sources** → **write the failing test** → implement → test → fix → **re-anchor to the spec section** → next); halts only on stop conditions (opt-in) |
@@ -123,7 +123,7 @@ Run skills in Claude Code chat by typing `/skill-name`.
 
 | Skill | Purpose | When |
 |-------|---------|------|
-| `doc-review` | Independent agent reviews a requirements or spec document (AC testability via the shared readiness checks, completeness, references) | Optional, human-invoked when desired |
+| `doc-review` | Independent agent reviews a requirements or spec document (AC testability via the shared readiness checks, completeness, references, and whether each conclusion has a recorded basis) | Optional, human-invoked when desired |
 | `docode-review` | Independent agent reviews changed code against the ACs and general quality | **Mandatory** once `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, human-invoked, on the manual `start-feature` path |
 
 > `run-tests`, `doc-review`, and `docode-review` are model-invocable (callers invoke them via the Skill tool); the other internal skills are executed by higher-level skills following their `SKILL.md` steps inline. See CLAUDE.md "検証スキルの呼び出しポリシー".

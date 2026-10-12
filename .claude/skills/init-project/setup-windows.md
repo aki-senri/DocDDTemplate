@@ -10,7 +10,9 @@
 ## Fixed decisions (standards defined by this skill)
 
 Do not change the following unless there is a project-specific reason.
-If a change is made, record the reason in `docs/00_project/decisions.md`.
+If a change is made, record it as an ADR in `docs/00_project/decisions.md`, in the format of
+[`adr-format.md`](adr-format.md) (種別 `技術`) — the standard below is the alternative it was chosen over,
+so name it under 検討した代替案と却下理由 with the reason it did not fit.
 
 ### Tech stack
 

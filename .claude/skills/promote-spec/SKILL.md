@@ -61,11 +61,11 @@ target changes are made carefully by a person, this skill does **not** merge sil
 ```
 ① Identify the spec/* branch to promote
 ② Drift guard: check the spec branch is current with main
-③ Diff & classify spec changes (NEW / CHANGED / REMOVED)
+③ Diff & classify spec changes (NEW / CHANGED / REMOVED), and list the ADR candidates
 ④ Impact analysis against completed & active exec-plans (find stale impl + in-flight collisions)
 ⑤ Present the promotion impact report → STOP for human decision
 ⑥ Execute promotion after explicit confirmation (tag outgoing version, merge --no-ff)
-⑦ Post-promotion bookkeeping (reconcile exec-plan, Decision Log, CONTEXT.md)
+⑦ Post-promotion bookkeeping (reconcile exec-plan, ADR drafts, Decision Log, CONTEXT.md)
 ⑧ Final report
 ```
 
@@ -116,6 +116,13 @@ git rev-list --count spec/<label>..main   # commits on main not yet in the spec 
   in a hunk that does not overlap the removed section merges cleanly and lands back in the old
   layout. So after the merge, check `git diff main...spec/<label> -- docs/02_spec/` for added
   `### E2E-` headings and move each into its own file the same way.
+- **ADR numbers taken on both sides.** `docs/00_project/decisions.md` is appended to on `main` and on
+  the spec branch alike, so the same `ADR-NNN` can be drafted on both; the merge usually conflicts at
+  the end of the file, and may not. Resolve it on the spec branch by renumbering the **branch's** ADR to
+  the next number free on `main`, and its citations on the branch with it — it has not taken effect
+  yet, while `main`'s may already be cited (`../init-project/adr-format.md`「The format」). After the
+  merge, check `grep -oE '^## ADR-[0-9]+' docs/00_project/decisions.md | sort | uniq -d` on the branch
+  for a duplicate the merge did not flag.
 - **Lines dropped on `main` for this version.** A gap or a contradiction resolved as next-version
   may have been handled by removing a line on `main` — a scenario step (②), or the broader side of a
   contradiction — on the understanding that this version brings it back
@@ -191,6 +198,23 @@ yet every plan that froze the scenario has had its target moved
 git diff --name-status main..spec/<label> -- docs/01-02_e2e/
 git diff main..spec/<label> -- docs/01-02_e2e/ docs/02_spec/   # old layout: ### E2E-NNN blocks
 ```
+
+**List the ADR candidates.** A CHANGED or REMOVED item reverses or narrows something already decided —
+the decision a later reader will most want the reasons for, and the one most likely to be re-proposed
+if they are lost ([`../init-project/adr-format.md`](../init-project/adr-format.md)「When a decision is
+an ADR candidate」). Collect the ADRs the branch itself adds:
+
+```bash
+git diff main..spec/<label> -- docs/00_project/decisions.md | grep -E '^\+' || true   # the added ADRs, headings and bodies
+```
+
+Every CHANGED / REMOVED AC and every CHANGED / REMOVED `E2E-NNN` whose ID no added ADR names (an ADR
+names the IDs it changed in its 結果 — `adr-format.md`「The format」) is an **ADR candidate**; one that
+is named is covered. Matching by ID is a starting point, not a
+verdict — show the added ADRs, and any research note the branch adds under `docs/00_project/research/`,
+beside the list so the human can mark an item covered that the ID match missed (a research note that
+names the rejected option also ends a candidacy — `adr-format.md`, condition 2). NEW items are not candidates here: they are scoped through `/create-exec-plan` after the
+promotion, and their decisions were drafted with the spec (`create-spec` Step 2c).
 
 ### Step 4: Impact analysis (find stale impl + in-flight collisions)
 
@@ -291,6 +315,19 @@ Output the report (format below) and then **halt for the human decision**:
 > (yes / adjust the spec branch first / cancel)"
 
 Do not proceed to Step 6 without an explicit "yes".
+
+**Ask about the ADR candidates in the same reply** (per `adr-format.md`「The procedure at a call
+site」): for each, record it as an ADR — yes or no — and, for a yes, where:
+
+| Where | When to choose it |
+|-------|-------------------|
+| **On `spec/<label>`, before the merge** | Choose "adjust the spec branch first": the decision and its reasons are promoted together and tagged in `spec-target-<label>`. Draft it there now — `git switch spec/<label>`, draft per `adr-format.md`「The procedure at a call site」 step 3, commit, `git switch main` — then the human re-runs `/promote-spec` |
+| **On `main`, in Step 7** | The promotion goes ahead now; the ADR is drafted after the merge, with the reconcile plan |
+
+A no — or no answer about the candidates — does not hold the promotion: the decision this step waits
+for is the merge, not the ADRs. A no is not written anywhere, so a re-run (after adjusting the branch
+for any other reason) lists the same candidate again; answer it again. That costs one line of a report
+the human reads anyway, and keeps the record of a no from becoming a file nobody maintains.
 
 ### Step 6: Execute promotion (only after explicit confirmation)
 
@@ -474,6 +511,14 @@ Do not proceed to Step 6 without an explicit "yes".
      so traceability is not left broken, and suggest deprecating the corresponding code/docs
      (set the owning doc `status: deprecated`). Do not delete code automatically.
 
+1b. **Draft the ADRs the human said yes to "on `main`"** (Step 5) in `docs/00_project/decisions.md`,
+   in the format of [`../init-project/adr-format.md`](../init-project/adr-format.md), taking 検討した代替案と却下理由
+   — normally the pre-promotion behavior, and why it was replaced — from the human, never inventing
+   it. Commit them with the reconcile plan, and have the human review that commit before it is pushed
+   — on `main`, that review is the ADR's approval (`adr-format.md`「The format」, 状態). In prose, an ADR names the promoted sections and the label
+   (`spec-target-<label>`); it does not link them (layer 0). This step runs even for a purely additive
+   promotion that skips the reconcile plan, if any yes was given.
+
 2. **Record the promotion** in the reconcile plan's Decision Log (and/or a project Promotion Log):
    version label, date, summary of NEW/CHANGED/REMOVED, stale ACs, how in-flight collisions were
    handled, and the routing rationale.
@@ -510,6 +555,8 @@ Drift guard : ✅ up to date  /  ⚠️ main is N commits ahead (bring branch cu
 NEW     : {count}   (US-012, AC-015, AC-016, ...)
 CHANGED : {count}   (AC-003, AC-007, ...)
 REMOVED : {count}   (AC-009, ...)
+ADR 候補 : {count}   (AC-003 CHANGED, E2E-002 CHANGED, AC-009 REMOVED — no ADR added on the branch names them)
+          added on the branch: ADR-014 「…」 (covers AC-007)  /  "none"
 
 ── Impact on existing work ───────────────────
 🔴 In-flight collisions : {count}
@@ -537,6 +584,7 @@ Promotion changes the development target — confirm to proceed (yes / adjust / 
 Outgoing version preserved : spec-target-<prev>  (baseline seeded if first promotion)
 New target snapshot tagged  : spec-target-<label>
 Reconcile plan created      : exec-plans/active/YYYY-MM-reconcile-<label>.md (AC-003, ... + [E2E] AC-NNN)
+ADR 候補                    : {n} 件 — ADR-NNN 追記 {n}（branch {n} / main {n}）/ 見送り {n}; or "none"
 New-AC plans suggested      : /create-exec-plan for AC-015, AC-016
 CONTEXT.md                  : current target updated to <label>
 Deferrals to lift           : exec-plans/active/2026-06-export.md (deferred until spec/<label>) — owner records deferred 解除:
@@ -562,6 +610,9 @@ Next action                 : /start-feature on the reconcile plan; /create-exec
 - [ ] Active plans whose `## Sources` names a file or section this promotion moves were listed, and their owners asked to repoint the rows
 - [ ] Active plans deferred until `spec/<label>` were listed in the report, and their owners asked to
       decide whether to lift the deferral after the merge
+- [ ] ADR candidates (CHANGED / REMOVED ACs and scenarios that no ADR added on the branch names) were
+      listed in the report and asked about; an ADR was drafted for each yes — on the branch before the
+      merge, or on `main` in Step 7 — and a no did not hold the promotion
 - [ ] Impact report presented and **explicit human confirmation** obtained before merging
 - [ ] Outgoing version recoverable and new target snapshot tagged (`spec-target-<label>`)
 - [ ] Reconcile exec-plan created for stale-impl ACs; NEW ACs flagged for `/create-exec-plan`

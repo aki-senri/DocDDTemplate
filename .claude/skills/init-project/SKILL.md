@@ -23,7 +23,7 @@ disable-model-invocation: true
 | File | Role | How content is determined |
 |------|------|--------------------------|
 | `docs/00_project/overview.md` | Project purpose, scope, and tech stack | Generated from Q1 & Q2 answers |
-| `docs/00_project/decisions.md` | Technology decision log (ADR format) | Generated from Q2 answers |
+| `docs/00_project/decisions.md` | Decision log (ADR format — [adr-format.md](adr-format.md)): technology decisions at initialization, requirement and spec decisions as the project goes on | Generated from Q2 answers |
 | `docs/07_ai_context/CONTEXT.md` | Navigation map (including development rules) | Generated from all answers |
 
 `overview.md` and `decisions.md` are layer 0 — the most upstream layer — and link to nothing below
@@ -67,8 +67,15 @@ Then ask:
 > "What are the main reasons for choosing each technology?
 > You can write 'undecided' for items you are unsure about."
 
+For each item with a clear reason, also ask:
+
+> "Were other options considered for it? If so, which, and why were they not chosen?"
+
 → Used for the tech stack table in `overview.md`
-→ Recorded as ADRs in `decisions.md` (only for items with clear reasons)
+→ Recorded as ADRs in `decisions.md` (only for items with clear reasons), in the format of
+  [`adr-format.md`](adr-format.md) — 種別 `技術`, with the options not chosen under
+  検討した代替案と却下理由 (or `なし（理由）` when none was considered). That section is what stops a
+  rejected option from being proposed again later
 → Used for the tech stack section of `CONTEXT.md`
 
 ---
@@ -175,7 +182,7 @@ A complete list of documents managed by the project. `Required` items are always
 |------|------------------|-----------|
 | `docs/00_project/overview.md` | Required | Always |
 | `docs/00_project/glossary.md` | Optional | When there is a risk of terminology misunderstanding |
-| `docs/00_project/decisions.md` | Required | Always (records technology decision ADRs) |
+| `docs/00_project/decisions.md` | Required | Always (records ADRs in the format of [`adr-format.md`](adr-format.md) — technology decisions from Q2 first; later, the requirement and spec decisions that `create-spec` and `promote-spec` ask about) |
 | `docs/00_project/research/{topic}.md` | Optional | When material a decision is made from — an investigation, a comparison, a rejected option, an external source — is worth keeping. Background only: readable from every layer, never a test's source (`../create-exec-plan/ac-sources.md`) |
 | `docs/01_requirements/functional/common.md` | Optional | When multiple platforms exist |
 | `docs/01_requirements/functional/{platform}.md` | Required | Always (one file per platform) |
@@ -298,7 +305,7 @@ describe('AC-001: Login with invalid password', () => {
 ### Phase 0
 
 - [ ] `docs/00_project/overview.md` has been created
-- [ ] `docs/00_project/decisions.md` has been created (at least one ADR)
+- [ ] `docs/00_project/decisions.md` has been created (at least one ADR, in the format of [`adr-format.md`](adr-format.md))
 - [ ] `docs/07_ai_context/CONTEXT.md` has been created
 - [ ] `CONTEXT.md` has a "Development rules" section with all 4 items from Q3
 
