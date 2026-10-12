@@ -37,7 +37,9 @@
 ユーザーが「仕様なしで進めることを確認します」などの明示的な確認を与えた場合のみ：
 
 1. `exec-plans/.spec-override` を作成する（理由とタイムスタンプを記録）
-2. 実装を進める
+2. 実装を進める。その変更のコミットメッセージに `Spec-Override: <理由>` の trailer を書く
+   （ファイルは PR 前に消えるため、この変更がどのプランの実装でもないことを `/pre-pr`・`run-tests` は
+   この trailer で知る。無いと「プランが特定できない」として全 active プランの AC カバレッジで止まる）
 3. 実装完了後に `exec-plans/.spec-override` を削除する
 
 ## 自律実装ループ（autonomous exec loop）

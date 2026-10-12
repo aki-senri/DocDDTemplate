@@ -59,14 +59,17 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 > once implementation completes**, which is before this skill runs: do not expect to find it. Check
 > `git log main..HEAD` for the evidence before reporting ⚠️ for any of ⑤–⑤d. Evidence recorded
 > outside a plan file is a `➖`, not a missing record, and ⑥ has nothing to update. With no plan and
-> no such record anywhere, the ⚠️ stands. ⑦ is `➖` — there is no plan to complete.
+> no such record anywhere, the ⚠️ stands. ⑦ is `➖` when the change is plan-less by the rule below —
+> there is no plan to complete.
 >
 > This does **not** relax ⑤'s blocking parts for what the change itself is answerable for: failing
 > tests block a plan-less change exactly as they block any other. The ACs of the plans in `active/`
-> are not its work, so their coverage is not held against it — **provided the override is recorded
-> in the commit messages**. A branch that changed code, touched no plan and records no override is not
+> are not its work, so their coverage is not held against it — **provided the change is plan-less**:
+> it changed nothing outside `exec-plans/` and `docs/`, or a commit message carries the
+> `Spec-Override:` trailer. A branch that changed code, touched no plan and carries no trailer is not
 > taken as plan-less: ask the human which plan it implements; until they answer, ⑤ holds on every
-> active plan's coverage and ⑦ reports ⚠️ "プランが特定できない"
+> active plan's coverage and ⑦ reports ⚠️ "プランが特定できない". An answer of "none — it was an
+> override" is recorded as the trailer (an empty commit), after which the change is plan-less
 > (`../complete-exec-plan/completion-boundary.md`「A change with no plan」).
 
 ---
@@ -369,7 +372,7 @@ Where the branch stands relative to the human confirmation
 | State of the plan | Outcome |
 |-------------------|---------|
 | The branch has **not started** the plan — it only adds it, or re-opens ACs in it with the spec fix that re-opens them: no AC goes to `- [x]` **and** nothing changed outside `exec-plans/` and `docs/` (「A plan this branch has not started」 — both checks, working tree included) | ➖ nothing to confirm yet — not an intermediate state. A branch that changed code but ticked no box is not this row, and neither is a documentation-only plan whose branch changed `docs/` with no box ticked: both are the ⚠️ row below |
-| No plan found, the branch changed something outside `exec-plans/` and `docs/`, and no spec-override is recorded in its commit messages | ⚠️ **does not block by itself** — "プランが特定できない". Ask the human which plan the change implements; until then ⑤ covers every active plan (「A change with no plan」) |
+| No plan found, the branch changed something outside `exec-plans/` and `docs/`, and no commit message carries a `Spec-Override:` trailer | ⚠️ **does not block by itself** — "プランが特定できない". Ask the human which plan the change implements; until then ⑤ covers every active plan (「A change with no plan」) |
 | In `active/`, every AC `- [x]` | ℹ️ **not completed yet — does not block.** PR creation is fine (the second path completes after review); the merge waits for the human confirmation and the complete commit on this branch |
 | In `active/`, some ACs still `- [ ]` | ⚠️ **intermediate state — does not block PR creation**, but the branch is not merged like this. Finish the plan, or the human splits it (「When part of a plan has to merge before the rest」) |
 | Moved to `completed/` in the working tree but **not committed** | ℹ️ **does not block.** A `complete-exec-plan` run stopped before its commit; resume it (its Step 1) — there is no boundary to check against yet |

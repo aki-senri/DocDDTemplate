@@ -333,7 +333,10 @@ completed:
    rewrite changes a `## Sources` row so that it names a different `E2E-NNN`, run Step 2b's
    complement detection on that scenario before going on — the plan freezes it when finalized
 4. Confirm today's date in `YYYY-MM-DD` format
-5. Create the `exec-plans/active/` directory if it doesn't exist
+5. Create the `exec-plans/active/` directory if it doesn't exist. Write the plan on a branch that is
+   not implementing another plan — one implemented plan per branch
+   ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+   「When part of a plan has to merge before the rest」)
 6. Apply the interview answers to the template and create `exec-plans/active/YYYY-MM-{name}.md`
 7. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
    - Add a link to the newly created plan file in the priority tasks section

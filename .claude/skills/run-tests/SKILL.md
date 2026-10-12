@@ -132,12 +132,11 @@ If all tests pass — or only **expected reds** (Step 2c) remain — verify AC-I
      `exec-plans/completed/`. Another plan in `active/` that came from `main` is not this branch's
      work, and holding on its uncovered ACs would block every branch while any plan is open. When
      the commands find nothing:
-     - the branch's commit messages record the `exec-plans/.spec-override` exception → the change has
-       no plan: report the coverage of the plans in `exec-plans/active/` for information, and **hold
-       on none of it** — only failing tests hold
-     - otherwise, and the branch changed something outside `exec-plans/` and `docs/` → it may
-       implement a plan from `main` without having edited it: the caller asks the human which one,
-       and until then cover **every** plan in `exec-plans/active/` and hold as usual
+     - the branch changed nothing outside `exec-plans/` and `docs/`, or a commit message carries a
+       `Spec-Override:` trailer → the change has no plan: report the coverage of the plans in
+       `exec-plans/active/` for information, and **hold on none of it** — only failing tests hold
+     - otherwise → it may implement a plan from `main` without having edited it: the caller asks the
+       human which one, and until then cover **every** plan in `exec-plans/active/` and hold as usual
      (「A change with no plan」 there)
    - **Otherwise** (standalone, `start-feature`, `run-exec-plan`): every plan in `exec-plans/active/`
 2. Split them into **functional ACs** and **E2E ACs** — an E2E AC is one whose description starts

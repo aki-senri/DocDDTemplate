@@ -231,15 +231,24 @@ carries one implemented plan at most (「When part of a plan has to merge before
 `E2E: n/a (documentation-only)`) from a spec fix, since both live in `docs/`. For such a plan, a
 branch that changed `docs/` and ticked no box is **not** taken as not started: it is reported as an
 intermediate state (⚠️), so documentation work cannot pass unconfirmed by leaving its boxes empty.
+One case reads the same and is not: a documentation-only reconcile plan re-opened together with the
+docs fix that re-opens it. The routing sends that fix to `main` directly, where no `pre-pr` runs; if
+it goes through a PR instead, the ⚠️ does not block, and the human says it is a re-open.
 
-**A change with no plan** — the `exec-plans/.spec-override` exception — implements none of the plans
-in `active/`, so their ACs are not held against it: its tests must pass, and that is all. It counts
-as plan-less only when **the branch's commit messages record the override** (`git log main..HEAD`,
-as `pre-pr`'s note on plan-less changes describes — the override file itself is deleted before the
-PR). Finding nothing is not enough: a branch can implement a plan that is already on `main` without
-ever editing the plan file. So when the branch changed something outside `exec-plans/` and `docs/`,
-no plan was found and no override is recorded, ask the human which plan the change implements;
-until they answer, hold on the coverage of every plan in `active/`, as if each might be it.
+**A change with no plan** implements none of the plans in `active/`, so their ACs are not held
+against it: its tests must pass, and that is all. Finding no plan is not enough to call a change
+plan-less — a branch can implement a plan that is already on `main` without ever editing the plan
+file — so it is decided from what the branch changed and what its commits record:
+
+| No plan found, and the branch… | Then |
+|-------------------------------|------|
+| changed nothing outside `exec-plans/` and `docs/` (a spec fix, a document change) | Plan-less. Nothing there can be a plan's code. (A documentation-only plan from `main` that the branch works on without ticking a box reads the same; its boxes are ticked as the work is done) |
+| changed something else, and a commit message carries a `Spec-Override: <理由>` trailer | Plan-less — the `exec-plans/.spec-override` exception (CLAUDE.md「例外処理」 has the trailer written, since the override file is deleted before the PR) |
+| changed something else, with no such trailer | Ask the human which plan the change implements; until they answer, hold on the coverage of every plan in `active/`, as if each might be it. If they answer that it implements none — it was an override — record their answer as the trailer, in an empty commit on the branch (`git commit --allow-empty`, `Spec-Override: <理由>（<確認者>, YYYY-MM-DD の回答）`), and it is plan-less from then on |
+
+```bash
+git log --format=%B main..HEAD 2>/dev/null | grep -E '^Spec-Override:' || true
+```
 
 Use the branch the PR merges into in place of `main`, and make sure it is current (`git fetch`, then
 `origin/main` if the local `main` lags): a stale `main` makes plans completed there look like this

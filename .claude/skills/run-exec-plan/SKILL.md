@@ -91,7 +91,11 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ### Step 0: Preconditions
 
-- Confirm exactly one target plan. If several active plans exist, ask the user which one
+- Confirm exactly one target plan. If the current branch already implements a different plan (it
+  ticked that plan's ACs or changed code for it), stop and say so: one implemented plan per branch
+  ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+  「When part of a plan has to merge before the rest」) — the user switches branches.
+  If several active plans exist, ask the user which one
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
 - **If the plan is deferred, do not start.** A plan whose Decision Log has a bullet beginning
   `- deferred: spec/` with no later bullet beginning `- deferred 解除:` is waiting on a promotion

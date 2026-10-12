@@ -156,6 +156,11 @@ so a test drafted red-first comes from the AC line and its sources, never from t
 
 Suggest a branch name following the "branch strategy" rule in CONTEXT.md.
 
+**One implemented plan per branch.** Start the plan on a branch of its own — not on a branch already
+implementing another plan. The checks that decide "this branch's plan" and whether it has started
+judge the whole branch, so a second plan's code would make the first read as unconfirmed work
+(`../complete-exec-plan/completion-boundary.md`「When part of a plan has to merge before the rest」).
+
 - Standard pattern: `feature/{exec-plan-name}`
 - Example: `feature/user-auth`
 
