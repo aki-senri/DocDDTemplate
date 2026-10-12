@@ -376,16 +376,17 @@ it would stop on a plan it never touched. So the run made for a PR (`pre-pr` ③
 
 **When the split cannot be made, nothing is downgraded** — git is unavailable, the base does not
 resolve (or looks like an option), `--root` is not the top of the repository, or the working tree
-does not differ from the base at all. The report says which, and every ❌ blocks. That is the direction to err in: misplacing the PR's own row
-as "someone else's" would let the PR go ahead on a row nobody can open, which is the path this check
-exists to close. Paths are compared the way the file system resolves them — case-folded where it
-ignores case, and Unicode-normalized — since a row that names `docs/a.md` opens `docs/A.md` there,
-and the PR that deletes `docs/A.md` has broken it.
+does not differ from the base at all. The report says which, and every ❌ blocks. That is the
+direction to err in: misplacing the PR's own row as "someone else's" would let the PR go ahead on a
+row nobody can open, which is the path this check exists to close. Paths are compared the way the
+file system resolves them — case-folded where it ignores case, and Unicode-normalized — since a row
+that names `docs/a.md` opens `docs/A.md` there, and the PR that deletes `docs/A.md` has broken it.
 
 A change with no plan (the spec-override exception) is split like any other: it changes no plan, so
 it blocks only on rows naming a file it deleted or renamed. A PR that repoints another plan's row —
-as `../create-exec-plan/ac-sources.md` requires ("Moving a source breaks rows elsewhere") — changes that plan, so it becomes answerable for that plan's other
-broken rows too; that errs toward blocking, and the fix is the same repointing.
+as `../create-exec-plan/ac-sources.md` requires ("Moving a source breaks rows elsewhere") — changes
+that plan, so it becomes answerable for that plan's other broken rows too; that errs toward
+blocking, and the fix is the same repointing.
 
 **Pass an up-to-date base.** The split is only as good as the merge-base. A local `main` that is
 behind — in a worktree it usually is — puts changes already on the base into the diff, so another
