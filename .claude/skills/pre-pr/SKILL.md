@@ -99,7 +99,10 @@ Verify that documents corresponding to changed code files are up to date.
 
 ### ③ Document invariant check (check-doc-invariants)
 
-Run the `check-doc-invariants` skill.
+Run the `check-doc-invariants` skill **in PR mode**: at its Step 8, pass
+`--base <the branch this PR will merge into>` — fetch first and pass the remote-tracking branch
+(`origin/main` unless the PR targets another; the local `main` is often behind, which makes other
+plans' rows look like this PR's). This is the only site that passes it.
 
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
 2. Check every built-in invariant the skill defines. The list — and each invariant's range —
@@ -107,10 +110,20 @@ Run the `check-doc-invariants` skill.
    script-backed ones are run by that skill, not by this one, and some reach beyond `docs/**`
    (the convention documents themselves, and active plans' `## Sources` tables)
 3. Blocking vs. reporting follows the skill's own levels — a ❌ blocks the PR, a ⚠️ is reported.
+   The one exception is DOC-INV-012's other-plans group, below: an ❌ that does not block.
    A DOC-INV-012 finding (an active plan's `## Sources` row that cannot be opened) is **presented to
    the user, not repaired here** — do not repoint the row to a guessed file and do not replace it
    with `n/a`; that is a decision about what the AC condenses
-   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」). The same holds for
+   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」).
+   In PR mode the DOC-INV-012 ❌s come in two groups (`check-doc-invariants`「Which ❌ blocks which
+   run」): the rows this PR is answerable for — in a plan it changed or added, or naming a file it
+   deleted or renamed — block as before; the rows listed under **"In other plans — not blocking this
+   PR"** do not. Present the second group as a note for each plan's **owner** (name the plan file and
+   row, and say the owner repoints it), not as something to fix in this PR — and do not repair those
+   rows here either. Nothing is lost by not blocking: they still block their own plan's PR, and
+   `gc` ③ reports them as ❌ until they are repointed. If the script reports that it could not
+   determine this PR's plans, every DOC-INV-012 ❌ blocks; fix the cause it names (a missing base
+   branch, say) rather than dropping `--base`. The same holds for
    DOC-INV-006's scenario findings — the symmetric check (要決定 / 要確認) and the upward-trace lines
    (`由来ジャーニー` / `満たす業務要求`), even an ❌ among them: present them, and do not drop a
    scenario step, promote it into the US, or fill in a line to make the check pass. Each is an edit to
@@ -323,6 +336,7 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 ① invariants       : ✅ all passed  / ❌ {count} violation(s)
 ② doc-freshness    : ✅ all passed  / ⚠️ {count} update(s) needed
 ③ doc-invariants   : ✅ all passed  / ❌ {count} violation(s) / ⚠️ {count} warning(s)
+  └ other plans    : ➖ none  / ❌ {count} row(s) in other plans — tell their owners (does not block)
 ④ review_checklist : ✅ all passed  / ❌ {count} item(s) not addressed
 ⑤ run-tests        : ✅ all passed, AC coverage complete  / ❌ {count} failure(s) or uncovered ACs
   └ E2E coverage   : ✅ {n}/{n} [E2E] AC covered and green  / ❌ {count} uncovered or failing (blocks)
@@ -355,6 +369,8 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 - [ ] All checks ① through ⑥ (including ⑤b and ⑤c) are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation — except a DOC-INV-012
       row, which the user repoints (③); it is neither repaired by the agent nor marked N/A
+- [ ] ③ was run with `--base`, and any DOC-INV-012 row listed under another plan was presented as
+      a note for that plan's owner (it does not block this PR)
 - [ ] If tests failed, they were resolved through the spec alignment gate
 - [ ] Every `[E2E]` AC in the plan has a test that exists and passed (or the plan's lack of an
       `[E2E]` AC was reported and referred back to `create-exec-plan`)

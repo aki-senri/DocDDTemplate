@@ -279,8 +279,11 @@ wins over completed) applies to scenarios the same way.
 > anything is pushed** — not before the promotion (the new path does not exist on `main` yet, so a
 > repointed row would fail there) and not after the push (the shared `main` would already be broken).
 > Repairing a row is a human's call (`../create-exec-plan/ac-sources.md`「When a source cannot be
-> opened」). A moved or renamed file left behind is a DOC-INV-012 ❌ that blocks every PR after the
-> merge, including PRs that have nothing to do with those plans; a retitled section is a ⚠️.
+> opened」). A moved or renamed file left behind is a DOC-INV-012 ❌, and the promotion is not
+> stopped by it — it never passes `pre-pr`. After the push it blocks the PR of each plan whose row it
+> is, shows up in every other PR's `pre-pr` ③ as another plan's row (not blocking), and stays an ❌
+> in `gc` until repointed (`../check-doc-invariants/SKILL.md`「Which ❌ blocks which run」); a
+> retitled section is a ⚠️.
 
 > **Plans deferred until this promotion.** An active plan may be waiting for exactly this `<label>`:
 > a requirements gap in a scenario it froze was judged next-version, and the human deferred the plan

@@ -152,7 +152,8 @@ Rules for the table:
   `n/a（理由）` it is `n/a` with the same reason. Either form with no row above it is an error:
   there is nothing to repeat.
 - In active plans these forms are resolved mechanically by DOC-INV-012
-  (`../check-doc-invariants/SKILL.md`): a missing file blocks the PR, an unmatched section warns.
+  (`../check-doc-invariants/SKILL.md`): a missing file blocks the plan's own PR (and a PR that
+  moved the file away), an unmatched section warns.
 
 Referencing `docs/02_spec/` or `docs/01-02_e2e/` from an exec-plan is a legal upward reference —
 see DOC-INV-001 in `../check-doc-invariants/SKILL.md`, where exec-plans sit at layer 2.5 (below the
@@ -217,9 +218,13 @@ commit as the move** (at least before it is pushed), and by a human. That holds 
 source moves: a promotion (`promote-spec` Step 4 lists the rows, Step 5 shows them, Step 6 has them
 repointed right after the merge and before the push), a fix made directly on `main`, and a plan whose
 own work moves a file its `## Sources` names — which would otherwise trip DOC-INV-012 on its own PR
-at the moment it succeeds. A moved or renamed file left behind is a DOC-INV-012 ❌ that blocks every
-PR after it; a retitled section is a ⚠️ there, and a HALT (a) at run time if the reader cannot
-identify it.
+at the moment it succeeds. A moved or renamed file left behind is a DOC-INV-012 ❌: it blocks a PR
+that makes the move, and afterwards the PR of the plan whose row it is. Every other PR's `pre-pr` ③
+lists it under another plan without being blocked, so the owner hears of it, and `gc` reports it as
+an ❌ until it is repointed (`../check-doc-invariants/SKILL.md`「Which ❌ blocks which run」). A move
+made directly on `main` or by a promotion never passes `pre-pr`, so nothing stops it at the moment it
+breaks the row — which is why the rows are repointed in the same commit. A retitled section is a ⚠️
+there, and a HALT (a) at run time if the reader cannot identify it.
 
 ---
 
@@ -342,7 +347,7 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 | `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened or names background material is reported, not judged on the line alone (advisory) |
 | `pre-pr` (⑤c) | Before the PR | ⚠️ Report a plan with no `## Sources` table, and any AC whose `done` entry has no re-anchor line. Does **not** block |
 | `promote-spec` (Step 4–6) | Promoting a spec that moves or retitles a source | List the active plans' rows it breaks (Step 4), show them in the decision report (Step 5), and have the human repoint them right after the merge, before the push (Step 6) — see「Moving a source」above |
-| `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range |
+| `check-doc-invariants` (DOC-INV-012) | Before the PR (via `pre-pr` ③) and in `gc` | ❌ a file an **active** plan's row names does not exist; ⚠️ the named section cannot be matched, or the row names a file without a section. Completed plans are out of range. Before a PR, only the rows in a plan the PR changed or added, and rows naming a file it deleted or renamed, block; other plans' ❌ are listed apart for their owners. `gc` blocks on all of them (「Which ❌ blocks which run」 there) |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Judge the diff against the sources, not only against the AC line (advisory). A row that cannot be opened or names background material is handed over as such, never as `n/a` |
 | `promote-spec` (Step 7) | Generating a reconcile plan | Write the table with the **new** spec's sections and `E2E-NNN` as the sources of the re-opened ACs |
 

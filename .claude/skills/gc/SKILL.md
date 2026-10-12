@@ -72,6 +72,11 @@ Run the `check-doc-invariants` skill against all documents in the repository.
   reported to a human, not repaired: repointing it to the file it "probably meant", or writing
   `n/a` in its place, is a decision about what that AC condenses
   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」)
+- Do **not** pass `--base` (that is `pre-pr` ③'s PR mode). Without it every DOC-INV-012 ❌ is an ❌
+  here, whichever plan it is in — this full scan is the **backstop** for the rows a PR listed under
+  "In other plans — not blocking this PR" (`check-doc-invariants`「Which ❌ blocks which run」).
+  Name the plan of each DOC-INV-012 row in the report so its owner can be told — a full scan
+  cannot tell which of them some PR listed apart, and does not need to
 - For a DOC-INV-001 or DOC-INV-003 hit involving a research note (`docs/00_project/research/`) — a
   note linking below layer 0, or a document linking to a deprecated note: the only fix is to turn the
   link into the **same** path in backticks, which changes no meaning
