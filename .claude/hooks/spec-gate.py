@@ -112,6 +112,9 @@ def main() -> None:
             "■ 必要なアクション\n"
             "  /create-exec-plan を実行して受け入れ基準（AC-001〜）を定義してください。\n"
             "  AC を定義してから改めて実装を指示してください。\n\n"
+            "■ このブランチで complete 済み（マージ前）のプランを直す場合\n"
+            "  新しいプランは作らず、人の判断でそのプランを active/ へ再オープンしてください\n"
+            "  （.claude/skills/complete-exec-plan/completion-boundary.md「Reopening before the merge」）。\n\n"
             "■ 例外として仕様なしで進める場合\n"
             "  ユーザーに「仕様なしで進めることを確認します」と明示的に確認を求めてください。"
         )

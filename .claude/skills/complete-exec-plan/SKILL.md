@@ -2,30 +2,48 @@
 name: complete-exec-plan
 description: |
   Skill to transition an execution plan to completed status.
-  When all acceptance criteria are met, moves the plan from exec-plans/active/ to completed/ and updates CONTEXT.md.
+  When a human has confirmed every acceptance criterion of the plan and that confirmation is
+  recorded, moves the plan from exec-plans/active/ to completed/, updates CONTEXT.md, and makes
+  the complete commit on the implementation branch — the boundary between the agent's work and
+  the human's confirmation. Runs before the merge, in the same PR as the implementation.
+  Also reopens a plan completed on the branch when a finding arrives before the merge.
 disable-model-invocation: true
 ---
 
 # Skill: Complete Execution Plan
 
-> **When to run**: When all acceptance criteria of an execution plan are met and the PR has been merged
+> **When to run**: When a human has confirmed every acceptance criterion of the plan — by checking
+> the commits before opening a PR, or in PR review — **before the merge, on the implementation
+> branch**
 >
-> **Purpose**: Record completed work as history and keep the "Current Phase & Priority Tasks" in CONTEXT.md up to date.
+> **Purpose**: Record where the agent's work ends and the human's confirmation begins, as a commit
+> in the branch, and keep the "Current Phase & Priority Tasks" in CONTEXT.md up to date.
 >
 > **Prerequisites**:
 > - The target execution plan must exist in `exec-plans/active/`
-> - All acceptance criteria must be met (verified by the `pre-pr` skill)
-> - The PR must have been merged
+> - Every acceptance criterion is `- [x]`
+> - **A human has confirmed every AC, and the record of it is in the plan or its evidence is in
+>   hand** — see [`completion-boundary.md`](completion-boundary.md)「The human confirmation record」.
+>   A merged PR is not required, and not the condition.
+
+The meaning of `completed`, the record format, the complete commit, the merge condition and the
+reopen rule live in [`completion-boundary.md`](completion-boundary.md) (single source). This skill
+is the procedure.
 
 ---
 
 ## What this skill does
 
 1. Confirm the target execution plan
-2. Final verification that all acceptance criteria are met
-3. Move the file from `active/` to `completed/`
-4. Update `docs/07_ai_context/CONTEXT.md`
-5. Guide the user to the next task
+2. Confirm the human confirmation record (stop and ask when there is none)
+3. Re-run the blocking checks
+4. Update and move the plan file
+5. Update `docs/07_ai_context/CONTEXT.md`
+6. Make the complete commit
+7. Guide the user to the next step
+
+Reopening a plan this branch already completed is a separate procedure — see **Reopening before the
+merge** at the end.
 
 ---
 
@@ -37,23 +55,54 @@ List the files in `exec-plans/active/` and confirm which plan to complete.
 
 - If there is only one file, select it
 - If there are multiple files, prompt the user to select one
+- **Resuming an interrupted run**: if `git status` shows a plan already moved into
+  `exec-plans/completed/` but not committed, an earlier run stopped before its commit (Step 6), and
+  the checks of Step 3 no longer describe the tree as it is now. Undo the uncommitted completion and
+  start again: `git mv` the file back to `exec-plans/active/`, set `status: active` and empty
+  `completed:`, remove the uncommitted completion entry from the Progress Log, and revert the
+  uncommitted `CONTEXT.md` change. **Keep a `- 人の確認:` bullet** the moved file carries — Step 2
+  then finds it and does not ask again. Select that plan
 
-### Step 2: Final verification of acceptance criteria
+### Step 2: Confirm the human confirmation record
 
-Load the target execution plan file and verify all acceptance criteria are met.
+Look in the plan's `## Decision Log` for the record that counts — the last `- 人の確認:` bullet
+after the last `- 再オープン:` bullet ([`completion-boundary.md`](completion-boundary.md)「Which
+record counts」).
 
-- Confirm all criteria have `- [x]`
-- If any criteria are unchecked, inform the user that the plan cannot be completed and prompt for action
-  - If a criterion is deemed unnecessary, record the reason in the decision log before proceeding
+| What is in hand | Action |
+|-----------------|--------|
+| A record that counts, covering every AC | Proceed |
+| No record, but the user said **in this session** that they confirmed every AC of the plan | Transcribe it with `根拠: 発言「<their words, verbatim>」` and proceed |
+| No record, but the PR carrying the plan is approved | Read the approval (`gh pr view NN --json reviews`). If the reviewer's latest review is `APPROVED` and was given on the commit that carries the branch's last implementation change, or later, transcribe it with `根拠: PR #NN approve（…）` and proceed. If it is older, or no longer stands, it does not cover the branch — ask |
+| None of the above, or evidence covering only some ACs | **Stop.** Ask the user whether they have confirmed every AC of the plan, and how. Do not proceed on a reply that does not say every AC was confirmed |
 
-Run the `run-tests` skill and verify the following:
+Never write the record from anything else — not from green tests, a `pre-pr` pass, a
+`docode-review` verdict, or the user's silence. Those are checks the confirmation is added to, not
+the confirmation ([`completion-boundary.md`](completion-boundary.md)「Who writes it」).
 
-- All tests pass
-- All AC-IDs have corresponding tests (AC coverage)
-- Each AC has a red-first record preceding its `done` record (⚠️ report only — see below)
-- **Every `[E2E]` AC has a test that exists and passed** (E2E coverage) — a plan whose functional
-  ACs are all `- [x]` is still not complete while the through-flow is unverified
+### Step 3: Re-run the blocking checks
+
+The human confirmed behaviour; this step makes sure the branch they confirmed is still green.
+Run only the checks that **block** completion — the ⚠️ evidence checks (red-first, process
+walkthrough, `## Sources`, `docode-review` record) are reported by `pre-pr` and not repeated here.
+
+- Confirm every criterion has `- [x]`
+  - If any criterion is unchecked, the plan cannot be completed: finish it, split the plan, or — if
+    the human no longer wants it — have them withdraw it
+    ([`completion-boundary.md`](completion-boundary.md)「When part of a plan has to merge before the
+    rest」「When an AC is no longer wanted」 — both the human's decision, recorded in the decision
+    log). Do not complete with unchecked criteria
+- Run the `run-tests` skill and verify:
+  - All tests pass
+  - All AC-IDs have corresponding tests (AC coverage)
+  - **Every `[E2E]` AC has a test that exists and passed** (E2E coverage) — a plan whose functional
+    ACs are all `- [x]` is still not complete while the through-flow is unverified
 - If any condition is not met, put the completion on hold and prompt for action
+
+These are re-run rather than taken from `pre-pr` because they are mechanical and cheap, and because
+fixes can land between `pre-pr` and the confirmation (the second path in
+[`completion-boundary.md`](completion-boundary.md)「Order relative to the PR」 completes after
+review).
 
 Two situations, two outcomes (same split as `run-tests` and `pre-pr`):
 
@@ -66,20 +115,12 @@ The second case has legitimate causes (the plan predates the E2E requirement, or
 documentation-only — see `create-exec-plan`). Report it, record the reason in the decision log,
 and proceed. Do not write the criterion here.
 
-**Red-first evidence (⚠️ report only).** For each AC, check that the decision log contains an
-`AC-NNN red-first:` entry **before** its `AC-NNN done.` entry — the record that the test was written
-from the AC and observed failing before the implementation existed (see
-[`../run-tests/red-first.md`](../run-tests/red-first.md)). Report any AC that lacks one; this does
-**not** hold completion, for the same reason as in `pre-pr`: the evidence is hand-written, so a
-missing entry cannot be told apart from a missed note, and completion is the wrong place to
-reconstruct it. Never add the entry now — at this point nothing about the order can still be
-observed.
-
-### Step 3: Update and move the file
+### Step 4: Update and move the file
 
 Update and move the target file in the following order.
 
-1. Update the frontmatter:
+1. If the confirmation record was transcribed in Step 2, append it to the `## Decision Log`
+2. Update the frontmatter:
    ```yaml
    ---
    status: completed
@@ -87,14 +128,15 @@ Update and move the target file in the following order.
    completed: YYYY-MM-DD   ← enter today's date
    ---
    ```
-2. Append a completion entry to the progress log:
+3. Append a completion entry to the progress log:
    ```markdown
    ### YYYY-MM-DD
-   - All acceptance criteria met. Transitioned plan to completed status.
+   - All acceptance criteria met and confirmed by <確認者> (<方法>). Transitioned plan to completed status.
    ```
-3. Move the file to `exec-plans/completed/` (create it if it doesn't exist)
+4. Move the file to `exec-plans/completed/` (create it if it doesn't exist) with `git mv`, so the
+   history shows a move
 
-### Step 4: Update CONTEXT.md
+### Step 5: Update CONTEXT.md
 
 Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`.
 
@@ -103,28 +145,79 @@ Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTE
 - If `active/` is empty, write "Priority tasks: Please create the next exec-plan"
 - If a phase transition occurs (e.g., Phase 1 → Phase 2), update the current phase as well
 
-### Step 5: Guide to the next task
+Another branch completing a plan in parallel edits the same section; a conflict at merge is
+resolved from the state of `exec-plans/active/` after both merges.
 
-Guide the user to the next action based on the following.
+### Step 6: Make the complete commit
+
+Commit Steps 4–5 as one commit that carries **nothing else** — no implementation, no test, no other
+document ([`completion-boundary.md`](completion-boundary.md)「The complete commit」).
+
+If the working tree has other changes — anything outside the plan file and `CONTEXT.md` — **do not
+commit them before the complete commit**: anything
+committed before the boundary reads as confirmed, and the human did not confirm them. Stop and ask the
+user. Either they set the changes aside and the complete commit is made without them, or the changes
+belong to the plan — then they are committed, Step 3 runs again, and the confirmation (Step 2) must
+cover them, which for a confirmation given before they existed means asking again.
+
+Recommended message (not checked by any gate):
+
+```
+complete: <plan file name without .md>（確認: <確認者>, <方法>）
+
+Confirmed-by: <確認者>
+Confirmed-via: <方法>
+```
+
+**Do not push** unless the user asks. On the "confirm in PR review" path, the commit goes to the
+existing PR branch; on the "confirm, then open the PR" path, the PR is created next. Either way it is
+the user's step.
+
+### Step 7: Guide to the next task
 
 | Situation | Guidance |
 |-----------|---------|
-| Other plans exist in `exec-plans/active/` | Guide the user to start the next plan with `start-feature` |
-| `exec-plans/active/` is empty | Guide the user to create the next plan with `create-exec-plan` |
-| A phase transition occurred | Guide the user to create the necessary documents for the next phase |
+| The PR is not open yet | Push and create the PR; it can merge as it stands — it carries its own completion |
+| The PR is open | Push the complete commit to the PR branch; the PR can then merge |
+| Other plans exist in `exec-plans/active/` | After the merge, start the next plan with `start-feature` |
+| `exec-plans/active/` is empty | After the merge, create the next plan with `create-exec-plan` |
+| A phase transition occurred | Create the necessary documents for the next phase |
+
+If a finding arrives before the merge — a review comment, a spec fix from `main` — the plan is
+reopened (below), not left completed while the code changes.
+
+---
+
+## Reopening before the merge
+
+When the human decides that a plan this branch already completed must change before the merge,
+follow [`completion-boundary.md`](completion-boundary.md)「Reopening before the merge」: one commit
+that moves the plan back to `exec-plans/active/`, sets `status: active` and empties `completed:`,
+appends `- 再オープン: …` to the Decision Log, unchecks the ACs whose behaviour the fix changes, and
+updates the priority tasks in `CONTEXT.md`.
+
+The decision to reopen is the human's — it withdraws their confirmation. Do not reopen on your own
+judgement, and do not fix the code while the plan stays in `completed/`: a change after the boundary
+is exactly what `pre-pr` ⑦ reports as ❌.
+
+After reopening, the plan is an ordinary active plan: implement, `pre-pr`, a new confirmation, and
+this skill again for a new complete commit.
 
 ---
 
 ## Completion criteria
 
+- [ ] A confirmation record that counts — covering every AC, with its evidence (`発言「…」`,
+      `PR #NN approve（…）` or `本人記入`) — is in the plan's Decision Log, and none was written from
+      anything else
+- [ ] Every AC is `- [x]` (or the plan was split by the human and the remaining ACs are all `- [x]`)
 - [ ] Ran `run-tests` and all tests pass
 - [ ] All AC-IDs have corresponding tests
 - [ ] Every `[E2E]` AC has a passing test (or its absence was reported / recorded in the decision log)
-- [ ] Red-first evidence was checked per AC and any missing entry was reported (⚠️ — it does not
-      hold completion, and is never written after the fact)
 - [ ] The target file's frontmatter shows `status: completed` and `completed: YYYY-MM-DD`
 - [ ] The file has been moved to `exec-plans/completed/`
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
+- [ ] The complete commit carries only the completion, and was not pushed without the user asking
 - [ ] The next action has been communicated
 
 Final report output by the agent:
@@ -133,7 +226,9 @@ Final report output by the agent:
 === Execution plan completed ===
 
 Completed plan : exec-plans/completed/YYYY-MM-{name}.md
+人の確認       : <確認者>, <方法>（根拠: 発言 / PR approve / 本人記入）
+Complete commit: <short sha>  complete: YYYY-MM-{name}（確認: …）
 CONTEXT.md     : Priority tasks updated
 
-Next action: {guidance based on situation}
+Next action: {push and create the PR | push to the PR branch, then merge | …}
 ```

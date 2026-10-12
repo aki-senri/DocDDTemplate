@@ -68,7 +68,9 @@ This collects project overview, tech stack, development rules, and platform via 
    (or manually: write the AC's test and confirm it fails → write code
     → /check-doc-freshness → /check-invariants → /run-tests)
 /pre-pr              ← comprehensive pre-PR check
-/complete-exec-plan  ← move plan to completed
+(you confirm every AC — checking the commits, or in PR review)
+/complete-exec-plan  ← record your confirmation and make the complete commit on the same branch,
+                       then merge (one PR — no separate PR just to move the plan)
 ```
 
 > Only `create-exec-plan` onward is required for a minimal loop; `create-requirements` / `create-spec`
@@ -104,8 +106,8 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) and given a **`## Sources`** row naming the US bullets and spec section it condenses. A plan that changes a DocDD process carries a **process-walkthrough** verification AC |
 | `start-feature` | Pre-implementation review, AC readiness re-check, loading of the US / spec sections in `## Sources`, and branch name decision (once per feature) |
 | `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), place the `[E2E]` test red, then autonomously implement ACs one by one (**read the AC's sources** → **write the failing test** → implement → test → fix → **re-anchor to the spec section** → next); halts only on stop conditions (opt-in) |
-| `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update) |
-| `complete-exec-plan` | Move execution plan from `active/` to `completed/` |
+| `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update / completion boundary) |
+| `complete-exec-plan` | Once a human has confirmed every AC and that confirmation is recorded, move the plan from `active/` to `completed/` and make the **complete commit** on the implementation branch — the boundary between the agent's work and the human's confirmation, before the merge, in the same PR |
 | `promote-spec` | Promote a next-version spec (`spec/<label>` branch) into the current target (sprint boundary) |
 | `gc` | Periodic garbage collection (documentation and architecture health check; weekly) |
 
@@ -269,7 +271,7 @@ The `run-tests` skill verifies that all AC-IDs have corresponding tests.
 | `start-feature` start | Baseline check (start implementation from a green state) |
 | During implementation (anytime) | Verify anytime with `/run-tests` |
 | `pre-pr` | Final check before PR (put on hold if there are failures or uncovered ACs) |
-| `complete-exec-plan` | All AC-ID tests passing is a required condition for completion |
+| `complete-exec-plan` | All AC-ID tests passing is a required condition for completion (alongside the human confirmation record) |
 
 ---
 

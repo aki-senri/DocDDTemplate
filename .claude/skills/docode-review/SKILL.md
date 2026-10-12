@@ -67,7 +67,8 @@ construct the prompt described in Step 3 and pass it as the `prompt` parameter.
 Spawns a **new, independent agent** via the `Agent` tool and passes it:
 
 1. The full diff of committed changes (`git diff main...HEAD`) plus any uncommitted changes
-2. The active exec-plan (AC definitions), if one exists
+2. The exec-plan this branch implements (AC definitions), if one exists — in `exec-plans/active/`, or
+   in `exec-plans/completed/` when the branch already carries its complete commit
 3. A structured review prompt
 
 The independent agent has no memory of the current session and reviews the code from scratch.
@@ -99,6 +100,13 @@ git diff
 # Active exec-plan contents (if any exist)
 ls exec-plans/active/ && cat exec-plans/active/*.md 2>/dev/null || echo "No active exec-plan"
 ```
+
+Then narrow to **the plan this branch implements** with the commands in
+`../complete-exec-plan/completion-boundary.md`「Finding the plan of this branch」 (read them there —
+they are not restated here). They also find a plan the branch already moved into
+`exec-plans/completed/`: it is still the plan this diff implements, and without it a review of a
+diff that includes the complete commit would lose the ACs at exactly the point the human is
+confirming them. When they find nothing, fall back to every plan in `exec-plans/active/` (below).
 
 Then read the plan's `## Sources` table and **open every US / spec section it names**. The subagent
 inherits no session context, so a path it cannot read is a path it will ignore: paste the relevant
@@ -140,7 +148,7 @@ touched is what lets the reviewer tell a followed dependency from a missed one.
 - Remind the user to commit or stash all changes before running this skill, OR
 - Include `git diff --cached` and `git diff` output in the review context in addition to `git diff main...HEAD`
 
-**If `exec-plans/active/` is empty**, proceed without AC context (review for general code quality only).
+**If `exec-plans/active/` is empty and the branch completed no plan**, proceed without AC context (review for general code quality only).
 
 **If multiple exec-plans exist**, include all of them and let the reviewer determine which ACs apply to the diff.
 
@@ -175,7 +183,8 @@ Review the following changes objectively.
 {output of: git diff, or "none"}
 
 ## Acceptance criteria (from exec-plan)
-{contents of exec-plans/active/*.md, or "None — review for general quality only"}
+{contents of exec-plans/active/*.md and of any plan this branch moved into exec-plans/completed/,
+ or "None — review for general quality only"}
 
 ## AC sources (the US bullets / spec sections each AC condenses)
 {for each row of the plan's ## Sources table: the AC-ID, the section's path, and the section text.

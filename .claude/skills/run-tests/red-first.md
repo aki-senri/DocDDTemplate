@@ -1,7 +1,7 @@
 # Red-first — the acceptance test is written before the implementation it measures
 
 > **Single source.** `run-exec-plan` (Step 0c / Step 2a), `run-tests` (red-first verification),
-> `start-feature` (implementation order), `pre-pr` / `complete-exec-plan` (evidence check) and
+> `start-feature` (implementation order), `pre-pr` (evidence check) and
 > `docode-review` all apply **this** file. Do not restate the procedure or the valid/invalid red
 > criteria inline in a skill — reference this file, so the call sites cannot drift apart.
 
@@ -87,7 +87,7 @@ and after the implementation is green, the usual entry:
 ```
 
 **The order of the two entries is the evidence.** For each AC, the `red-first` entry must precede
-the `done` entry — this is what `pre-pr` and `complete-exec-plan` check, and what a later session
+the `done` entry — this is what `pre-pr` checks, and what a later session
 reads to know the test was not written to fit the code.
 
 ---
@@ -134,7 +134,8 @@ to build* is present.
 | `run-exec-plan` (Step 2a) | Before implementing each functional AC, after Step 1b has read its sources | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
 | `run-tests` | Whenever it is invoked for a red-first run, and on every later run while an AC is unimplemented | Classify and report valid / invalid red. Never report an invalid red as "expected red". Report expected reds (above) apart from real failures |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
-| `pre-pr` / `complete-exec-plan` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
+| `pre-pr` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |
+| `complete-exec-plan` | After the human's confirmation, before the merge | **Not re-reported.** `pre-pr` reports it on the same branch; completion re-runs only the blocking checks (`../complete-exec-plan/SKILL.md` Step 3) |
 | `docode-review` | Mandatory on autonomous completion (`run-exec-plan` Step 4a); optional independent review on the manual path | Report a test that mirrors the implementation rather than the AC as a finding (advisory) |
 
 ---

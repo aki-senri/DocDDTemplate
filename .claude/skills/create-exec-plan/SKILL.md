@@ -31,6 +31,8 @@ disable-model-invocation: true
    **process walkthrough** AC rather than a description-consistency one
 2b. Record each criterion's **sources** — the US bullets and spec section its one line condenses
 2c. Check every criterion for **AC readiness** (testability) and rewrite the ones that fail
+2d. Check that the plan is small enough for **one branch to implement and one human confirmation to
+   cover** every criterion, and split it if not
 3. Generate `exec-plans/active/YYYY-MM-{name}.md` with at least one `[E2E]` acceptance criterion
    alongside the functional ones, and a `## Sources` table covering every criterion
 4. Update the "Current Phase & Priority Tasks" section of `docs/07_ai_context/CONTEXT.md`
@@ -47,19 +49,45 @@ The agent asks the following questions **one at a time, in order**.
 | Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
+| Q3f | Can **one branch implement every criterion above, and one confirmation by you cover them all**? If not, which criteria go to a separate plan? (see **Plan size** below) | `## Acceptance Criteria` (criteria moved out), `## Decision Log` (the split) |
 | Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
 | Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
 
 > **Ask them in the order the rows appear**, not in alphabetical order of their labels: Q1 → Q2 →
-> Q3 → Q3b → Q3e → Q3d → Q3c → Q4. Q3e and Q3d come **before** Q3c although they are lettered
-> later. Readiness must run over the
+> Q3 → Q3b → Q3f → Q3e → Q3d → Q3c → Q4. Q3f, Q3e and Q3d come **before** Q3c although they are lettered
+> later. Q3f comes right after the criteria are listed, so the questions that follow — the
+> walkthrough AC, the sources, readiness — run only on the criteria that stay in this plan. Readiness must run over the
 > finished AC set: an AC added after the readiness gate has never been through it — which is the
 > failure the gate exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on
 > it. Q3d comes before Q3c for a second reason: `R2` and `R4` are judged against the AC line
 > **together with its sources**, so the readiness check cannot run correctly until Q3d has named
 > which US section and which `E2E-NNN` each criterion condenses.
+
+---
+
+## Plan size
+
+A plan is written to the size that **one branch can implement in full, and one human confirmation
+can cover in full**. Completion is the human confirming every AC of the plan, recorded as a commit on
+the implementation branch before the merge, and a plan is not merged in an intermediate state — so a
+plan too large for one branch and one confirmation would have to be split later, mid-flight, when
+splitting costs the most. The rule, the signs that a plan should be split and the one line not to
+split across (an `[E2E]` AC's through-flow) live in
+[`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+「Plan size」 — apply it at Q3f.
+
+This is not a readiness check. Readiness (`ac-readiness.md`) asks whether each criterion can be
+measured; Q3f asks whether the plan as a whole can be finished and confirmed at once. A plan can pass
+one and fail the other.
+
+| Answer | Action here |
+|--------|-------------|
+| Fits | Continue |
+| Does not fit | Agree with the user which criteria move out, and run this skill again for them as a separate plan. Record the split in this plan's `## Decision Log` (`- 分割: AC-… を <別プラン名> へ — <理由>`). Each plan that implements functionality keeps its own `[E2E]` AC |
+
+Which criteria a plan delivers is the user's decision; propose a split, do not make it.
 
 ---
 
@@ -254,6 +282,7 @@ completed:
 - [ ] AC-003: [E2E] {Answer to Q3b — the through-flow that must work end to end}
 
 > このプランは、機能 AC がすべて `- [x]` でも `[E2E]` の AC が緑でなければ完了ではない。
+> 完了は、人が全 AC を確認して実装ブランチに complete コミットを積んだとき。途中状態ではマージしない。
 
 <!-- documentation-only プランの場合は上の [E2E] AC と注記を置かず、代わりに
      Decision Log へ `E2E: n/a (documentation-only)` を記録する -->
@@ -287,7 +316,10 @@ completed:
 ## Steps
 
 1. Complete the Q1–Q4 interview (including Q3b — read the scenarios in `docs/01-02_e2e/` first
-   if a spec exists, so the E2E criteria can be derived rather than asked from scratch)
+   if a spec exists, so the E2E criteria can be derived rather than asked from scratch). At Q3f,
+   check the plan size against
+   [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+   「Plan size」 and split with the user before going on
 2. If the plan changes a process (Q3e — scope table in
    [`process-walkthrough.md`](process-walkthrough.md)), add the walkthrough AC **before** the
    readiness check, so it is checked with the rest
@@ -317,7 +349,10 @@ completed:
       placed after the functional ACs, and traced to an `E2E-NNN` scenario (or to the US goal image
       when no spec exists). For a documentation-only plan: **no `[E2E]` AC is present**, and
       `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
-- [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked
+- [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked, and that it
+      is completed by the human confirming every AC and is not merged in an intermediate state
+- [ ] The plan size was checked at Q3f: one branch can implement every criterion and one human
+      confirmation can cover them, or the plan was split with the user and the split recorded
 - [ ] The plan has a `## Sources` table with **a row for every criterion**, each naming a section
       (not just a file) or an explicit `n/a（理由）` — no blank cells, and no colon directly after
       `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md)), and no row naming background

@@ -50,7 +50,12 @@ List the files in `exec-plans/active/` and confirm the plan to work on with the 
 
 - If there is only one plan, select it
 - If there are multiple plans, prompt the user to select one
-- If there are no plans, prompt to run the `create-exec-plan` skill and stop
+- If there are no plans, prompt to run the `create-exec-plan` skill and stop — unless the work is a
+  fix to a plan **this branch already completed** (its complete commit is on the branch, not yet
+  merged). Then the plan is reopened, not re-created: present
+  [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+  「Reopening before the merge」 to the user — reopening withdraws their confirmation, so it is their
+  call — and continue with the reopened plan
 - If the selected plan is **deferred** — its Decision Log has a bullet beginning `- deferred: spec/`
   with no later bullet beginning `- deferred 解除:` — present that line to the user before anything else. The plan is waiting on
   a promotion ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a

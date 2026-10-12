@@ -125,7 +125,10 @@ Expected reds (red-first, AC not implemented yet):
 
 If all tests pass — or only **expected reds** (Step 2c) remain — verify AC-ID coverage.
 
-1. Load execution plans in `exec-plans/active/` and list the AC-XXX items in `## Acceptance Criteria`
+1. Load execution plans in `exec-plans/active/` — plus, when called from `pre-pr` re-run after the
+   complete commit, the plan this branch moved into `exec-plans/completed/`
+   ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+   「Finding the plan of this branch」) — and list the AC-XXX items in `## Acceptance Criteria`
 2. Split them into **functional ACs** and **E2E ACs** — an E2E AC is one whose description starts
    with the `[E2E]` marker (`- [ ] AC-005: [E2E] ...`)
 3. Read test files and verify that a test exists for each AC-ID, and report the two groups separately
