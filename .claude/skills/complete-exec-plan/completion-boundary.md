@@ -188,8 +188,8 @@ two places, so that they work both before and after the complete commit:
 ```bash
 # plans in active/ that this branch added or edited (another active plan is not this branch's;
 # AM leaves out the old path of a plan the branch has since moved to completed/)
-git diff --name-only --diff-filter=AM main...HEAD -- exec-plans/active/ 2>/dev/null || true
-git diff --name-only --diff-filter=AM -- exec-plans/active/ 2>/dev/null || true     # edited, not committed
+# (against the merge-base, so committed, staged and unstaged edits all count)
+git diff --name-only --diff-filter=AM "$(git merge-base main HEAD)" -- exec-plans/active/ 2>/dev/null || true
 git ls-files --others -- exec-plans/active/ 2>/dev/null || true   # new, untracked — gitignored ones included
 # plans this branch moved into completed/ (rename or add) — the complete commit
 git diff --name-only --diff-filter=AR main...HEAD -- exec-plans/ 2>/dev/null | grep '^exec-plans/completed/' || true
@@ -203,6 +203,28 @@ untracked files including gitignored ones), so `pre-pr` ③ and ⑤–⑦ read t
 
 A file without an `## Acceptance Criteria` section is not a plan — a `/gc` report
 (`exec-plans/completed/YYYY-MM-gc.md`) is the usual one; leave it out.
+
+**A plan this branch has not started.** A branch can carry a plan without implementing it: it adds
+a new plan, or re-opens ACs in a reconcile plan together with the spec fix that re-opens them. There
+is nothing to confirm yet, and its ACs are not held as uncovered (`pre-pr` ⑤ / ⑦, `run-tests`).
+Both of these must hold, so that a branch which implemented code but did not tick a box is not taken
+for one:
+
+```bash
+# (a) no AC line goes to [x] on this branch — working tree included
+git diff "$(git merge-base main HEAD)" -- <plan> 2>/dev/null | grep -E '^\+- \[x\] AC-' || true   # for an untracked plan: grep the file itself
+# (b) nothing changed outside exec-plans/ and docs/ — committed, staged, unstaged or untracked
+git diff --name-only "$(git merge-base main HEAD)" -- . ':(exclude)exec-plans/' ':(exclude)docs/' 2>/dev/null || true
+git ls-files --others --exclude-standard -- . ':(exclude)exec-plans/' ':(exclude)docs/' 2>/dev/null || true
+```
+
+No output from all three means not started. (b) cannot separate the work of a documentation-only
+plan from a spec fix, since both live in `docs/`; for such a plan only (a) tells them apart, so its
+boxes are ticked as the work is done.
+
+**A change with no plan** (the `exec-plans/.spec-override` exception) finds nothing above. It
+implements none of the plans in `active/`, so their ACs are not held against it either: its tests
+must pass, and that is all.
 
 Use the branch the PR merges into in place of `main`, and make sure it is current (`git fetch`, then
 `origin/main` if the local `main` lags): a stale `main` makes plans completed there look like this

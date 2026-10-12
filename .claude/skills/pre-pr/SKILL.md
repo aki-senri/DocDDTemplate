@@ -61,8 +61,10 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 > outside a plan file is a `➖`, not a missing record, and ⑥ has nothing to update. With no plan and
 > no such record anywhere, the ⚠️ stands. ⑦ is `➖` — there is no plan to complete.
 >
-> This does **not** relax ⑤'s blocking parts. Failing tests, uncovered ACs and uncovered `[E2E]` ACs
-> block a plan-less change exactly as they block any other.
+> This does **not** relax ⑤'s blocking parts for what the change itself is answerable for: failing
+> tests block a plan-less change exactly as they block any other. The ACs of the plans in `active/`
+> are not its work, so their coverage is not held against it
+> (`../complete-exec-plan/completion-boundary.md`「A change with no plan」).
 
 ---
 
@@ -166,8 +168,9 @@ Run the `run-tests` skill.
 
 1. All tests must pass
 2. Every AC-ID of **this branch's plan** must have a corresponding test (coverage check) — `run-tests`
-   narrows to it when called from here; a plan the branch only adds or re-opens ACs in is reported,
-   not held (⑦'s ➖ row)
+   narrows to it when called from here; a plan the branch has **not started** (⑦'s ➖ row — no box
+   ticked and nothing changed outside `exec-plans/` and `docs/`) is reported, not held, for its
+   functional and `[E2E]` ACs alike
 3. **Every `[E2E]` AC must have a test that exists and passed** (E2E coverage check)
 4. If there are changes to test files, confirm the changes are grounded in a spec (AC-ID)
 
@@ -187,6 +190,7 @@ Two situations, two outcomes (same split as `run-tests`):
 | Situation | Outcome |
 |-----------|---------|
 | The plan **has** a `[E2E]` AC, but its test is missing / did not run / failed | ❌ **blocks PR creation** — same weight as a failing test |
+| The plan **has** a `[E2E]` AC, but the branch has **not started** the plan (⑦'s ➖ row) | ➖ **report as not started, does not block** — nothing of the through-flow is built yet |
 | The plan has **no** `[E2E]` AC at all | ⚠️ **report only, does not block** |
 
 The second case has legitimate causes (the plan predates the E2E requirement, or it is
@@ -361,7 +365,7 @@ Where the branch stands relative to the human confirmation
 
 | State of the plan | Outcome |
 |-------------------|---------|
-| The branch checked **none** of the plan's ACs — it only adds the plan, or appends unchecked ACs to it (a new plan; ACs re-opened in a reconcile plan, with the spec fix that re-opens them). Mechanically: the plan as it is now — working tree included — adds no `- [x] AC-` line against the merge-base (`git diff "$(git merge-base main HEAD)" -- <plan>`; for an untracked plan, the file has no `- [x] AC-` line) | ➖ nothing to confirm yet — not an intermediate state |
+| The branch has **not started** the plan — it only adds it, or re-opens ACs in it with the spec fix that re-opens them: no AC goes to `- [x]` **and** nothing changed outside `exec-plans/` and `docs/` (「A plan this branch has not started」 — both checks, working tree included) | ➖ nothing to confirm yet — not an intermediate state. A branch that changed code but ticked no box is not this row: it is the ⚠️ row below |
 | In `active/`, every AC `- [x]` | ℹ️ **not completed yet — does not block.** PR creation is fine (the second path completes after review); the merge waits for the human confirmation and the complete commit on this branch |
 | In `active/`, some ACs still `- [ ]` | ⚠️ **intermediate state — does not block PR creation**, but the branch is not merged like this. Finish the plan, or the human splits it (「When part of a plan has to merge before the rest」) |
 | Moved to `completed/` in the working tree but **not committed** | ℹ️ **does not block.** A `complete-exec-plan` run stopped before its commit; resume it (its Step 1) — there is no boundary to check against yet |

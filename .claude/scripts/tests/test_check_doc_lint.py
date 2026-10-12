@@ -623,7 +623,11 @@ class TestAC010SingleEntityCalledFromExistingSites(unittest.TestCase):
         self.assertEqual(naming, [".claude/skills/check-doc-invariants/SKILL.md"])
 
     def test_pre_pr_and_gc_reach_it_through_the_skill(self):
-        for rel in (".claude/skills/pre-pr/SKILL.md", ".claude/skills/gc/SKILL.md"):
+        for rel in (
+            ".claude/skills/pre-pr/SKILL.md",
+            ".claude/skills/gc/SKILL.md",
+            ".claude/skills/complete-exec-plan/SKILL.md",
+        ):
             text = (REPO_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("check-doc-invariants", text, rel)
             self.assertNotIn("check_doc_lint.py", text, rel)

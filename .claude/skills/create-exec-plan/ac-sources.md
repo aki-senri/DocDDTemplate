@@ -219,7 +219,9 @@ source moves: a promotion (`promote-spec` Step 4 lists the rows, Step 5 shows th
 repointed right after the merge and before the push), a fix made directly on `main`, and a plan whose
 own work moves a file its `## Sources` names — which would otherwise trip DOC-INV-012 on its own PR
 at the moment it succeeds. A moved or renamed file left behind is a DOC-INV-012 ❌: it blocks a PR
-that makes the move, and afterwards the PR of the plan whose row it is. Every other PR's `pre-pr` ③
+that makes the move, and afterwards the PR of the plan whose row it is while that plan is in
+`active/` (a plan its branch completes is checked by `complete-exec-plan` before the move, and
+`pre-pr` ⑦ reports a Sources file moved after it — `../complete-exec-plan/completion-boundary.md`). Every other PR's `pre-pr` ③
 lists it under another plan without being blocked, so the owner hears of it, and `gc` reports it as
 an ❌ until it is repointed (`../check-doc-invariants/SKILL.md`「Which ❌ blocks which run」). A move
 made directly on `main` or by a promotion never passes `pre-pr`, so nothing stops it at the moment it

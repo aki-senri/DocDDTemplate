@@ -281,7 +281,8 @@ wins over completed) applies to scenarios the same way.
 > Repairing a row is a human's call (`../create-exec-plan/ac-sources.md`「When a source cannot be
 > opened」). A moved or renamed file left behind is a DOC-INV-012 ❌, and the promotion is not
 > stopped by it — it never passes `pre-pr`. After the push it blocks the PR of each plan whose row it
-> is, shows up in every other PR's `pre-pr` ③ as another plan's row (not blocking), and stays an ❌
+> is while that plan is in `active/` (a branch that already completed its plan sees it at `pre-pr`
+> ⑦ once it takes in `main`), shows up in every other PR's `pre-pr` ③ as another plan's row (not blocking), and stays an ❌
 > in `gc` until repointed (`../check-doc-invariants/SKILL.md`「Which ❌ blocks which run」); a
 > retitled section is a ⚠️.
 

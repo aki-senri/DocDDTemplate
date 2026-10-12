@@ -127,6 +127,7 @@ flowchart TD
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
 | `run-exec-plan` | `check-doc-freshness` | Internal call (advisory) |
 | `complete-exec-plan` | `run-tests` | Internal call |
+| `complete-exec-plan` | `check-doc-invariants` | Internal call (DOC-INV-012 on the plan alone, before it moves out of `active/`) |
 | `complete-exec-plan` | —— | Updates `CONTEXT.md` directly (does not call `update-context`) |
 | `gc` | `check-doc-freshness` | Internal call (full scan) |
 | `gc` | `check-invariants` | Internal call (full scan) |

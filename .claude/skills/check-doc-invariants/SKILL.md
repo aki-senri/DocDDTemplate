@@ -7,7 +7,8 @@ description: |
   Verifies reference directions, frontmatter completeness, lifecycle consistency,
   AC traceability, goal image / E2E traceability, link resolution, table integrity,
   label references, Mermaid quoting, shell-snippet robustness and AC sources resolution.
-  Called from pre-pr and gc, or run standalone.
+  Called from pre-pr and gc (and, for one plan's DOC-INV-012 only, from complete-exec-plan), or run
+  standalone.
 disable-model-invocation: true
 ---
 
@@ -532,7 +533,9 @@ For each `docs/**/*.md` and `exec-plans/**/*.md`:
 
 ### Step 8: Check DOC-INV-007〜012 (mechanical checks)
 
-Run the single script entity once, from the repository root:
+Run the single script entity from the repository root — once per run. This step is the only place
+that names the script; every caller (`pre-pr` ③, `gc` ③, `complete-exec-plan` Step 3) reaches it
+through this skill:
 
 ```bash
 python3 .claude/scripts/check_doc_lint.py
@@ -559,8 +562,9 @@ python3 .claude/scripts/check_doc_lint.py
   `python3 .claude/scripts/check_doc_lint.py --only C6 exec-plans/active/<plan>.md`. Every ❌ there
   blocks the completion (no `--base`: the plan is the completing branch's own)
 
-Do not restate the checks inline anywhere else, and do not add a second call site: the reason this
-is one script called from one skill is that a duplicated list is what went stale before
+Do not restate the checks inline anywhere else, and do not name the script from another skill — a
+new need is a new bullet in this step, as the one-plan run above is: the reason this is one script
+called from one skill is that a duplicated list is what went stale before
 (`pre-pr` ③ and `gc` ③ both enumerated DOC-INV-001〜006 by hand).
 
 ---

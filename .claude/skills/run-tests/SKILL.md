@@ -131,7 +131,9 @@ If all tests pass — or only **expected reds** (Step 2c) remain — verify AC-I
      「Finding the plan of this branch」, which also finds a plan the branch already moved into
      `exec-plans/completed/`. Another plan in `active/` that came from `main` is not this branch's
      work, and holding on its uncovered ACs would block every branch while any plan is open. When
-     the commands find nothing, fall back to every plan in `exec-plans/active/`
+     the commands find nothing, the change has no plan: report the coverage of the plans in
+     `exec-plans/active/` for information, and **hold on none of it** — only failing tests hold
+     (「A change with no plan」 there)
    - **Otherwise** (standalone, `start-feature`, `run-exec-plan`): every plan in `exec-plans/active/`
 2. Split them into **functional ACs** and **E2E ACs** — an E2E AC is one whose description starts
    with the `[E2E]` marker (`- [ ] AC-005: [E2E] ...`)
@@ -150,9 +152,10 @@ E2E acceptance criteria coverage:
 
 - If any AC-IDs are uncovered, issue a warning and prompt to create tests
 - If called from `pre-pr` or `complete-exec-plan`, put processing on hold if there are uncovered AC-IDs
-  — except in a plan whose ACs this branch checked none of (it only adds the plan, or re-opens ACs
-  in it; `pre-pr` ⑦'s ➖ row): nothing in it is implemented yet, so its ACs are reported as
-  not started, not held
+  — except in a plan the branch has **not started** (no box ticked **and** nothing changed outside
+  `exec-plans/` and `docs/`: `../complete-exec-plan/completion-boundary.md`「A plan this branch has
+  not started」, `pre-pr` ⑦'s ➖ row). Nothing in it is implemented yet, so its ACs are reported as
+  not started, not held. A branch that changed code but ticked no box is not such a plan
 
 E2E acceptance criteria are checked separately, because a per-AC coverage check cannot see the
 failure mode they exist for: every functional AC green while the through-flow does not work. So
@@ -173,7 +176,8 @@ the E2E requirement, or it is documentation-only (see `create-exec-plan`). Repor
 the criterion here.** Deciding what to build is an outer gate.
 
 When called from `pre-pr` or `complete-exec-plan`, an uncovered `[E2E]` AC puts processing on hold
-in the same way an uncovered functional AC does; a missing `[E2E]` AC does not.
+in the same way an uncovered functional AC does — including the same exception for a plan the branch
+has not started; a missing `[E2E]` AC does not.
 
 ### Step 4: If failures — spec alignment gate
 
