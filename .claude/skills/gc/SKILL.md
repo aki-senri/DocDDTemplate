@@ -80,7 +80,8 @@ Run the `check-doc-invariants` skill against all documents in the repository.
   which observation a decision rests on. A link to a deprecated note stays reported by the research-note backstop below
   until the human records what it means
 - For DOC-INV-005 warnings: use context to decide whether Mermaid conversion is worthwhile;
-  record the decision if leaving ASCII art intentionally
+  record the decision if leaving ASCII art intentionally. In a research note, report it and do not
+  convert: a note is not rewritten (`../init-project/research-note-format.md`「Rechecking」)
 - For the DOC-INV-006 migration warning (scenarios still in a spec's `## E2E シナリオ` section):
   **report it, do not move them**. Moving a scenario breaks every active plan's `## Sources` row
   that names it, and repointing those rows is a human's call — the same reason DOC-INV-012 is not

@@ -138,8 +138,11 @@ is no premise of a live decision to lose.
    recheck would leave the decisions it reaches unreported from then on, since the note that would
    have raised them is no longer active.
 
-**The backstop does not edit** a note, its frontmatter, or any citing document — not even to move a date (`gc` ③'s link → same backticked path repair is the only edit `gc` makes, and it is not this backstop's). Rechecking
-is the human's.
+**The backstop does not edit** a note, its frontmatter, or any citing document — not even to move a
+date. The edits `gc` makes elsewhere are other steps' and follow their own rules: ① and ③ may fix a
+citing US or spec for their own findings, ③ turns a link into the same backticked path (「Rechecking」,
+what may change) and never repoints it, and ④'s lifecycle moves a `draft` note to `active` (never to
+`deprecated` — only a recheck does that). Rechecking is the human's.
 
 The report is weekly and advisory. `pre-pr` does not run it: a due recheck is unrelated to the PR at
 hand, and a ⚠️ on every PR would teach people to move dates without looking.
