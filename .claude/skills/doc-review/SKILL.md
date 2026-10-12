@@ -110,6 +110,7 @@ cat {each in-repo file the target's ## 関連 names, e.g. docs/00_project/resear
 # For a scenario: the document its 満たす業務要求 names (its recorded outer anchor).
 cat {each such in-repo file} 2>/dev/null || echo "not found"
 cat .claude/skills/init-project/adr-format.md
+cat .claude/skills/init-project/research-note-format.md   # for a research note, or a ## 関連 that names one
 
 # Project documentation rules
 cat CLAUDE.md
@@ -181,7 +182,8 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 {content, or "not available"}
 
 ### Recorded basis (needed for §6 — for a US, spec, scenario, ADR or research note)
-{the ADR format (.claude/skills/init-project/adr-format.md); docs/00_project/decisions.md; and each
+{the ADR format (.claude/skills/init-project/adr-format.md); the research-note format
+ (.claude/skills/init-project/research-note-format.md); docs/00_project/decisions.md; and each
  in-repo file the document's ## 関連 names, with its content — or "{path}: not found".
  Or "not applicable — {document type}"}
 
@@ -208,8 +210,9 @@ Review the following document from a DocDD (Document-Driven Development) perspec
 - Are there any forward references — links against DOC-INV-001's layer table in
   `check-doc-invariants` (a requirements doc linking to design/implementation; a `docs/00_project/`
   doc linking to any lower layer; an E2E scenario linking beyond the spec)?
-- For a research note: are `collected:` and `references:` present (`init-project`「Document
-  frontmatter」)?
+- For a research note: are `collected:`, `references:` and `recheck_by:` (a date, or `n/a（理由）`)
+  present (`.claude/skills/init-project/research-note-format.md`「Frontmatter」)? A missing
+  `recheck_by` is a suggestion, not a defect — the `gc` backstop still finds the note.
 
 ### 2. Acceptance criteria quality (for User Stories and exec-plans)
 
@@ -348,7 +351,13 @@ with the ADR format and the recorded basis supplied above:
   table, or `なし（理由）`) and a 根拠資料 that is not blank? An ADR with no 種別 or no 却下理由 section is
   reported as a suggestion to fill when it is next touched, not as a defect.
 - **Research note.** If it was the material for a choice, does it record the options and the one
-  rejected, with why?
+  rejected, with why? Has it been changed beyond what `research-note-format.md`「Rechecking」 lists as
+  the permitted changes — an observation edited in place rather than a new note written?
+- **A `## 関連` pointing at a `status: deprecated` research note** with no `- 影響` line on that note
+  recording this document as `維持` or `変更` (the same condition as `research-note-format.md`「The
+  `gc` backstop」 step 6) — the document may rest on an observation that no longer holds. Report it so
+  the human can check the premise; it is not a defect in the document by itself. Once the human has
+  recorded the outcome, it is not a finding.
 - **A basis that points at nothing** — a `## 関連` or 根拠資料 entry naming a file that does not exist,
   or a ヒアリング with no date or person — is a finding: a basis nobody can find is not recorded.
 

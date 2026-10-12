@@ -148,7 +148,7 @@ docs/
 ├── 00_project/
 │   ├── overview.md       ← Project overview (can be ported from README.md)
 │   ├── decisions.md      ← Rationale for technology, requirement and spec decisions (ADR format; keep the rejected options)
-│   └── research/         ← (optional) Research notes — background, never a test's source
+│   └── research/         ← (optional) Research notes — background, never a test's source (never rewritten; changeable material carries a recheck date)
 ├── 01_requirements/
 │   └── user_stories/     ← Requirements / user stories
 ├── 01-02_e2e/
