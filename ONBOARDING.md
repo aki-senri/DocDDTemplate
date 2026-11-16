@@ -324,8 +324,9 @@ The table below lists the main skills used in the daily implementation flow. Bey
 > The human invokes the top row (**7 + 2 periodic**). `create-spec` drafts the application spec from approved requirements and hands off to `create-exec-plan` after human approval (optional; skip for small changes). On the autonomous path one `run-exec-plan` invocation covers preparation (what `start-feature` does), the loop, the review and `pre-pr` — and, when you say "PR まで" as you start it, a draft PR; `start-feature` and `pre-pr` are what you invoke yourself on the manual path. The bottom-row verification skills are invoked internally by the top-row skills as needed (e.g. `run-tests` by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`; `check-*` by `run-exec-plan` / `pre-pr` / `gc`). `update-context` is invoked by `gc` (`complete-exec-plan` updates CONTEXT.md directly and does not call `update-context`).
 >
 > `docode-review` sits on both rows depending on the path: `run-exec-plan` (Step 4a) invokes it
-> internally and **mandatorily** once every AC in a plan is `- [x]`, halting on a ❌ verdict rather
-> than going on to `pre-pr` (its Step 4b) — but on the manual `start-feature` path, the human invokes it
+> internally and **mandatorily** once every AC in a plan is `- [x]`; on a ❌ verdict it halts for a
+> finding the reviewer classified as needing a human's judgement (and repairs the rest under a fresh
+> review, at most twice) rather than going on to `pre-pr` (its Step 4b) — but on the manual `start-feature` path, the human invokes it
 > directly and it remains optional, same as `doc-review`.
 
 #### B. Human-perspective flow
