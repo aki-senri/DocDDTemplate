@@ -350,7 +350,7 @@ path.
 
 | Call site | When | Action |
 |-----------|------|--------|
-| `create-exec-plan` | Before the plan is finalized | Ask whether one branch can implement every AC and one confirmation cover them (**Plan size**); split there if not |
+| `create-exec-plan` | Before the plan is finalized | Ask whether one branch can implement every AC and one confirmation cover them (**Plan size**); split there if not. In the drafting mode the agent proposes the scope and a split is a question in the expanded view — the human decides it (`../create-exec-plan/expanded-view.md`) |
 | `run-exec-plan` | Handoff after the loop | Names the next steps: `pre-pr`, then the human's confirmation and `complete-exec-plan` **on this branch, before the merge**. Never completes the plan itself — the confirmation is not the driver's |
 | `pre-pr` | Before the PR — and again if re-run | Reads the plan from `active/` or from this branch's `completed/` (**Finding the plan of this branch**), and has `run-tests` cover that plan's ACs. ⑦: plan not yet completed → ℹ️ (does not block — the second path completes after the PR); ACs left unchecked → ⚠️ (do not merge an intermediate state); implementation change after the boundary, or an unchecked AC inside the completed plan → ❌; a merge of `main` after the boundary changed a file the plan's `## Sources` names → ⚠️ |
 | `complete-exec-plan` | After the human's confirmation, before the merge | Entry condition = the confirmation record (stop and ask when absent); makes the complete commit — resuming one an earlier run moved but did not commit; reopens before the merge |

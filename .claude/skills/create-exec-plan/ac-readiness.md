@@ -81,7 +81,9 @@ legitimately unmet — e.g. the threshold lives in a spec that deliberately leav
 this cycle, or the plan is documentation-only and has no through-flow.
 
 **Who may state the ⚠️ reason.** A reason is a claim about the spec, so it comes from a human or
-from a record a human left. `create-exec-plan` and `start-feature` may obtain one in conversation;
+from a record a human left. `create-exec-plan` and `start-feature` may obtain one in conversation
+(`create-exec-plan`'s drafting mode asks for it as a question in the expanded view — the agent does
+not draft one: `expanded-view.md`);
 **`run-exec-plan` may not author one** — for the unattended loop, ⚠️ counts as passing only when the
 reason is already written in the plan's `## Decision Log`. An unmet R3/R4 with no recorded reason is
 NOT READY, and the loop halts. (Same principle as not rewriting the AC itself.)
@@ -102,7 +104,7 @@ human is there, the fix is a conversation; where none is, the only correct move 
 
 | Call site | When it runs | READY | ⚠️ | NOT READY |
 |-----------|--------------|-------|----|-----------|
-| `create-exec-plan` (Q3c) | Before the plan file is finalized | Write the plan | Write the plan; record the reason in the Decision Log | Rewrite the AC with the user. **Do not finalize the plan** with a NOT READY criterion |
+| `create-exec-plan` (Q3c) | Before the plan file is finalized | Write the plan | Write the plan; record the reason in the Decision Log (in the drafting mode the reason is the user's answer to a question in the expanded view) | Rewrite the AC with the user — in the drafting mode, as a question in the expanded view (`expanded-view.md`). **Do not finalize the plan** with a NOT READY criterion |
 | `start-feature` (Step 1b) | Before manual implementation | Proceed | Report and proceed | Present the failing checks and ask the user to rewrite or to proceed anyway; record the decision in the Progress Log (for a row naming background material, in the Decision Log — `ac-sources.md`) |
 | `run-exec-plan` (Step 0b) | Before the autonomous loop starts | Start the loop | Start the loop **only if the reason is already recorded** (see below) | **Do not start the loop** — HALT with stop condition (a) and record it in the Decision Log |
 | `doc-review` (§2) | Optional independent review | ✅ | ⚠️ | ❌ in the findings table — advisory only; the reviewing agent changes no files |

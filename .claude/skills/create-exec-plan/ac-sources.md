@@ -83,6 +83,11 @@ it is not part of the comparison set.
 The implementer's own inference about intent is in none of the classes: it is not a document, and an
 expected result that rests on it is invented, not transcribed.
 
+Neither is the **expanded view** `create-exec-plan` writes under `.claude/views/`
+([`expanded-view.md`](expanded-view.md)). It quotes the sources, but it is a temporary copy, and
+its examples are the agent's — built from the sources' values, never frozen. Draft from the sources
+it quotes, never from the view.
+
 **Why background is separate from source.** Background is the material a decision was made *from* —
 the comparison that was run, the option that was rejected, the business flow it was checked against.
 It is worth reading: without it nobody can tell why the spec is the way it is, and the routing
@@ -341,7 +346,7 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 
 | Call site | When | Action |
 |-----------|------|--------|
-| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table. Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec. Never name background material in a row (「When a row names background material」). A row naming an `E2E-NNN` freezes it — run complement detection first, and again for a row the readiness rewrite changes (`../create-spec/e2e-interaction.md`) |
+| `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table (in the drafting mode the agent drafts it — the sections each line was condensed from). Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec (in the drafting mode, as a question in the expanded view: `expanded-view.md`). Never name background material in a row (「When a row names background material」). A row naming an `E2E-NNN` freezes it — run complement detection first, and again for a row the readiness rewrite changes (`../create-spec/e2e-interaction.md`) |
 | `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened, or that names background material → that AC is NOT READY → **HALT** (a). A row naming an `E2E-NNN` also gets complement detection (`../create-spec/e2e-interaction.md`) |
 | `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) |
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
