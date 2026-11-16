@@ -1,7 +1,9 @@
 # Expanded view — showing a drafted plan so a human can decide, not just accept
 
-> **Single source.** `create-exec-plan` (drafting mode) applies **this** file. Do not restate the
-> view's layout, its rules or its record format inline in a skill — reference this file.
+> **Single source.** `create-exec-plan` (drafting mode) applies **this** file, and
+> `../complete-exec-plan/confirmation-sheet.md` reuses its frame and rules for the sheet a human
+> confirms with. Do not restate the view's layout, its rules or its record format inline in a skill —
+> reference this file.
 
 ## Why this exists
 
@@ -186,3 +188,4 @@ are.
 |-----------|------|--------|
 | `create-exec-plan` (drafting mode) | Before the plan file is written | Draft, generate the view, put the questions to the human, apply the answers, re-check, then write the plan with the records above |
 | `create-exec-plan` (interview mode) | — | Not applied: with no approved document to derive from, there is nothing to quote, and the questions are asked one at a time as before |
+| `../complete-exec-plan/confirmation-sheet.md` | When every AC is done | Reuses the frame and rules V1, V2, V4–V6 for the sheet the human confirms with; V3 (the example) is replaced there by the evidence |

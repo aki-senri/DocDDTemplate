@@ -338,7 +338,7 @@ flowchart TD
     C --> D{AI が HALT?}
     D -->|停止条件 a〜f| E["④ 人が判断<br/>決定依頼に答える — 文書の修正は AI が起草し人が承認"]
     E --> C
-    D -->|全 AC 完了・レビューと pre-pr 済み| F["⑤ 確認<br/>全 AC を確認（コミット or ドラフト PR）"]
+    D -->|全 AC 完了・レビューと pre-pr 済み| F["⑤ 確認シートで全 AC を確認<br/>[E2E] は実演で・機能 AC はシートで"]
     F --> G["⑥ 完了 & マージ<br/>complete-exec-plan（ブランチに complete コミット）→ マージ"]
 ```
 
@@ -386,7 +386,8 @@ flowchart TD
                           全 AC 完了後は docode-review → /pre-pr（報告のみ）。「PR まで」で起動すれば
                           push してドラフト PR も作る
 4. /pre-pr              → 手動の経路: PR 前の総合チェック（run-exec-plan は自分で回し済み）
-5. 全 AC を確認         → コミットを見て、または PR レビューで（PR はこの前でも後でもよい）
+5. 全 AC を確認         → /pre-pr が書く確認シート（.claude/views/、または PR）で確認する。
+                          [E2E] AC は通しの流れの実演で、機能 AC はシートで（PR はこの前でも後でもよい）
 6. /complete-exec-plan  → 確認を記録し、計画を completed/ へ移動して同じブランチに
                           complete コミット（境界）を積む → マージ
                           実装と完了を 1 PR で運ぶ。plan は 1 ブランチ・1 回の確認で

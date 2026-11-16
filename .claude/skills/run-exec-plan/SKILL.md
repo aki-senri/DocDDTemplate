@@ -527,10 +527,12 @@ halt with (d).
 - Commit the work if it is uncommitted (a push needs a commit; this skill does not commit
   otherwise), push the branch with upstream tracking, and open the PR as a draft against the base
   branch (`main` unless the project says otherwise). If a PR already exists for the branch, push and
-  keep it — do not open a second one, and do not change its draft state.
+  keep it — do not open a second one, and do not change its draft state; replace the confirmation
+  sheet in its body with the one this run wrote (the old one describes an older commit).
 - The PR body states: the plan and its ACs, the Step 4a verdict and any suggestions, every ⚠️ / ℹ️
   of Step 4b, and what is left to the human — **confirming every AC, then `complete-exec-plan` on this
-  branch before the merge**.
+  branch before the merge** — and carries the confirmation sheet Step 4b wrote (`pre-pr` ⑧), so a
+  reviewer confirms from it ([`../complete-exec-plan/confirmation-sheet.md`](../complete-exec-plan/confirmation-sheet.md)).
 - Record it in the plan's Decision Log — `- draft PR (Step 4c): <URL>（起動時の指示「PR まで」による）`
   — then commit that record and push it to the same branch (the same authorization: this branch,
   this PR). Marking the PR ready for review is the human's.
@@ -666,9 +668,10 @@ docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ C
                          | n/a (loop stopped before every AC was checked — see Stopped at)
 pre-pr (Step 4b): ✅ No issues | ⚠️ {n} (does not block) | ❌ {n} → no PR | n/a (did not reach it)
 Draft PR (Step 4c): <URL> | ➖ not asked for at invocation (「PR まで」で起動すれば作成) | ➖ pre-pr ❌
+確認シート: .claude/views/YYYY-MM-{name}.confirm.md（{commit} 時点。[E2E] は実演を、機能 AC はシートを確認）
 Stopped at: {none | AC-NNN, stop condition <id>: <reason> | ⏸ not started — deferred: <the line>}
 
-Next action: {confirm every AC yourself (in the draft PR, or from the commits), then run
+Next action: {confirm every AC yourself with the confirmation sheet (in the draft PR, or locally), then run
              /complete-exec-plan on this branch before the merge | fix the pre-pr ❌ and run again
              | human decision needed for the HALT (the decision request above)
              | lift the deferral (deferred 解除:) once the promotion it waits for has landed}

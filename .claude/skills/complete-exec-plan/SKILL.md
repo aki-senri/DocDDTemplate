@@ -77,10 +77,13 @@ record counts」).
 | A record that counts, covering every AC | Proceed |
 | No record, but the user said **in this session** that they confirmed every AC of the plan | Transcribe it with `根拠: 発言「<their words, verbatim>」` and proceed |
 | No record, but the PR carrying the plan is approved | Read the reviews (`gh pr view NN --json reviews`) and apply [`completion-boundary.md`](completion-boundary.md)「An approval covers the commit it was given on」「Whose approval counts」: the reviewer is the project's (`authorAssociation` `OWNER` / `MEMBER` / `COLLABORATOR`, not a bot or an app); their latest decisive review (`APPROVED` or `CHANGES_REQUESTED` — `COMMENTED` is skipped) is `APPROVED` and not dismissed; and it was given on the commit that carries the branch's last implementation change, or later. Then transcribe it with `根拠: PR #NN approve（…）` and proceed. If any of these fails, or you are unsure, it is not a confirmation — ask |
-| None of the above, or evidence covering only some ACs | **Stop.** Ask the user whether they have confirmed every AC of the plan, and how. Do not proceed on a reply that does not say every AC was confirmed |
+| None of the above, or evidence covering only some ACs | **Stop.** Ask the user whether they have confirmed every AC of the plan, and how — and hand them the confirmation sheet with the question: the one `pre-pr` ⑧ wrote, or a regenerated one if it is gone or implementation changed after it ([`confirmation-sheet.md`](confirmation-sheet.md)). Do not proceed on a reply that does not say every AC was confirmed |
 
 Never write the record from anything else — not from green tests, a `pre-pr` pass, a
-`docode-review` verdict, or the user's silence. Those are checks the confirmation is added to, not
+`docode-review` verdict, the confirmation sheet's existence, or the user's silence. The record's
+`<方法>` is what the user says they did — the sheet's commit and how they saw the `[E2E]` flow, in
+their account ([`confirmation-sheet.md`](confirmation-sheet.md)「The method in the confirmation
+record」). Those are checks the confirmation is added to, not
 the confirmation ([`completion-boundary.md`](completion-boundary.md)「Who writes it」).
 
 ### Step 3: Re-run the blocking checks

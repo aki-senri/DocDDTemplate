@@ -338,7 +338,7 @@ flowchart TD
     C --> D{Does the AI HALT?}
     D -->|Stop conditions a–f| E["④ Human decides<br/>answer the decision request — the AI drafts the edit, you approve it"]
     E --> C
-    D -->|All ACs done: review + pre-pr ran| F["⑤ Confirm<br/>every AC (commits, or the draft PR)"]
+    D -->|All ACs done: review + pre-pr ran| F["⑤ Confirm every AC with the confirmation sheet<br/>[E2E]: see the flow run / others: read the sheet"]
     F --> G["⑥ Complete & merge<br/>complete-exec-plan (complete commit on the branch) → merge"]
 ```
 
@@ -388,7 +388,9 @@ Every box ①②③④⑤⑥ is a human action (at ③ a single `run-exec-plan` 
                           When every AC is done: docode-review, then /pre-pr (report-only);
                           started with 「PR まで」, it also pushes and opens a draft PR
 4. /pre-pr              → Manual path: consolidated pre-PR checks (run-exec-plan already ran it)
-5. Confirm every AC     → by checking the commits, or in PR review (create the PR before or after)
+5. Confirm every AC     → with the confirmation sheet /pre-pr writes (.claude/views/, or in the PR):
+                          [E2E] ACs by seeing the through-flow run, functional ACs by reading the sheet
+                          — before the PR, or in PR review
 6. /complete-exec-plan  → Record the confirmation, move the plan to completed/, and make the
                           complete commit on the same branch (the boundary) → merge
                           One PR carries implementation and completion; the plan is sized so one

@@ -112,7 +112,7 @@ start of a line:
 | Field | What it holds |
 |-------|---------------|
 | `<確認者>` | The person who confirmed — a name or account, as they are known in the project |
-| `<方法>` | How they confirmed: `PR #NN のレビュー`, `コミット後の確認（<short sha> まで）`, or a short description of another method |
+| `<方法>` | How they confirmed: `PR #NN のレビュー`, `コミット後の確認（<short sha> まで）`, or a short description of another method — naming, when they used it, the confirmation sheet's commit and how they saw the `[E2E]` flow (`確認シート（a1b2c3d）で機能 AC、[E2E] AC-005 は実演記録を確認`; [`confirmation-sheet.md`](confirmation-sheet.md)) |
 | `<根拠>` | What the record rests on — exactly one of the three below |
 
 | `<根拠>` | When | Written as |
@@ -121,11 +121,15 @@ start of a line:
 | A PR approval | The PR that carries the plan was approved | `PR #NN approve（<reviewer>, <submittedAt>, <commit の short sha>）` — read with `gh pr view NN --json reviews` |
 | The person wrote the record | The record was written by the person themselves | `本人記入` |
 
+**What the human confirms with.** The confirmation sheet `pre-pr` ⑧ writes once every AC is done
+([`confirmation-sheet.md`](confirmation-sheet.md)): the `[E2E]` AC by seeing the through-flow work —
+running it, or reading the demonstration record — and the functional ACs by reading the sheet.
+
 **Who writes it.** The human, or the agent **transcribing** one of the first two. The agent never
 infers or composes the fact of confirmation. None of these is a confirmation:
 
-- tests passing, `pre-pr` passing, a `docode-review` verdict — those are the agent's checks, which
-  the human confirmation is added to;
+- tests passing, `pre-pr` passing, a `docode-review` verdict, the confirmation sheet — those are the
+  agent's checks and material, which the human confirmation is added to;
 - the human not objecting, or asking for the next step;
 - a statement or an approval that covers only some ACs (`AC-001 は OK`) — ask about the rest;
 - a statement from an earlier session that is not in the plan file — it is not in hand; ask again.
@@ -352,8 +356,9 @@ path.
 |-----------|------|--------|
 | `create-exec-plan` | Before the plan is finalized | Ask whether one branch can implement every AC and one confirmation cover them (**Plan size**); split there if not. In the drafting mode the agent proposes the scope and a split is a question in the expanded view — the human decides it (`../create-exec-plan/expanded-view.md`) |
 | `run-exec-plan` | Handoff after the loop | Runs `pre-pr` itself (Step 4b) and, only when the human asked for it at invocation, opens a draft PR (Step 4c); then names the next steps: the human's confirmation and `complete-exec-plan` **on this branch, before the merge**. Never completes the plan itself — the confirmation is not the driver's |
+| `pre-pr` (⑧) | Every AC done, plan in `active/` | Writes the confirmation sheet the human confirms with ([`confirmation-sheet.md`](confirmation-sheet.md)); never blocks |
 | `pre-pr` | Before the PR — and again if re-run | Reads the plan from `active/` or from this branch's `completed/` (**Finding the plan of this branch**), and has `run-tests` cover that plan's ACs. ⑦: plan not yet completed → ℹ️ (does not block — the second path completes after the PR); ACs left unchecked → ⚠️ (do not merge an intermediate state); implementation change after the boundary, or an unchecked AC inside the completed plan → ❌; a merge of `main` after the boundary changed a file the plan's `## Sources` names → ⚠️ |
-| `complete-exec-plan` | After the human's confirmation, before the merge | Entry condition = the confirmation record (stop and ask when absent); makes the complete commit — resuming one an earlier run moved but did not commit; reopens before the merge |
+| `complete-exec-plan` | After the human's confirmation, before the merge | Entry condition = the confirmation record (stop and ask when absent, handing over the confirmation sheet); makes the complete commit — resuming one an earlier run moved but did not commit; reopens before the merge |
 | `run-tests` | AC coverage | Covers the ACs of the plan in `active/`, or of the plan this branch moved into `completed/` when `pre-pr` is re-run after the complete commit |
 | `docode-review` | When it collects the plan | Reads the plan from `active/` or from this branch's `completed/`, so a review of a diff that includes the complete commit still has the ACs |
 | `start-feature` | Choosing the plan | A plan this branch already completed is reopened first, not re-created |
