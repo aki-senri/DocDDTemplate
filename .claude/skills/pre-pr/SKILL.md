@@ -40,6 +40,7 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 ⑥ exec-plan update      → Record progress in log
 ⑦ completion boundary   → Plan completed? (❌ only for implementation changed after the complete
                           commit, or an unchecked AC inside the completed plan)
+⑧ confirmation sheet    → Every AC done: write the sheet the human confirms with (never blocks)
 ```
 
 > **Which plan.** "The plan" in ⑤–⑦ is the one this branch implements. Before the complete commit
@@ -60,7 +61,8 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 > driver ran both over the whole branch just before the review), and a ④ item that "requires fix".
 > A finding that would have needed a fix is reported as ❌ for the step, and the driver opens no PR;
 > after the human has it fixed, a new run reviews again. ⑥ still updates the plan's progress log.
-> ⑤d finds the Step 4a verdict already recorded.
+> ⑤d finds the Step 4a verdict already recorded. ⑧ still writes the confirmation sheet: it goes to
+> `.claude/views/`, outside the code and the documents, and changes nothing the review saw.
 
 > **Changes made with no exec-plan.** ⑤ (red-first evidence), ⑤b, ⑤c, ⑤d, ⑥ and ⑦ all read or write a
 > plan file. A change made under the `exec-plans/.spec-override` exception has none — its evidence
@@ -366,8 +368,8 @@ Update the `exec-plans/active/*.md` corresponding to the implemented work.
 1. Check off completed tasks (`- [x]`)
 2. Append today's date and a description of what was done to the progress log
 3. If all acceptance criteria are met, say what comes next — the merge waits for it: the human
-   confirms every AC (by checking the commits, or in PR review), then `complete-exec-plan` makes the
-   complete commit **on this branch, before the merge**
+   confirms every AC with the confirmation sheet ⑧ writes (by checking the commits, or in PR
+   review), then `complete-exec-plan` makes the complete commit **on this branch, before the merge**
    ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
    「Order relative to the PR」)
 
@@ -410,6 +412,28 @@ human's confirmation and is theirs to decide, and the record is theirs to give.
 
 ---
 
+### ⑧ Confirmation sheet (never blocks)
+
+When every AC of the plan is `- [x]` and the plan is still in `exec-plans/active/`, write the
+confirmation sheet the human will confirm with, following
+[`../complete-exec-plan/confirmation-sheet.md`](../complete-exec-plan/confirmation-sheet.md): the
+approved text, each AC's test in product words, red before green, the re-anchor, and for each
+`[E2E]` AC a demonstration from a real run at this commit. Name its path in the report, and put its
+"確認してほしいこと" block in the conversation.
+
+| State | ⑧ |
+|-------|---|
+| Every AC `- [x]`, plan in `active/` | Write (or regenerate) the sheet |
+| ACs still `- [ ]` | ➖ — there is nothing to confirm yet |
+| Plan already in `completed/` (re-run after the complete commit) | ➖ — the confirmation is already recorded |
+| No plan (a plan-less change) | ➖ |
+
+The sheet is material for the human, not a check: it never blocks, and it is never a confirmation
+(`../complete-exec-plan/completion-boundary.md`「Who writes it」). An AC whose evidence is missing
+from the record is shown as `記録なし` in the sheet, not filled in.
+
+---
+
 ## Result report format
 
 ```
@@ -444,6 +468,8 @@ human's confirmation and is theirs to decide, and the record is theirs to give.
                      / ⚠️ プランが特定できない — どのプランの実装かを人に確認 (does not block)
                      / ➖ 確認対象なし（プランの追加・AC の再オープンのみ）
                      / ➖ n/a (プラン無しの変更)
+⑧ confirmation     : 📄 .claude/views/YYYY-MM-{name}.confirm.md（{commit} 時点）
+                     / ➖ 確認対象なし（AC が残る・complete 済み・プラン無し）
 
 ---
 {If there are issues, list specific fix instructions here}
@@ -456,7 +482,7 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 
 ## Completion criteria
 
-- [ ] All checks ① through ⑦ (including ⑤b, ⑤c and ⑤d) are complete
+- [ ] All checks ① through ⑧ (including ⑤b, ⑤c and ⑤d) are complete
 - [ ] All issues have been fixed, or documented as "N/A" with explanation — except a DOC-INV-012
       row, which the user repoints (③); it is neither repaired by the agent nor marked N/A
 - [ ] ③ was run with `--base`, and any DOC-INV-012 row listed under another plan was presented as
@@ -477,4 +503,6 @@ PR creation status: ✅ No issues / ❌ Fix the above and re-run
 - [ ] The progress log in exec-plan has been updated (or ⑥ is `➖` because the plan is already completed)
 - [ ] The completion boundary was checked (⑦): an implementation change after the complete commit is
       ❌; a plan not yet completed, or one with ACs left, was reported and the merge condition stated
+- [ ] When every AC was done and the plan was in `active/`: the confirmation sheet was written (⑧),
+      from the records only, and its path given
 - [ ] Output shows "PR creation status: ✅ No issues"

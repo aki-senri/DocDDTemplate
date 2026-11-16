@@ -71,7 +71,8 @@ Claude Code で以下を実行します：
    （手動で進める場合: その AC のテストを書いて赤を確認 → コードを書く
      → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
-（人が全 AC を確認 — コミットを見て、または PR レビューで）
+（人が全 AC を確認 — /pre-pr が書く確認シートで。[E2E] は実演で、他はシートで。
+  PR の前でも、PR レビューでもよい）
 /complete-exec-plan  ← 確認を記録し、同じブランチに complete コミットを積んでからマージ
                        （1 PR で完結。移動だけの PR は作らない）
 ```

@@ -68,11 +68,11 @@ flowchart TD
     DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
-        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes\n⑦ Completion boundary: not completed → ℹ️,\n   ACs left → ⚠️, implementation changed\n   after the complete commit → ❌"]
+        PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes\n⑦ Completion boundary: not completed → ℹ️,\n   ACs left → ⚠️, implementation changed\n   after the complete commit → ❌\n⑧ Confirmation sheet (every AC done):\n   evidence per AC + [E2E] demonstration,\n   in .claude/views/ (not committed)"]
     end
 
     PREPR --> CONFIRM
-    CONFIRM{"HUMAN confirms every AC of the plan\n(checking the commits before a PR,\nor in PR review)"}
+    CONFIRM{"HUMAN confirms every AC of the plan\nwith the confirmation sheet (pre-pr ⑧):\n[E2E] by seeing the flow run,\nfunctional ACs by reading the sheet\n(before a PR, or in PR review)"}
     CONFIRM -->|findings| IMPL
 
     subgraph COMPLETE_PHASE["Completion (on the implementation branch, before the merge — same PR)"]
@@ -244,6 +244,15 @@ flowchart TD
 > contradiction, a repointed `## Sources` row, a deferral bullet, a scenario migration, an AC
 > rewrite) and applies it only after the human approves that diff; landing it on `main` or
 > `spec/<label>` is on the human's instruction. The unattended loop still edits neither document.
+>
+> **Shared reference file (not a skill):** `pre-pr` (⑧), `run-exec-plan` (Step 4c) and
+> `complete-exec-plan` (Step 2) apply
+> [`.claude/skills/complete-exec-plan/confirmation-sheet.md`](.claude/skills/complete-exec-plan/confirmation-sheet.md)
+> — the material a human confirms every AC with: the expanded view's frame with the evidence filled
+> in (approved text, each test in product words, red before green, the re-anchor) and, for each
+> `[E2E]` AC, a demonstration from a real run at the sheet's commit. `[E2E]` ACs are confirmed by
+> seeing the flow work, functional ACs by reading the sheet. The sheet is a temporary file under
+> `.claude/views/`, put into the PR for a reviewer; it is never a confirmation itself.
 >
 > **Shared reference file (not a skill):** `create-exec-plan` (drafting mode) applies
 > [`.claude/skills/create-exec-plan/expanded-view.md`](.claude/skills/create-exec-plan/expanded-view.md)

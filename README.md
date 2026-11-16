@@ -71,7 +71,8 @@ This collects project overview, tech stack, development rules, and platform via 
    (or manually: write the AC's test and confirm it fails → write code
     → /check-doc-freshness → /check-invariants → /run-tests)
 /pre-pr              ← comprehensive pre-PR check
-(you confirm every AC — checking the commits, or in PR review)
+(you confirm every AC with the confirmation sheet /pre-pr writes — [E2E] by seeing the flow
+ run, the rest by reading the sheet; before the PR, or in PR review)
 /complete-exec-plan  ← record your confirmation and make the complete commit on the same branch,
                        then merge (one PR — no separate PR just to move the plan)
 ```
