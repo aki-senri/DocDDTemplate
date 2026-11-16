@@ -3,6 +3,7 @@ name: pre-pr
 description: |
   Comprehensive pre-PR check skill run before creating a pull request.
   Runs invariant checks, document freshness checks, review checklist, tests, exec-plan progress update,
+  and — when run-exec-plan calls it after its review — reports instead of fixing,
   and the completion-boundary check (is the plan completed; did implementation change after the
   complete commit) all at once.
 disable-model-invocation: true
@@ -52,6 +53,14 @@ Runs the following steps in order. If all pass, PR creation is allowed.
 > fixing it — ①/② that would rewrite code or documents, ④ "requires fix", a failing test at ⑤: a fix
 > is an implementation change after the boundary, so it would turn ⑦ into ❌ by this skill's own
 > hand. If a fix is wanted, it goes through a reopen.
+
+> **When `run-exec-plan` runs this skill (its Step 4b),** it does so after its mandatory
+> `docode-review` (Step 4a), and the diff that review judged must be the diff handed off. So on that
+> call **every step that would rewrite code or documents reports instead of fixing** — ① and ② (the
+> driver ran both over the whole branch just before the review), and a ④ item that "requires fix".
+> A finding that would have needed a fix is reported as ❌ for the step, and the driver opens no PR;
+> after the human has it fixed, a new run reviews again. ⑥ still updates the plan's progress log.
+> ⑤d finds the Step 4a verdict already recorded.
 
 > **Changes made with no exec-plan.** ⑤ (red-first evidence), ⑤b, ⑤c, ⑤d, ⑥ and ⑦ all read or write a
 > plan file. A change made under the `exec-plans/.spec-override` exception has none — its evidence
@@ -138,7 +147,9 @@ plans' rows look like this PR's). This is the only site that passes it.
    A DOC-INV-012 finding (an active plan's `## Sources` row that cannot be opened) is **presented to
    the user, not repaired here** — do not repoint the row to a guessed file and do not replace it
    with `n/a`; that is a decision about what the AC condenses
-   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」).
+   (`create-exec-plan/ac-sources.md`「When a source cannot be opened」). Present it as a decision
+   request, and once the user names the target, draft the row edit for their approval
+   (`run-exec-plan/decision-requests.md`) — the agent writes the row, the user chooses it.
    In PR mode the DOC-INV-012 ❌s come in two groups (`check-doc-invariants`「Which ❌ blocks which
    run」): the rows this PR is answerable for — in a plan it changed or added, or naming a file it
    deleted or renamed — block as before; the rows listed under **"In other plans — not blocking this

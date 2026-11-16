@@ -222,8 +222,10 @@ is missing a path, or the AC is not actually needed for the finished thing.
 **A project whose spec still has a `## E2E シナリオ` section** (the earlier layout, which put the
 scenarios inside `docs/02_spec/**`) keeps it valid for now — DOC-INV-006 reads both layouts and
 reports the old one as a ⚠️ migration candidate. Do not add new scenarios there: draft them in
-`docs/01-02_e2e/`. Moving the existing ones is the human's step, done as DOC-INV-006's fix hint
-describes, because a moved scenario breaks every active plan's `## Sources` row that names it.
+`docs/01-02_e2e/`. Moving the existing ones is the human's decision, because a moved scenario breaks
+every active plan's `## Sources` row that names it; once they decide, the agent drafts the move as
+DOC-INV-006's fix hint describes — the new files and the repointed rows in one change — for their
+approval (`../run-exec-plan/decision-requests.md`).
 
 **A scenario is not frozen when this skill writes it — and approving it does not freeze it
 either.** Approval (the human merging the draft to `main`) makes it the current target; the freeze
@@ -329,7 +331,7 @@ about *what*, not *how*.
       `相互チェック未了` line (the skill did not halt for it, and did not write the US)
 - [ ] An application spec was drafted under `docs/02_spec/` covering purpose, scope/non-goals,
       features, and behavior — with no **new** scenario added to a `## E2E シナリオ` section. An
-      existing old-layout section is left in place (moving it is the human's step) and named in
+      existing old-layout section is left in place (moving it is the human's decision) and named in
       the report as a migration candidate
 - [ ] At least one scenario exists for the spec, in either layout, and every scenario this run
       drafted is a file `docs/01-02_e2e/E2E-NNN_{slug}.md` carrying `status: draft`, a

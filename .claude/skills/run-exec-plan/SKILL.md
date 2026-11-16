@@ -10,12 +10,16 @@ description: |
   write the failing test -> implement -> run-tests -> check-invariants -> re-anchor to the spec
   section, and on green it checks the
   box, records a Decision Log entry, and moves to the next AC. When every AC is checked, it runs
-  `docode-review` as a mandatory independent goal check before handing off to `pre-pr` — the
+  `docode-review` as a mandatory independent goal check before the pre-PR check — the
   self-implementing loop is the case that most needs an outside look, since the same agent wrote
   the code and the tests. Halts ONLY on explicit stop conditions
   (missing/ambiguous AC, tests still red after bounded retries, a test change required,
   an irreversible/outward action, an INV violation needing scope expansion, or the independent
   review requesting changes).
+  One invocation covers the whole autonomous path: it prepares the run itself (what start-feature
+  does on the manual path — plan, branch, baseline, readiness, sources, start record), and after the
+  review it runs the pre-PR check. Only when the human says so at invocation ("PR まで") does it then
+  push the branch and open a draft PR; merging, the human's confirmation and completion stay human.
   Opt-in: runs only when the user explicitly invokes it; default behavior is unchanged.
 disable-model-invocation: true
 ---
@@ -36,7 +40,9 @@ disable-model-invocation: true
 >   picked up from there: reopening it withdraws the human's confirmation, so the human reopens it
 >   first ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
 >   「Reopening before the merge」)
-> - `start-feature` should already have run (baseline green, branch chosen, docs loaded)
+> - `start-feature` is **not** needed first: Step 0 prepares the run itself. `start-feature` is the
+>   manual path, where a human present resolves in conversation what this skill halts on. Running it
+>   first does no harm — Step 0 finds its records and does not repeat them
 > - `docs/05_quality/test_strategy.md` must have `test_command` set (used by `run-tests`)
 
 ---
@@ -48,8 +54,8 @@ on the human's behalf.
 
 | Layer | Examples | Who decides |
 |-------|----------|-------------|
-| **Inner loop — automate** | Read the AC's frozen sources, transcribe them into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, check the result against the AC's spec section, advance to the next AC, **invoke `docode-review` once every AC is `- [x]` (Step 4a — the call itself is automatic; interpreting a ❌ verdict is not, see below)** | **This skill (no confirmation)** |
-| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result neither the AC nor its sources state**, **choosing between two frozen documents that disagree**, changing a test's expectation once frozen, **deciding which `docode-review` findings to act on when Step 4a returns ❌**, modifying the spec, `promote-spec`, creating/pushing a PR | **Human (halt and ask)** |
+| **Inner loop — automate** | Prepare the run (Step 0: plan, branch, baseline, readiness, sources, start record), read the AC's frozen sources, transcribe them into a test and observe it red, implement the AC, run tests, fix a failing test caused by an implementation bug, re-run, check the result against the AC's spec section, advance to the next AC, **invoke `docode-review` once every AC is `- [x]` (Step 4a — the call itself is automatic; interpreting a ❌ verdict is not, see below)**, then the pre-PR check (Step 4b) | **This skill (no confirmation)** |
+| **Outer gate — never automate** | What to build (defining AC), **deciding an expected result neither the AC nor its sources state**, **choosing between two frozen documents that disagree**, changing a test's expectation once frozen, **deciding which `docode-review` findings to act on when Step 4a returns ❌**, modifying the spec, `promote-spec`, creating/pushing a PR — **unless the human asked for it when invoking this run** (「PR まで」: Step 4c pushes the branch and opens a draft PR, nothing more), the human's confirmation of every AC, completion, merging | **Human (halt and ask)** |
 
 Writing a test is on the inner-loop side **only in the transcription sense**: the given / when / then
 come from material a human already froze — the AC line, plus the US bullets and spec section it
@@ -65,10 +71,12 @@ genuinely need a human, and never in the middle of executing a frozen AC."
 
 ## What this skill does
 
-1. Select the active exec-plan — a plan **deferred** until a promotion is not started at all (Step 0)
-   — confirm baseline is green, gate on **AC readiness**
+1. Prepare the run (Step 0): select the active exec-plan — a plan **deferred** until a promotion is
+   not started at all — put the work on a branch of its own, confirm baseline is green, gate on
+   **AC readiness**
    (every unchecked AC is testable as written — otherwise halt before the loop starts), and put
-   each `[E2E]` AC's test in place **as a failing test** before any AC is implemented
+   each `[E2E]` AC's test in place **as a failing test** before any AC is implemented, and record the
+   start
 2. Loop over each unchecked AC:
    a. Read the AC's **sources** — the US bullets and spec section named in the plan's `## Sources`
    b. Write the test for this AC **first**, from the AC and its sources, and observe it fail (red-first)
@@ -79,18 +87,28 @@ genuinely need a human, and never in the middle of executing a frozen AC."
       describes — a green test set proves only what was transcribed into it
    g. On green: check the AC box, append a Decision Log entry, continue to the next AC
    h. On red: attempt a **bounded** self-repair (default 3 tries); if still red, **halt**
-3. When all ACs are checked: run `docode-review` (**mandatory** — see Step 4) as an independent
-   goal check before handing off to `pre-pr`. On ✅ or ⚠️, produce a summary and hand off. On ❌,
-   **halt** with stop condition (f) — do not hand off. (If a stop condition fires before all ACs
-   are checked, the loop stops there and this step does not run; `docode-review` stays optional on
-   that path, same as any human-implemented plan)
+3. When all ACs are checked: sweep the whole branch with the checks that can rewrite files, then run
+   `docode-review` (**mandatory** — see Step 4) as an independent goal check. On ❌, **halt** with
+   stop condition (f). On ✅ or ⚠️, run the pre-PR check (`pre-pr`, Step 4b) on the diff the review
+   saw; if the human asked for it at invocation and the check has no ❌, push and open a **draft** PR
+   (Step 4c). (If a stop condition fires before all ACs are checked, the loop stops there and this
+   step does not run; `docode-review` stays optional on that path, same as any human-implemented
+   plan)
 
 ---
 
 ## Steps
 
-### Step 0: Preconditions
+### Step 0: Preconditions and preparation
 
+Step 0 is the preparation `start-feature` does on the manual path, with this skill's actions on a
+finding: where `start-feature` asks the human present, this step halts (or, for a deferral, does not
+start). The two paths apply the same single sources; only the action differs.
+
+- **If `exec-plans/active/` has no plan**, say so and end: propose `create-exec-plan` — or, when the
+  work fixes a plan this branch already completed, reopening it, which is the human's call
+  ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
+  「Reopening before the merge」). Nothing is written.
 - Confirm exactly one target plan. If the current branch already implements a different plan (it
   ticked that plan's ACs or changed code for it), stop and say so: one implemented plan per branch
   ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
@@ -104,6 +122,12 @@ genuinely need a human, and never in the middle of executing a frozen AC."
   comparison, and **without appending a HALT entry**. The finding it waits on is still on `main`, so
   running Step 0b would only find it again and record the same HALT on every resume; the deferral is
   already the record. Lifting it is the human's.
+- **Put the work on a branch of its own.** If the current branch is the default branch (`main`),
+  create and switch to `feature/{plan name}` (or the pattern the project's CONTEXT.md「branch
+  strategy」 sets). A local branch is not an outward action. On any other branch, the
+  one-plan-per-branch check above has already decided it is this plan's.
+- Load `docs/07_ai_context/CONTEXT.md` and `docs/04_implementation/invariants.md` (where they exist)
+  — the development rules and the invariants `check-invariants` holds every AC to.
 - Run `run-tests` as a baseline. If baseline is already red, **halt** — do not start a loop
   on a red baseline (you could not attribute failures to your own changes).
   **Expected reds do not count as a red baseline.** When resuming a partly-done plan, the tests
@@ -112,6 +136,7 @@ genuinely need a human, and never in the middle of executing a frozen AC."
   is green when everything *else* passes. Any other failure still halts.
 - **Run the AC readiness gate** (below) over every unchecked AC.
 - **Put every `[E2E]` AC's test in place as a failing test** (Step 0c below).
+- **Record the start** (Step 0d below).
 - See **Retry budget** below; default `MAX_REPAIR_ATTEMPTS = 3`.
 
 #### Step 0b: AC readiness gate (before the loop, not inside it)
@@ -202,6 +227,17 @@ signal the run is steering toward, and the run is not done until it goes green o
 
 Because the E2E test is red by design here, the baseline check in Step 0 is what establishes "all
 other tests are green"; do not re-interpret the failing E2E test as a red baseline.
+
+#### Step 0d: Record the start
+
+Once Step 0b has cleared and Step 0c has placed the `[E2E]` tests, append to the plan's
+`## Progress Log` — unless a start record for this branch is already there (`start-feature` ran first,
+or this is a resumed run):
+
+```markdown
+### YYYY-MM-DD
+- Implementation started. Branch: feature/{name}（run-exec-plan）
+```
 
 ### Step 1: Pick the next AC
 
@@ -397,15 +433,29 @@ below) — Step 4a does not run on this path. `docode-review` remains optional h
 plan a human is implementing (`start-feature` path): the loop did not reach an unattended
 completion, so there is nothing for the mandatory gate to guard yet.
 
-When every AC is `- [x]`, continue to **Step 4a** before reporting.
+When every AC is `- [x]`, the run finishes in this order — **sweep → Step 4a → Step 4b → Step 4c**:
+
+1. **Sweep** (before the review): run the two checks that may rewrite files over the **whole
+   branch**, not one AC — `check-invariants` and `check-doc-freshness`, inline (they are `pre-pr` ①
+   and ②). Fix what is in scope and re-run `run-tests` after any fix (in-scope fixes count against
+   `MAX_REPAIR_ATTEMPTS`, as in Step 3; a fix needing scope expansion is (e)). Per-AC Step 3 already
+   ran them, so the sweep usually finds nothing; it exists so the diff `docode-review` judges is the
+   diff that is handed off.
+2. **Step 4a** — the mandatory independent review, below.
+3. **Step 4b** — the pre-PR check, below. It runs after the review and **changes nothing the review
+   saw**.
+4. **Step 4c** — the draft PR, only when the human asked for it at invocation.
+
+Why this order: `pre-pr` ① and ② can rewrite code and documents. Run after the review, they would
+hand off a diff the review never saw; run before it, they are part of what is reviewed.
 
 #### Step 4a: Mandatory independent review (self-implementing completion only)
 
 This is the one point in the loop where the implementer and the verifier are the same agent from
 start to finish — every AC, every test, every re-anchor was judged by the driver against its own
 work. `docode-review` exists precisely to catch what a self-reviewer cannot: run it now, via the
-`Skill` tool (`docode-review` is model-invocable), **before** reporting completion or handing off
-to `pre-pr`.
+`Skill` tool (`docode-review` is model-invocable), **before** reporting completion or running the
+pre-PR check (Step 4b).
 
 - Collect context exactly as `docode-review`'s own Step 1 describes — read that step rather than
   this summary, which is illustrative and will fall behind it. At minimum it covers the diff, this
@@ -422,8 +472,8 @@ to `pre-pr`.
 
 | Verdict | Action |
 |---------|--------|
-| ✅ Approved | Continue to reporting; hand off to `pre-pr` |
-| ⚠️ Approved with suggestions | Continue to reporting; hand off to `pre-pr`. Mention the suggestions in the summary so the human sees them at handoff, even though they do not block it |
+| ✅ Approved | Go to Step 4b |
+| ⚠️ Approved with suggestions | Go to Step 4b. Mention the suggestions in the report (and in the draft PR's body, Step 4c) so the human sees them, even though they do not block |
 | ❌ Changes requested | **Halt** with stop condition (f). Surface the findings verbatim. Do **not** attempt to fix them yourself and re-run — deciding which findings to act on (and how) is the same governance judgment as rewriting an AC, and this gate exists so a human makes it, not the agent that just finished implementing |
 
 **Do not call it twice to produce one report.** "Same pass" means: no new tool call boundary, no new
@@ -443,8 +493,51 @@ entry rather than trusting the old one. (A stale ❌ is not a shortcut to skip r
 the human wants to proceed past it, that happens by getting a fresh ✅/⚠️ or by the human directly
 overriding the halt, not by the driver reasoning "it was already reviewed.")
 
-When all ACs are `- [x]` (and, on this path, Step 4a's verdict is ✅ or ⚠️), stop the loop and report
-(see format below). **Do not create a PR.** Hand off to `pre-pr` as a separate, human-reviewed step.
+#### Step 4b: Pre-PR check (after a ✅ / ⚠️ review)
+
+Follow [`../pre-pr/SKILL.md`](../pre-pr/SKILL.md) inline (`pre-pr` is not model-invocable, so its
+steps are read and executed, as Step 3 does for `check-invariants`), in the mode that skill defines
+for this call site: **every step that would rewrite code or documents reports instead of fixing** —
+①, ② and a ④ item that "requires fix". The sweep already ran ① and ②; a fix now would be a change
+Step 4a did not see. ⑥ still updates the plan's progress log (bookkeeping in `exec-plans/`, not
+implementation). Append to the Decision Log:
+
+```markdown
+### YYYY-MM-DD
+- pre-pr (Step 4b): {✅ No issues | ⚠️ {n} 件（{項目}） | ❌ {n} 件（{項目}）}。
+```
+
+| Result | Action |
+|--------|--------|
+| ✅, or ⚠️ / ℹ️ only | Go to Step 4c |
+| ❌ (a blocking finding, or a step that would have needed a fix) | Report it and end — **no draft PR**, even if one was asked for. Fixing it is a change after the review: when the human has it fixed, the next run starts at Step 4a again (a resumed session always reviews fresh) |
+
+#### Step 4c: Draft PR (only when the human asked for it at invocation)
+
+Run this step **only when the human's instruction that started this run** asked for a PR
+(「PR まで」, "through to a PR"). That instruction is the authorization stop condition (d) requires,
+and it covers exactly two outward actions: pushing this branch, and opening a **draft** PR for it.
+Marking it ready for review, requesting reviewers, merging, tagging and anything else outward still
+halt with (d).
+
+- **The instruction belongs to the invocation, not to the plan.** It is not written to the plan file,
+  and a run started without it — including a resumed run after a HALT, whose earlier invocation did
+  say it — does not open a PR: it ends after Step 4b and says that a run started with 「PR まで」
+  would. A record of an earlier draft PR is history, not permission.
+- Commit the work if it is uncommitted (a push needs a commit; this skill does not commit
+  otherwise), push the branch with upstream tracking, and open the PR as a draft against the base
+  branch (`main` unless the project says otherwise). If a PR already exists for the branch, push and
+  keep it — do not open a second one, and do not change its draft state.
+- The PR body states: the plan and its ACs, the Step 4a verdict and any suggestions, every ⚠️ / ℹ️
+  of Step 4b, and what is left to the human — **confirming every AC, then `complete-exec-plan` on this
+  branch before the merge**.
+- Record it in the plan's Decision Log — `- draft PR (Step 4c): <URL>（起動時の指示「PR まで」による）`
+  — then commit that record and push it to the same branch (the same authorization: this branch,
+  this PR). Marking the PR ready for review is the human's.
+- If the push or the PR creation fails (authentication, a protected branch, no remote), stop and
+  report — do not retry with other credentials or another remote.
+
+Without the instruction, stop after Step 4b and report. **Do not create a PR.**
 
 **Do not complete the plan either.** Completion is the human confirming every AC, recorded, then
 `complete-exec-plan` making the complete commit on this branch before the merge
@@ -457,14 +550,19 @@ confirmation itself — name the step in the handoff, and leave it to the human.
 ## Stop conditions (halt and ask the human)
 
 The driver continues autonomously **except** in these cases. When one fires, stop, write the
-current state to the Decision Log, and surface a concise summary to the user.
+current state to the Decision Log, and put the decision to the user as a **decision request**
+([`decision-requests.md`](decision-requests.md)): in product words, with every option, what each
+changes (the edit as a diff), the routing where one is needed, and a recommendation. The HALT entry
+is for the next session; the request is for the human. Once the human decides, the edits that
+follow (the document that lost, a repointed row, a deferral bullet) are drafted for their approval
+in the conversation — never by the loop itself, which edits neither document.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
 | (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); by **Step 0b** when a row names background material instead of a source, and by **Step 1b** when an expected result appears only in background material; by **Step 0b** (backstop **0c / 1b / 3a**) when an `E2E-NNN` states an outcome nowhere in its comparison set, or contradicts it, or the set cannot be assembled (complement detection, `../create-spec/e2e-interaction.md`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
-| (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) | Outward effects require human authorization |
+| (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) — except the push and the draft PR of Step 4c, when the human asked for them in the instruction that started this run | Outward effects require human authorization. The instruction at invocation is that authorization for exactly those two actions, and only for that invocation |
 | (e) | An INV violation cannot be resolved without expanding scope | Scope expansion is a planning decision, not execution |
 | (f) | `docode-review` (Step 4a), run mandatorily once every AC is `- [x]`, returns ❌ Changes requested | Deciding which findings to act on — and how — is the same governance judgment as rewriting an AC; the driver that just finished implementing is the one party who cannot make it objectively |
 
@@ -502,8 +600,9 @@ iteration records enough state in the plan itself:
   - HALT at AC-NNN (stop condition <id>). <what is blocking> <what the human must decide>.
   ```
 
-- A **deferral** is written by a human, not by this skill — `deferred: spec/<label> の昇格まで — <所見>`,
-  and later `deferred 解除: <日付・理由>`
+- A **deferral** is decided by a human, never by this skill — `deferred: spec/<label> の昇格まで — <所見>`,
+  and later `deferred 解除: <日付・理由>`. The agent may draft the bullet in the conversation once
+  the human has decided ([`decision-requests.md`](decision-requests.md)); the loop never writes it
   ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a plan, and
   lifting it」). It is resume state too: a session that finds an unlifted deferral bullet stops at
   Step 0 without writing anything, and the line itself is what the next session reads.
@@ -539,11 +638,16 @@ When the budget is exhausted, halt with stop-condition (b).
 - [ ] Every AC reached is either `- [x]` (green) or recorded as a HALT in the Decision Log
 - [ ] Decision Log updated per the resume-state convention
 - [ ] **If every AC reached `- [x]`**: `docode-review` was run (Step 4a) via the `Skill` tool and its
-      verdict recorded in the Decision Log **before** handoff; a ❌ verdict halted with stop
-      condition (f) instead of handing off (a run that stopped early on another stop condition does
+      verdict recorded in the Decision Log **before** Step 4b; a ❌ verdict halted with stop
+      condition (f) instead of going on (a run that stopped early on another stop condition does
       not need this — `docode-review` stays optional there)
-- [ ] No PR was created by this skill (handoff to `pre-pr` only), and the plan was not completed by
-      it (completion needs the human's confirmation)
+- [ ] Step 0 prepared the run — a branch of its own, CONTEXT.md / invariants.md loaded, and a start
+      record in the Progress Log (Step 0d) unless one was already there
+- [ ] **If Step 4a's verdict was ✅ or ⚠️**: the sweep ran before the review, and `pre-pr` ran after it
+      (Step 4b) without changing anything the review saw, with its result in the Decision Log
+- [ ] A draft PR was opened only when the human asked for it in the instruction that started **this**
+      run and Step 4b had no ❌ (Step 4c); otherwise no PR was created. The plan was not completed by
+      this skill (completion needs the human's confirmation)
 
 Final report output by the agent:
 
@@ -560,9 +664,12 @@ Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 
 Tests     : ✅ {n} passing
 docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested → HALT (f)
                          | n/a (loop stopped before every AC was checked — see Stopped at)
+pre-pr (Step 4b): ✅ No issues | ⚠️ {n} (does not block) | ❌ {n} → no PR | n/a (did not reach it)
+Draft PR (Step 4c): <URL> | ➖ not asked for at invocation (「PR まで」で起動すれば作成) | ➖ pre-pr ❌
 Stopped at: {none | AC-NNN, stop condition <id>: <reason> | ⏸ not started — deferred: <the line>}
 
-Next action: {run /pre-pr for the completed ACs; then confirm every AC yourself and run
-             /complete-exec-plan on this branch before the merge | human decision needed for the HALT
+Next action: {confirm every AC yourself (in the draft PR, or from the commits), then run
+             /complete-exec-plan on this branch before the merge | fix the pre-pr ❌ and run again
+             | human decision needed for the HALT (the decision request above)
              | lift the deferral (deferred 解除:) once the promotion it waits for has landed}
 ```

@@ -64,8 +64,10 @@ Claude Code で以下を実行します：
                        記録して AC readiness を検査。承認済みの US からは起草され、
                        人は「決めてほしいこと」にだけ答える）
 /start-feature       ← 実装前の確認・AC readiness の再検査・ブランチ作成
+                       （手動の経路。run-exec-plan は準備を自分で行う）
 /run-exec-plan       ← AC を1つずつ自走実装（起点を読む→テストを先に赤で置く→実装→
-                       緑になったら spec 該当節へ再アンカー）（opt-in）
+                       緑になったら spec 該当節へ再アンカー）（opt-in）。その後
+                       docode-review と /pre-pr まで回し、「PR まで」で起動すればドラフト PR も作る
    （手動で進める場合: その AC のテストを書いて赤を確認 → コードを書く
      → /check-doc-freshness → /check-invariants → /run-tests）
 /pre-pr              ← PR前の総合チェック
@@ -105,8 +107,8 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 | `create-requirements` | User Story・**ゴール像**（完成時にできること／主要ユーザージャーニー／非ゴール）・受け入れ条件・制約と、判断に使った資料（`## 関連`。repo 外の資料は調査ノート化を提案）を定義（`docs/01_requirements/`） |
 | `create-spec` | 承認済み要件からアプリ仕様（*何をするか*）と **E2E シナリオ**（`E2E-001 → AC-001, AC-003` の横断 traceability）を起草（`docs/02_spec/` と、1シナリオ1ファイルの `docs/01-02_e2e/`。`status: draft`。人間承認が必要）。仕様の決定に使った資料を `## 関連` に残し、決定を ADR（`decisions.md`）にするかを尋ねる |
 | `create-exec-plan` | 受け入れ基準（AC-001~）と **最低1本の `[E2E]` AC**（documentation-only プランは持たない）を持つ実行計画を新規作成。各 AC の **AC readiness**（測定可能性）を検査し、**`## Sources`**（その AC が凝縮した US bullet と spec 該当節）を記録する。DocDD のプロセスを変えるプランには**周回を辿る**検証 AC を置く。承認済みの US から起票するときはプランを**起草**し、人には**展開ビュー**（起点の原文を通しの流れの順に引用した一時ファイル）を見せて決めてほしいことだけを問う |
-| `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度） |
-| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in） |
+| `start-feature` | 実装開始前の確認・**AC readiness の再検査**・`## Sources` が指す US / spec の読み込み・ブランチ名決定（機能ごとに一度。手動の経路で使い、`run-exec-plan` は準備を自分で行う） |
+| `run-exec-plan` | ループ開始前に **AC readiness** を検査（NOT READY があれば開始せず HALT）し、`[E2E]` のテストを赤で配置してから、AC を1つずつ自走実装（**起点を読む**→**テストを先に赤で置く**→実装→テスト→修正→**spec 該当節へ再アンカー**→次）。停止条件でのみ HALT（opt-in）。起動1回で準備（`start-feature` 相当）も行い、`docode-review` の後に `pre-pr` を回す。「PR まで」で起動すれば push して**ドラフト** PR を作る。HALT は選択肢・推奨・選んだ場合の差分つきの決定依頼で出す |
 | `pre-pr` | PR前の総合チェック（invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan更新 / 完了の境界） |
 | `complete-exec-plan` | 人が全 AC を確認した記録を入口条件に、実行計画を `active/` から `completed/` へ移動し、実装ブランチに **complete コミット**（AI の作業と人の確認の境界）を積む。マージ前・実装と同じ PR |
 | `promote-spec` | 次バージョン仕様（`spec/<label>` ブランチ）を現ターゲットへ昇格（スプリント境界） |

@@ -241,8 +241,10 @@ refinement — the scenario stating concretely what the set states — is not a 
 **The old layout is still read, during a grace period.** Scenarios used to be a `## E2E シナリオ`
 section inside a spec file, with `### E2E-NNN:` headings. A project generated before the move keeps
 working: its old-layout scenarios count for both checks above, and the section is reported as a
-⚠️ **migration candidate**, not a violation. Moving it is a human's step, because a scenario that an
-active plan names in `## Sources` breaks that row the moment the scenario moves:
+⚠️ **migration candidate**, not a violation. Moving it is a human's decision, because a scenario that
+an active plan names in `## Sources` breaks that row the moment the scenario moves. Once the human
+decides, the agent may draft the move below for their approval
+(`../run-exec-plan/decision-requests.md`):
 
 1. Cut each `### E2E-NNN:` block into its own file `docs/01-02_e2e/E2E-NNN_{slug}.md`, with
    `status:` copied from the spec file and the heading raised to `# E2E-NNN:`. Keep the ID. Do not

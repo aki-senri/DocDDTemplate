@@ -13,6 +13,12 @@ disable-model-invocation: true
 >
 > **Purpose**: Prevent overlooked pre-implementation checks and ensure the agent can start implementation with the correct assumptions.
 >
+> **Which path.** This is the preparation for the **manual** path, where the human is present and a
+> finding is resolved in conversation. On the autonomous path, `run-exec-plan` Step 0 does the same
+> preparation itself, applying the same single sources, and halts where this skill asks — running
+> this skill first is not needed (and does no harm: Step 0 finds its start record and does not
+> repeat it).
+>
 > **Prerequisites**:
 > - An active plan must exist in `exec-plans/active/`
 > - Phase 1 (knowledge base construction) must be complete (`docs/04_implementation/invariants.md` must exist)
@@ -77,8 +83,10 @@ table, `R2` falls back to the AC line, as `ac-readiness.md` states — an older 
 NOT READY verdicts merely for predating the convention. A row that names something that **cannot be
 opened** is not `n/a` and gets no fallback. Present it to the user now, with **Step 2's choice, not
 the NOT READY row's**: rewriting the AC does not repair a pointer, and "proceed anyway" is what Step 2
-then forbids. The user repoints the row, or replaces it with `n/a（理由）` if there is genuinely
-nothing to read; record the decision in the Progress Log. Judging R2 on the line alone here — or
+then forbids. The user decides where the row points, or replaces it with `n/a（理由）` if there is
+genuinely nothing to read — the agent may list candidates and, once the user has chosen, draft the
+row edit for their approval ([`../run-exec-plan/decision-requests.md`](../run-exec-plan/decision-requests.md));
+record the decision in the Progress Log. Judging R2 on the line alone here — or
 offering a choice Step 2 refuses — gives two verdicts for one row. A row that names **background
 material** — anything `ac-sources.md`「What counts as a source」 does not class as a source, such as
 a research note, an ADR, another plan's Decision Log or a design document — instead of a source is

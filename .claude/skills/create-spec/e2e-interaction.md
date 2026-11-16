@@ -156,7 +156,7 @@ Take the verdict from this table:
 |-----------------------------------------|-----------|--------|
 | **Refinement** — the same journey or outcome the US / spec states, with concrete preconditions, steps or end state | Not a complement. This is what a scenario is for | Use it as written |
 | **An outcome stated nowhere in the comparison set** — a step, a result or a 完了条件 that nothing in the comparison set describes | **A detected requirements gap.** The scenario is deciding something nobody decided | A human chooses one of: **① promote** it into the US / spec, landing it **inside the comparison set** — the US ゴール像, or the US / spec section of an AC the scenario lists under `満たす AC` (a promotion written as a new AC also adds that AC to `満たす AC`, which edits the scenario); promoted anywhere else, the next comparison finds the same gap. A spec change — routed per CLAUDE.md「変更のルーティング」, and see「Where the fix lands」 below; **② drop** it from the scenario; **③ the requirements are thin** — the gap is a symptom, and the US is reworked (`create-requirements`) before the plan proceeds. Unattended: **HALT (a)** |
-| **A contradiction** — the same outcome, with a different expected result, or a result the US lists under 非ゴール | Frozen documents disagree | A human decides which is the target, and **the other document is then edited to agree** — by the human, as a spec change routed per CLAUDE.md「変更のルーティング」. Unattended: **HALT (a)**; the driver edits **neither** document |
+| **A contradiction** — the same outcome, with a different expected result, or a result the US lists under 非ゴール | Frozen documents disagree | A human decides which is the target, and **the other document is then edited to agree** — a spec change routed per CLAUDE.md「変更のルーティング」, drafted by the agent once the human has decided and applied once the human approves the diff (`../run-exec-plan/decision-requests.md`). Unattended: **HALT (a)**; the driver edits **neither** document |
 | **No source** — the row names no `E2E-NNN` (`n/a（理由）`, or the plan has no `## Sources`) | Nothing to compare | Continue. The row's own `n/a（理由）` is the record — no separate line is needed |
 
 **Scope the comparison to whether the outcome is stated in the comparison set**, not to whether
@@ -235,7 +235,8 @@ deferred」), a review note, this very format quoted — are not. A plan is defe
 deferral bullet has no later lifting bullet. The marker
 is not `reconcile: deferred` (CLAUDE.md, read by `gc`'s spec-drift backstop) — that one says an AC is
 not being reconciled yet; this one says the plan must not run until a promotion. A deferral is a
-human's decision, and so is lifting it. Who reads it:
+human's decision, and so is lifting it; the bullet itself may be drafted by the agent once the human
+has decided (`../run-exec-plan/decision-requests.md`). Who reads it:
 
 | Site | What it does with a deferred plan | Why |
 |------|-----------------------------------|-----|

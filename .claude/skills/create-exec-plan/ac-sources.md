@@ -259,7 +259,7 @@ writing the row as `n/a（理由）` now, or deferring the plan (record `deferre
 |-----------|--------|
 | `create-exec-plan` (Q3d) | **Do not write the row.** Promote the detail into the US / spec with the user, or write `n/a（理由）` |
 | `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against material that is not a source, and the `n/a` fallback does not apply. **HALT** with (a) before the loop starts |
-| `start-feature` Step 1b and Step 2 | Present the row to the user — at Step 1b already, as for a row that cannot be opened. Fixing it is theirs: promote the detail into the US / spec and repoint the row once the promotion is on `main`, or replace it with `n/a（理由）` |
+| `start-feature` Step 1b and Step 2 | Present the row to the user — at Step 1b already, as for a row that cannot be opened. Fixing it is theirs: promote the detail into the US / spec and repoint the row once the promotion is on `main`, or replace it with `n/a（理由）`. Once they have decided, the agent may draft the edit for their approval (`../run-exec-plan/decision-requests.md`) |
 | `doc-review` §2 (advisory) | Report the row. `R2` for that AC is NOT READY, not judged on the line alone |
 | `docode-review` (advisory) | Hand the row to the reviewer as "names background material, not a source"; the reviewer reports it as a finding |
 

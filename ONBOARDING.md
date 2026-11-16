@@ -321,11 +321,11 @@ The table below lists the main skills used in the daily implementation flow. Bey
 | Used directly by the human (governance / decisions) | `create-requirements` / `create-spec` / `create-exec-plan` / `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>Periodic: `promote-spec` / `gc` | The human invokes and decides |
 | Run internally by the AI (execution / verification) | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | The human does not call these directly (higher-level skills run them automatically) |
 
-> The human invokes the top row (**7 + 2 periodic**). `create-spec` drafts the application spec from approved requirements and hands off to `create-exec-plan` after human approval (optional; skip for small changes). `start-feature` is invoked once per feature, as preparation before starting the autonomous loop. The bottom-row verification skills are invoked internally by the top-row skills as needed (e.g. `run-tests` by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`; `check-*` by `run-exec-plan` / `pre-pr` / `gc`). `update-context` is invoked by `gc` (`complete-exec-plan` updates CONTEXT.md directly and does not call `update-context`).
+> The human invokes the top row (**7 + 2 periodic**). `create-spec` drafts the application spec from approved requirements and hands off to `create-exec-plan` after human approval (optional; skip for small changes). On the autonomous path one `run-exec-plan` invocation covers preparation (what `start-feature` does), the loop, the review and `pre-pr` — and, when you say "PR まで" as you start it, a draft PR; `start-feature` and `pre-pr` are what you invoke yourself on the manual path. The bottom-row verification skills are invoked internally by the top-row skills as needed (e.g. `run-tests` by `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`; `check-*` by `run-exec-plan` / `pre-pr` / `gc`). `update-context` is invoked by `gc` (`complete-exec-plan` updates CONTEXT.md directly and does not call `update-context`).
 >
 > `docode-review` sits on both rows depending on the path: `run-exec-plan` (Step 4a) invokes it
 > internally and **mandatorily** once every AC in a plan is `- [x]`, halting on a ❌ verdict rather
-> than handing off to `pre-pr` — but on the manual `start-feature` path, the human invokes it
+> than going on to `pre-pr` (its Step 4b) — but on the manual `start-feature` path, the human invokes it
 > directly and it remains optional, same as `doc-review`.
 
 #### B. Human-perspective flow
@@ -334,15 +334,15 @@ The table below lists the main skills used in the daily implementation flow. Bey
 flowchart TD
     A["① Maintain docs<br/>create-requirements / create-spec / docs (what to build)"] --> B
     B["② Freeze the ACs<br/>create-exec-plan (decide acceptance criteria)"] --> C
-    C["③ Prepare & start the loop<br/>start-feature → run-exec-plan"]
+    C["③ Start the loop — one invocation<br/>run-exec-plan (prepares itself; add 「PR まで」 for a draft PR)"]
     C --> D{Does the AI HALT?}
-    D -->|Stop conditions a–f| E["④ Human decides<br/>add spec / test expectations / irreversible ops / review findings, etc."]
+    D -->|Stop conditions a–f| E["④ Human decides<br/>answer the decision request — the AI drafts the edit, you approve it"]
     E --> C
-    D -->|All ACs done| F["⑤ Review & confirm<br/>pre-pr → confirm every AC (commits or PR review)"]
+    D -->|All ACs done: review + pre-pr ran| F["⑤ Confirm<br/>every AC (commits, or the draft PR)"]
     F --> G["⑥ Complete & merge<br/>complete-exec-plan (complete commit on the branch) → merge"]
 ```
 
-Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per feature with `start-feature`, then start `run-exec-plan`). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–f in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
+Every box ①②③④⑤⑥ is a human action (at ③ a single `run-exec-plan` invocation: it prepares the run itself, and after the loop it runs `docode-review` and `pre-pr`; on the manual path, `start-feature` and `pre-pr` are invoked by hand instead). However, after ③ kicks it off, the "read the AC's sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC" loop (C↔D) runs autonomously by the AI; the human only returns when the AI HALTs on a stop condition (a–f in "Autonomous exec loop" of CLAUDE.md) at ④. The human's implementation instruction is basically just "hand over an AC number".
 
 #### C. Responsibility table
 
@@ -375,16 +375,19 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
                           carries a process-walkthrough AC — walk the laps, don't just match descriptions
                           Six laps forward, plus "dependency backflow": the existing sites that
                           consume what changed, walked from the top of each one
-2. /start-feature       → Confirm docs (incl. the US / spec sections in ## Sources),
-                          re-check AC readiness, and create a branch
-3. /run-exec-plan       → Gate on AC readiness first — a NOT READY criterion halts before any code is written
+2. /start-feature       → Manual path only: confirm docs (incl. the US / spec sections in ## Sources),
+                          re-check AC readiness, and create a branch (run-exec-plan Step 0 does this itself)
+3. /run-exec-plan       → Prepares the run (plan, own branch, baseline, start record), then gates on AC readiness — a NOT READY criterion halts before any code is written
                           Put the [E2E] test in place, red, before implementing anything (red-first / INV-T02)
                           Then autonomously implement ACs one by one
                           (read the AC's sources → write the failing test → implement → test → fix
                            → re-anchor to the AC's spec section → next AC)
                           Runs /run-tests, /check-invariants, /check-doc-freshness internally
-                          Checks with the human only when hitting a stop condition (a–f)
-4. /pre-pr              → Consolidated pre-PR checks
+                          Checks with the human only when hitting a stop condition (a–f), as a decision request
+                          (options, recommendation, the edit each option makes — the AI drafts it, you approve)
+                          When every AC is done: docode-review, then /pre-pr (report-only);
+                          started with 「PR まで」, it also pushes and opens a draft PR
+4. /pre-pr              → Manual path: consolidated pre-PR checks (run-exec-plan already ran it)
 5. Confirm every AC     → by checking the commits, or in PR review (create the PR before or after)
 6. /complete-exec-plan  → Record the confirmation, move the plan to completed/, and make the
                           complete commit on the same branch (the boundary) → merge
