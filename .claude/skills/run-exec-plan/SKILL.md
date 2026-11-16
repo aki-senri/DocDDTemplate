@@ -118,6 +118,13 @@ start). The two paths apply the same single sources; only the action differs.
   「When part of a plan has to merge before the rest」) — the user switches branches.
   If several active plans exist, ask the user which one
   (this is plan *selection*, an outer-gate choice — confirm it once, up front).
+- **If the plan awaits its bundled approval, do not start.** A plan with a `- 一括承認:` bullet whose
+  definition PR is not merged yet — the plan file, or a document the bullet names, is not on `main`
+  as it is here (`git diff --quiet origin/main -- <the plan and those documents>` fails) — was written
+  on its definition branch and is approved, and frozen, only at that merge
+  ([`../create-spec/bundled-approval.md`](../create-spec/bundled-approval.md)). Implementing it there
+  would mix the definitions with their implementation in one branch. Report it and end, writing
+  nothing; the implementation starts from `main` after the merge.
 - **If the plan is deferred, do not start.** A plan whose Decision Log has a bullet beginning
   `- deferred: spec/` with no later bullet beginning `- deferred 解除:` is waiting on a promotion
   ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a plan, and

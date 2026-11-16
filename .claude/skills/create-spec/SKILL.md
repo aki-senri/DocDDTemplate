@@ -50,9 +50,9 @@ and never proceeds to implementation planning on its own.
 ## What this skill does
 
 1. Locate and read the approved requirements in `docs/01_requirements/`
-2. If requirements are missing, not yet approved (`status: draft`), or too ambiguous to
-   specify against, **halt** and direct the user to approve/define them first (do not guess
-   intent). A missing goal image is not one of these: draft without it and report the mutual
+2. If requirements are missing, not yet approved (`status: draft`) — unless the US is part of the
+   same bundle (below) — or too ambiguous to specify against, **halt** and direct the user to
+   approve/define them first (do not guess intent). A missing goal image is not one of these: draft without it and report the mutual
    check as pending (Step 1)
 3. Draft the application spec under `docs/02_spec/` (whole-app scope/structure first), and the
    required E2E scenarios derived from the US goal image (or, without one, from the flow the user
@@ -116,6 +116,12 @@ and never proceeds to implementation planning on its own.
 
   Only proceed once the source requirements are approved (or the user explicitly confirms
   drafting from a draft requirement).
+
+  **A US in the same bundle is not a halt.** On the bundled path the US, this spec, its scenarios
+  and the plan are approved together in one PR ([`bundled-approval.md`](bundled-approval.md)), so a US
+  that this definition branch added or changed, `status: draft`, is the requirement being approved
+  with the spec — draft from it. A draft US that is **not** on this branch (someone else's, still in
+  review) is still a halt.
 
 **If no requirements exist, or they are too vague to specify against**: **halt** and report:
 
@@ -369,7 +375,9 @@ Requirements gaps : {outcomes a scenario needed that the US does not state — f
 根拠資料          : {n} 件 in the spec's ## 関連（repo 内 {n} / 調査ノート作成 {n} / 出典のみ {n}）, or "none"
 ADR 候補          : {n} 件 — ADR-NNN 追記 {n} / 見送り {n} (drafts, approved with the spec); or "none"
 
-Next steps (human-gated):
+Next steps (human-gated) — bundled path (standard): on this same branch, steps 1 and 3, then one PR
+approving the US, the spec, the scenarios and the plan together (bundled-approval.md). Staged path:
+step 2 before step 3.
   1. Review  : run /doc-review for an independent check of the spec
   2. Approve : edit as needed, then approve the spec and the scenarios — and any ADR or research
                note drafted with them (merge — see spec-version management). A scenario freezes

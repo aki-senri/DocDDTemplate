@@ -62,6 +62,10 @@ List the files in `exec-plans/active/` and confirm the plan to work on with the 
   [`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)
   「Reopening before the merge」 to the user — reopening withdraws their confirmation, so it is their
   call — and continue with the reopened plan
+- If the selected plan **awaits its bundled approval** — it has a `- 一括承認:` bullet, and the plan
+  file or a document the bullet names is not yet on `main` as it is here — tell the user the definition
+  PR has to merge first, and stop: the implementation goes on a branch of its own from `main`
+  ([`../create-spec/bundled-approval.md`](../create-spec/bundled-approval.md))
 - If the selected plan is **deferred** — its Decision Log has a bullet beginning `- deferred: spec/`
   with no later bullet beginning `- deferred 解除:` — present that line to the user before anything else. The plan is waiting on
   a promotion ([`../create-spec/e2e-interaction.md`](../create-spec/e2e-interaction.md)「Deferring a

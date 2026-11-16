@@ -25,7 +25,8 @@ flowchart TD
         SPEC["/create-spec\n· Draft application spec (what the app does)\n· from approved requirements + goal image\n  (no goal image yet: drafts anyway and\n  reports 相互チェック未了)\n· E2E scenarios (REQUIRED), one file each\n  in docs/01-02_e2e/ (range: two-way with\n  requirements and spec):\n  E2E-001 → AC-001, AC-003 (cross-cutting)\n· Generate docs/02_spec/ (status: draft)\n· Step 2b: material behind the spec in ## 関連\n· Step 2c: ADR candidates — draft only\n  the ones the human says yes to\n· Independent review + HUMAN approval"]
         REQ --> SPEC
         SPEC -.->|optional review| DR
-        SPEC -->|after human approval| PLAN
+        SPEC -->|"bundled (standard): same branch,\none PR approves US+spec+E2E+plan"| PLAN
+        SPEC -.->|"staged: after human approval"| PLAN
         REQ -.->|small change: skip spec| PLAN
         PLAN["/create-exec-plan\n· Approved US: draft the plan, show the\n  expanded view, ask only the decisions\n  (scope, NOT READY, n/a, E2E findings)\n· No approved US: interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· ## Sources: per-AC pointer to the US bullets\n  and spec section it condenses (n/a with a reason)\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
@@ -253,6 +254,15 @@ flowchart TD
 > `[E2E]` AC, a demonstration from a real run at the sheet's commit. `[E2E]` ACs are confirmed by
 > seeing the flow work, functional ACs by reading the sheet. The sheet is a temporary file under
 > `.claude/views/`, put into the PR for a reviewer; it is never a confirmation itself.
+>
+> **Shared reference file (not a skill):** `create-requirements`, `create-spec`, `doc-review`,
+> `create-exec-plan` and `e2e-interaction.md` apply
+> [`.claude/skills/create-spec/bundled-approval.md`](.claude/skills/create-spec/bundled-approval.md)
+> — the standard is to approve one feature's definitions in **one PR**: the human answers the
+> requirements dialogue, the agent drafts the spec, the scenarios and the plan on the same branch
+> and has them reviewed, and the human approves by merging, reading the expanded view. Before that
+> merge, the documents in the bundle are read from the definition branch; approval and the
+> scenario freeze both happen at the merge. Approving stage by stage remains available.
 >
 > **Shared reference file (not a skill):** `create-exec-plan` (drafting mode) applies
 > [`.claude/skills/create-exec-plan/expanded-view.md`](.claude/skills/create-exec-plan/expanded-view.md)

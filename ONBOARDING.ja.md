@@ -334,7 +334,7 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 ```mermaid
 flowchart TD
     A["① ドキュメント整備<br/>create-requirements / create-spec / docs（何を作るか）"] --> B
-    B["② AC を凍結<br/>create-exec-plan（受け入れ基準を決める）"] --> C
+    B["② AC を凍結<br/>create-exec-plan — ①② を1つの PR で一括承認"] --> C
     C["③ 自走を起動（1回）<br/>run-exec-plan（準備も自分で行う。「PR まで」でドラフト PR まで）"]
     C --> D{AI が HALT?}
     D -->|停止条件 a〜f| E["④ 人が判断<br/>決定依頼に答える — 文書の修正は AI が起草し人が承認"]
@@ -363,9 +363,10 @@ flowchart TD
 0. /create-requirements → User Story・ゴール像・AC 条件を定義（任意・推奨）
                           ゴール像＝完成時にできること／主要ユーザージャーニー／非ゴール（必須）
 0.5 /create-spec        → 承認済み要件からアプリ仕様（docs/02_spec/）と E2E シナリオ（docs/01-02_e2e/）を起草
-                          （任意・小さな変更ならスキップ。create-exec-plan の前に人間承認が必要）
+                          （任意・小さな変更ならスキップ。標準は同じブランチで 0〜1 を続け、要件・仕様・シナリオ・
+                           プランを1つの PR で承認する＝一括承認。US・spec を先に個別に承認する段階的な流れも選べる）
 1. /create-exec-plan    → 実装計画・受け入れ基準（AC）を定義
-                          承認済みの US からは AI がプランを起草し、展開ビュー（.claude/views/・コミットしない）を
+                          承認済み（または同じ PR で一括承認する）US からは AI がプランを起草し、展開ビュー（.claude/views/・コミットしない）を
                           書き出す。人は挙げられた「決めてほしいこと」にだけ答える
                           機能 AC に加えて最低1本の [E2E] AC を置く
                           （documentation-only プランは置かず E2E: n/a を記録）
