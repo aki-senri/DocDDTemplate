@@ -1,0 +1,45 @@
+# DocDD checks that a script can decide. A violation fails the job; make the job a required status
+# check in the repository's branch protection so that it stops the merge.
+#
+#   - Document lint (DOC-INV-007〜012): .claude/scripts/check_doc_lint.py, in PR mode (--base)
+#   - Completion boundary: .claude/scripts/check_completion_boundary.py — an implementation change
+#     after a plan's complete commit, or an unchecked AC inside a completed plan
+#
+# The checks that need a reading (AI review, the weekly /gc) are not run here.
+
+name: DocDD checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docdd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR head with full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Document lint (DOC-INV-007〜012)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python .claude/scripts/check_doc_lint.py --base "origin/${BASE_REF}"
+
+      - name: Completion boundary
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python .claude/scripts/check_completion_boundary.py --base "origin/${BASE_REF}"

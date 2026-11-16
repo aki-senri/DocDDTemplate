@@ -17,7 +17,7 @@ Implements DOC-INV-007 through DOC-INV-012 (see
 | C6    | DOC-INV-012  | A file an active plan's `## Sources` row names that   | ❌    |
 |       |              | does not exist (⚠️ when only the § section is missing) |       |
 
-With `--base <ref>` (PR mode — `pre-pr` ③ only), a DOC-INV-012 ❌ blocks only when the PR is
+With `--base <ref>` (PR mode — `pre-pr` ③ and the CI workflow), a DOC-INV-012 ❌ blocks only when the PR is
 answerable for it: the row is in a plan the branch changed or added, or names a file the branch
 deleted or renamed. Other plans' ❌ are listed apart and do not set the exit code; when the split
 cannot be made, every ❌ blocks. Without `--base` (`gc`, a standalone run) every ❌ blocks.
@@ -1202,7 +1202,7 @@ def main(argv=None) -> int:
         "--base",
         default=None,
         metavar="REF",
-        help="PR mode, for pre-pr only: a DOC-INV-012 ❌ blocks only when the row is in a plan this "
+        help="PR mode, for pre-pr ③ and CI: a DOC-INV-012 ❌ blocks only when the row is in a plan this "
         "branch changed or added since its merge-base with REF, or names a file it deleted or "
         "renamed; other plans' ❌ are listed apart and do not set the exit code. When that cannot "
         "be told, every ❌ blocks. Omitted (gc, standalone): every ❌ blocks",

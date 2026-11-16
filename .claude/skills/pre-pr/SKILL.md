@@ -137,7 +137,8 @@ Verify that documents corresponding to changed code files are up to date.
 Run the `check-doc-invariants` skill **in PR mode**: at its Step 8, pass
 `--base <the branch this PR will merge into>` — fetch first and pass the remote-tracking branch
 (`origin/main` unless the PR targets another; the local `main` is often behind, which makes other
-plans' rows look like this PR's). This is the only site that passes it.
+plans' rows look like this PR's). This and the CI workflow (`.github/workflows/docdd-checks.yml`,
+which runs the same script in the same mode on every PR) are the only sites that pass it.
 
 1. Collect all `docs/**/*.md` and `exec-plans/**/*.md`
 2. Check every built-in invariant the skill defines. The list — and each invariant's range —
@@ -382,6 +383,18 @@ boundary belongs to a reopened plan.
 
 Where the branch stands relative to the human confirmation
 ([`../complete-exec-plan/completion-boundary.md`](../complete-exec-plan/completion-boundary.md)).
+
+**Run the script; do not re-derive the judgement.** The rows below are decided by
+`.claude/scripts/check_completion_boundary.py`, the same script the CI workflow runs on every PR, so
+the judgement is written once:
+
+```bash
+git fetch --no-tags origin && python .claude/scripts/check_completion_boundary.py --base origin/main
+```
+
+(use the branch the PR merges into in place of `main`). Its report is ⑦'s result; its exit code is
+1 exactly when a ❌ row below holds, or when it cannot read the branch's state — then it says why,
+and every row blocks until the cause is fixed. The table describes what it reports:
 
 | State of the plan | Outcome |
 |-------------------|---------|

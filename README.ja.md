@@ -43,7 +43,10 @@ settings.json = トリガー（いつ自動実行するか）
 
 ```
 .claude/                   ← そのまま残す（スキル・設定）
+.github/workflows/         ← そのまま残す（CI: PR ごとにドキュメント lint と完了の境界を検査）
 ```
+
+CI でマージを止めるには、リポジトリの branch protection で `DocDD checks` のジョブを必須のステータスチェックにする（リポジトリ設定）。
 
 ### 2. プロジェクトを初期化する
 
@@ -141,10 +144,12 @@ DocDD は責任を分ける ── **「決定」は人、「実行」は AI**�
 
 ```
 プロジェクトルート/
+├── .github/workflows/         # docdd-checks.yml — CI: PR ごとにドキュメント lint と完了の境界を検査
 ├── .claude/
 │   ├── settings.json          # フック設定（コード変更時の自動リマインド）
 │   ├── hooks/                 # spec-gate.py（仕様ゲート）・post-tool-notify.py
 │   ├── scripts/               # check_doc_lint.py（スクリプト化された DOC-INV。check-doc-invariants が実行）
+│   │                          # check_completion_boundary.py（pre-pr ⑦ と CI）
 │   └── skills/                # 各スキルの定義
 │       ├── init-project/
 │       ├── create-requirements/

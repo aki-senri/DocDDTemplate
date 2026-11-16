@@ -43,7 +43,11 @@ Copy this repository into your new project repository, or use it as a template.
 
 ```
 .claude/                   ← keep as-is (skills and settings)
+.github/workflows/         ← keep as-is (CI: document lint + completion boundary on every PR)
 ```
+
+To have CI stop a merge, make the `DocDD checks` job a required status check in the repository's
+branch protection (a repository setting).
 
 ### 2. Initialize the project
 
@@ -141,10 +145,12 @@ Run skills in Claude Code chat by typing `/skill-name`.
 
 ```
 project-root/
+├── .github/workflows/         # docdd-checks.yml — CI: document lint + completion boundary on every PR
 ├── .claude/
 │   ├── settings.json          # Hook configuration (auto-reminders on code changes)
 │   ├── hooks/                 # spec-gate.py (spec-first gate), post-tool-notify.py
 │   ├── scripts/               # check_doc_lint.py (script-backed DOC-INVs; run by check-doc-invariants)
+│   │                          # check_completion_boundary.py (pre-pr ⑦ and CI)
 │   └── skills/                # Skill definitions
 │       ├── init-project/
 │       ├── create-requirements/

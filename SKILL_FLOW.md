@@ -383,8 +383,14 @@ flowchart TD
   G --> Z[Done]
 ```
 
-**Mandatory gates (impossible to skip): currently zero.**
-All skills are manually invoked, and hooks do not block execution.
+**Mandatory gates (impossible to skip): one, once it is required — CI.** All skills are manually
+invoked, and hooks do not block execution. The CI workflow (`.github/workflows/docdd-checks.yml`)
+runs, on every PR, the two checks a script can decide: the document lint
+(`check_doc_lint.py --base`, DOC-INV-007〜012) and the completion boundary
+(`check_completion_boundary.py` — an implementation change after a plan's complete commit, or an
+unchecked AC inside a completed plan). A violation fails the job; it stops the merge once the job is
+made a required status check in branch protection (a repository setting the human makes). Checks
+that need a reading — AI review, the weekly `/gc` — are not run there.
 
 > **Blocking *within* a skill is a different thing.** Once `pre-pr` or `complete-exec-plan` is
 > actually run, an uncovered or failing `[E2E]` AC blocks PR creation / completion — it cannot be
@@ -445,4 +451,5 @@ All skills are manually invoked, and hooks do not block execution.
 | Improvement | Approach |
 |-------------|----------|
 | **Change hook warnings to blocking** | Return `exit 1` from `post-tool-notify.py` to block Write/Edit and force user confirmation (use `exit 2` for a softer block if full blocking is too aggressive) |
-| **Merge-condition check in CI** | Fail a PR whose branch implements a plan that is still in `exec-plans/active/` (no complete commit) or changed implementation after its complete commit — the same mechanical check as `pre-pr` ⑦, run where the merge actually happens |
+| **Merge-condition check in CI — the rest** | CI already fails a PR that changed implementation after its complete commit or carries an unchecked AC in a completed plan (`check_completion_boundary.py`). Failing a PR whose plan is still in `exec-plans/active/` with every AC done (no complete commit yet) is reported (ℹ️) but not blocked: on the confirm-in-review path that is the normal state during review |
+| **Weekly `/gc` on a schedule** | Run `/gc` (an AI skill) from a scheduled job — a separate change, since it needs an agent runtime in CI |
