@@ -61,7 +61,8 @@ This collects project overview, tech stack, development rules, and platform via 
 /create-requirements ← define User Stories / goal image / AC conditions (optional, recommended)
 /create-spec         ← draft the application spec and E2E scenarios (optional; skip for small changes)
 /create-exec-plan    ← create an execution plan (define AC-001~ and the [E2E] AC,
-                       record each AC's sources, check AC readiness)
+                       record each AC's sources, check AC readiness;
+                       from an approved US: drafted, you answer only the decisions)
 /start-feature       ← pre-implementation review, AC readiness re-check, branch creation
 /run-exec-plan       ← autonomously implement ACs one by one: read the AC's sources,
                        test first, re-anchor to the spec on green (opt-in)
@@ -103,7 +104,7 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | `init-project` | Project initialization (Phase 0 → Phase 1). Run once at adoption |
 | `create-requirements` | Define User Stories, the **goal image** (what the user can do when done / primary journey / non-goals), acceptance conditions, constraints, and the material the decision was made from (`## 関連`; material outside the repo is offered as a research note) (`docs/01_requirements/`) |
 | `create-spec` | Draft the application spec — *what* the app does — plus **E2E scenarios** (`E2E-001 → AC-001, AC-003` cross-cutting traceability) from approved requirements (`docs/02_spec/` and one file per scenario in `docs/01-02_e2e/`, `status: draft`; needs human approval). Records the material behind the spec's decisions in `## 関連` and asks which decisions to keep as ADRs (`decisions.md`) |
-| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) and given a **`## Sources`** row naming the US bullets and spec section it condenses. A plan that changes a DocDD process carries a **process-walkthrough** verification AC |
+| `create-exec-plan` | Create a new execution plan with acceptance criteria (AC-001~) and **at least one `[E2E]` AC** (documentation-only plans carry none), each checked for **AC readiness** (testability) and given a **`## Sources`** row naming the US bullets and spec section it condenses. A plan that changes a DocDD process carries a **process-walkthrough** verification AC. When drawn from an approved US, the plan is **drafted** and the human is shown an **expanded view** (the approved text quoted in through-flow order, as a temporary file) and asked only the decisions |
 | `start-feature` | Pre-implementation review, AC readiness re-check, loading of the US / spec sections in `## Sources`, and branch name decision (once per feature) |
 | `run-exec-plan` | Gate on **AC readiness** before the loop starts (a NOT READY criterion halts it), place the `[E2E]` test red, then autonomously implement ACs one by one (**read the AC's sources** → **write the failing test** → implement → test → fix → **re-anchor to the spec section** → next); halts only on stop conditions (opt-in) |
 | `pre-pr` | Comprehensive pre-PR check (invariants / doc-freshness / doc-invariants / review_checklist / run-tests / exec-plan update / completion boundary) |

@@ -27,7 +27,7 @@ flowchart TD
         SPEC -.->|optional review| DR
         SPEC -->|after human approval| PLAN
         REQ -.->|small change: skip spec| PLAN
-        PLAN["/create-exec-plan\n· Interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· ## Sources: per-AC pointer to the US bullets\n  and spec section it condenses (n/a with a reason)\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
+        PLAN["/create-exec-plan\n· Approved US: draft the plan, show the\n  expanded view, ask only the decisions\n  (scope, NOT READY, n/a, E2E findings)\n· No approved US: interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· ## Sources: per-AC pointer to the US bullets\n  and spec section it condenses (n/a with a reason)\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
         SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md + the US/spec\n   sections in ## Sources\n⑥ Decide branch name\n⑦ Record start in progress log\n⑧ Implementation order: red-first,\n   then stable layer first"]
     end
@@ -230,6 +230,15 @@ flowchart TD
 > failure differs by site — HALT for the unattended loop, ask the human on the manual path, report
 > only after the fact — for the same reason as readiness below: deciding an expected result the AC
 > does not state is an outer-gate call.
+>
+> **Shared reference file (not a skill):** `create-exec-plan` (drafting mode) applies
+> [`.claude/skills/create-exec-plan/expanded-view.md`](.claude/skills/create-exec-plan/expanded-view.md)
+> — when the plan is drawn from an approved US, the agent drafts it and shows the human an expanded
+> view (the approved text quoted in through-flow order, the agent's own wording marked, the decisions
+> first) as a temporary file under `.claude/views/` (not committed). Only the decisions are asked; the
+> plan file is written once every question is answered, and its Decision Log records the commit the
+> view was generated from. The checks and their sites do not change — only who writes and how the
+> human is shown.
 >
 > **Shared reference file (not a skill):** `create-exec-plan` (Q3c), `start-feature` (Step 1b),
 > `run-exec-plan` (Step 0b) and `doc-review` (§2) all apply

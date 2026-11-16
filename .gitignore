@@ -7,6 +7,9 @@
 # Claude Code - ユーザー固有のメモリファイル
 .claude/memory/
 
+# create-exec-plan の読み合わせ用展開ビュー（一時ファイル。引用の写しをコミットすると原文とずれる）
+.claude/views/
+
 # exec-plan の仕様スキップ記録（一時ファイル）
 exec-plans/.spec-override
 

@@ -348,7 +348,7 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 
 | Phase | Human's responsibility | AI's responsibility |
 |-------|------------------------|---------------------|
-| Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY; decide which reading wins when a source and its AC line disagree | Elicit through dialogue, write the draft, record each AC's sources, and run the readiness check (it never rewrites an AC or picks between two frozen documents on its own) |
+| Requirements / spec | Define and freeze User Stories / ACs; rewrite any AC the readiness check flags as NOT READY; decide which reading wins when a source and its AC line disagree | Elicit through dialogue, write the draft, record each AC's sources, and run the readiness check; from an approved US, draft the plan and show it as an expanded view with only the decisions asked (it never rewrites an AC or picks between two frozen documents on its own) |
 | Implementation / verification | (Instruction is the AC number only) | Autonomously run read the sources → write the failing test → implement → test → fix → re-anchor to the spec → next AC; run `run-tests` / `check-*` internally |
 | Spec change / test expectations | Decide whether the change is allowed (outer gate) | Detect that a change is needed and stop to present it |
 | Review / PR | Confirm every AC of the plan (checking the commits, or in PR review), then merge once the complete commit is on the branch | Run the consolidated checks via `pre-pr`; with the human's confirmation in hand (their words or a PR approval), make the complete commit via `complete-exec-plan` — never on its own judgement |
@@ -364,6 +364,8 @@ Every box ①②③④⑤⑥ is a human-invoked action (at ③, prepare once per
 0.5 /create-spec        → Draft the application spec (docs/02_spec/) and E2E scenarios (docs/01-02_e2e/) from approved requirements
                           (optional; skip for small changes. Needs human approval before create-exec-plan)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
+                          From an approved US: the AI drafts the plan and writes an expanded view
+                          (.claude/views/, not committed); you answer only the decisions it lists
                           At least one [E2E] AC in addition to the functional ones
                           (documentation-only plans carry none — record E2E: n/a)
                           AC readiness check (R1–R5): a criterion that cannot be tested is rewritten here

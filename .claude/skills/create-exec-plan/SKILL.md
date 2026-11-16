@@ -10,6 +10,9 @@ description: |
   bullets and the spec section), so the implementer receives the whole goal rather than one line.
   Every criterion is checked for testability (AC readiness) before the plan
   file is finalized, so ambiguity is caught while it is still cheap to rewrite.
+  When the plan is drawn from an approved US (and its spec and E2E scenarios), the agent drafts the
+  plan instead of interviewing for it, and shows the human an expanded view — the draft against the
+  approved text, in through-flow order — with only the decisions that are the human's put to them.
 disable-model-invocation: true
 ---
 
@@ -26,7 +29,8 @@ disable-model-invocation: true
 
 ## What this skill does
 
-1. Collect plan details via an interview
+1. Collect plan details — **drafted** from the approved documents when there are some, through an
+   **interview** when there are none (see **Two modes** below)
 2. For a plan that changes a process (a loop, a gate, a resumable run), require a
    **process walkthrough** AC rather than a description-consistency one
 2b. Record each criterion's **sources** — the US bullets and spec section its one line condenses
@@ -39,25 +43,54 @@ disable-model-invocation: true
 
 ---
 
+## Two modes
+
+Most of what this skill used to ask can be derived when the plan is drawn from approved documents,
+and asking it anyway makes the human re-answer what they already approved. What cannot be derived
+is a decision, and those stay with the human. The mode follows from what there is to derive from:
+
+| Situation | Mode |
+|-----------|------|
+| The plan is drawn from a US that is approved (on `main`) — with its spec and `E2E-NNN` scenarios, or with `/create-spec` skipped and the US goal image as the through-flow | **Drafting** — the agent drafts every row marked *drafted* below, and puts only the rows marked *the human decides* to the human, through the expanded view ([`expanded-view.md`](expanded-view.md)) |
+| There is nothing approved to derive from — the plan's subject is the repository's own conventions (sources `n/a`), or the US is still a draft not on `main` | **Interview** — the questions are asked one at a time, in order, as below |
+
+The documents are read as they are on `main`. A US, spec or scenario that the current branch has
+edited but `main` does not have is not approved, and a draft is not derived from it: approve it first
+(merge it), or use the interview. Which US the plan is drawn from comes from the request
+(`/create-exec-plan US-003`); when the request does not say, list the approved US `AC-NNN` sections
+that no plan's `## Sources` (in `exec-plans/active/` or `exec-plans/completed/`) names yet, grouped by
+US, and let the human pick — a US whose first plan left some of its ACs for later still has them
+listed.
+
+**Drafting changes who writes, not who decides.** The checks below — plan size, the walkthrough AC,
+the sources, the scenario comparison, readiness — run exactly as in the interview; what changes is
+that each decision they raise reaches the human as a question in the expanded view instead of in the
+middle of a one-question-at-a-time interview. An agent that drafts a decision on the human's behalf
+(a ⚠️ reason, an `n/a` reason, a rewritten AC, a resolution of a scenario finding) has left the
+drafting mode's bounds, whatever the view looks like.
+
 ## Interview
 
-The agent asks the following questions **one at a time, in order**.
+In the interview mode, the agent asks the following questions **one at a time, in order**. In the
+drafting mode, the last column says which rows the agent drafts and which become questions in the
+expanded view.
 
-| # | Question | Used for |
-|---|----------|----------|
-| Q1 | What is the name of this plan? (alphanumeric and hyphens, e.g. `user-auth`, `refactor-service-layer`) | Filename |
-| Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` |
-| Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` |
-| Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) |
-| Q3f | Can **one branch implement every criterion above, and one confirmation by you cover them all**? If not, which criteria go to a separate plan? (see **Plan size** below) | `## Acceptance Criteria` (criteria moved out), `## Decision Log` (the split) |
-| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) |
-| Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` |
-| Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` |
-| Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` |
+| # | Question | Used for | Drafting mode |
+|---|----------|----------|---------------|
+| Q1 | What is the name of this plan? (alphanumeric and hyphens, e.g. `user-auth`, `refactor-service-layer`) | Filename | *drafted* from the US |
+| Q2 | Please describe the goal and scope in 3 lines or fewer | `## Goal & Scope` | *drafted* from the US goal image and the proposed scope |
+| Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` | *drafted* — one line per US `AC-NNN` section in scope, restating only what the section says |
+| Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) | *drafted* — one `[E2E]` AC per `E2E-NNN` in scope (the US goal image when the spec was skipped) |
+| Q3f | Can **one branch implement every criterion above, and one confirmation by you cover them all**? If not, which criteria go to a separate plan? (see **Plan size** below) | `## Acceptance Criteria` (criteria moved out), `## Decision Log` (the split) | **the human decides** — the agent proposes the scope; every US AC whose inclusion is a real choice, and any split the size calls for, is a question |
+| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) | *drafted* — judged by the scope table in [`process-walkthrough.md`](process-walkthrough.md) |
+| Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` | *drafted* — the sections each line was condensed from are its sources. **The human decides** every `n/a（理由）` and every finding of the scenario comparison |
+| Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` | run by the agent; **the human decides** every NOT READY rewrite and every ⚠️ reason |
+| Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` | *drafted* — how to build is not a decision about what to build |
 
 > **Ask them in the order the rows appear**, not in alphabetical order of their labels: Q1 → Q2 →
-> Q3 → Q3b → Q3f → Q3e → Q3d → Q3c → Q4. Q3f, Q3e and Q3d come **before** Q3c although they are lettered
-> later. Q3f comes right after the criteria are listed, so the questions that follow — the
+> Q3 → Q3b → Q3f → Q3e → Q3d → Q3c → Q4. In the drafting mode the same order is the order of
+> drafting, and the questions are put to the human together once the draft has been through Q3c.
+> Q3f, Q3e and Q3d come **before** Q3c although they are lettered later. Q3f comes right after the criteria are listed, so the questions that follow — the
 > walkthrough AC, the sources, readiness — run only on the criteria that stay in this plan. Readiness must run over the
 > finished AC set: an AC added after the readiness gate has never been through it — which is the
 > failure the gate exists to prevent. If any criterion is added or reworded after Q3c, re-run Q3c on
@@ -110,6 +143,12 @@ re-derive them here.
 | The plan's subject is the repository's own conventions, with no US and no spec | One row covering the range, `n/a（理由）` |
 | The source genuinely cannot be identified | `n/a（理由）` — **with the user**. "There is no spec for this" is a claim about the spec, not a gap the agent may declare on its own |
 
+In the drafting mode the rows are drafted — the sections each line was condensed from are its
+sources, and the `/create-spec`-skipped row follows from the fact that no spec exists — but an
+`n/a（理由）` for a source that cannot be identified is a claim about the spec and is put to the user
+as a question, never written by the agent alone. The same holds for every finding of the scenario
+comparison below.
+
 Never leave a cell blank. A blank cannot be told apart from a forgotten row, and the table's value
 is exactly that a later reader can distinguish "there is nothing to read" from "nobody looked".
 
@@ -149,8 +188,10 @@ option is to halt.
 | NOT READY | **Rewrite the criterion with the user** — name every failing check by its own ID (any of `R1` / `R2` / `R5`, and `R3` / `R4` when no reason can be given) and quote the phrase that fails each one, propose a rewrite, confirm it. Do not finalize a plan containing a NOT READY criterion |
 
 Rewriting an AC is a decision about *what to build*, so it is made with the user, not on their
-behalf. If the user declines to rewrite, record their decision and the failing check in the
-Decision Log — a later `run-exec-plan` will still halt on it (this is intended; see the call-site
+behalf. In the drafting mode a NOT READY criterion and an unmet R3 / R4 are put to the user as
+questions in the expanded view, in product words ([`expanded-view.md`](expanded-view.md)「What
+becomes a question」) — the agent drafts neither the rewrite nor the ⚠️ reason. If the user
+declines to rewrite, record their decision and the failing check in the Decision Log — a later `run-exec-plan` will still halt on it (this is intended; see the call-site
 table in `ac-readiness.md`).
 
 ---
@@ -259,6 +300,7 @@ later session reading only the file knows it.
 | File path | Role |
 |-----------|------|
 | `exec-plans/active/YYYY-MM-{Q1}.md` | The execution plan itself (follows the template below) |
+| `.claude/views/YYYY-MM-{Q1}.view.md` | Drafting mode only: the expanded view shown to the human. **Temporary, not committed** (`.gitignore`); the plan's Decision Log records the commit it was generated from ([`expanded-view.md`](expanded-view.md)) |
 
 ---
 
@@ -315,6 +357,26 @@ completed:
 
 ## Steps
 
+**Drafting mode** (see **Two modes**) runs the same steps with the agent writing the answers, and
+three steps of its own around them:
+
+- **D1** — Before Step 1: confirm the US is approved (on `main`) and note the commit the documents
+  are read at. Draft Q1–Q4 from the US, the spec and the scenarios, in the order of Steps 1–3, over
+  the scope the agent proposes. Steps 1–3 still run in full — the plan size check, the walkthrough
+  judgement, the sources, the scenario comparison and readiness — and every decision they raise
+  becomes a question instead of being asked on the spot or settled by the agent
+- **D2** — After Step 3: write the expanded view to `.claude/views/` and put **only the questions** to
+  the human, with the view's path ([`expanded-view.md`](expanded-view.md)). With no questions, ask
+  for approval of the through-flow as a whole. Apply the answers, re-run the checks on whatever they
+  added or changed, and check that the documents have not moved since the view was generated;
+  a new question goes back to the human in a regenerated view. **Do not write the plan file while a
+  question is open**
+- **D3** — At Step 6: add the expanded view's records to `## Decision Log`
+  ([`expanded-view.md`](expanded-view.md)「Record format」) alongside the records Steps 1–3 already
+  produce (the split, the scenario comparison, ⚠️ reasons)
+
+**Interview mode** runs the steps as written.
+
 1. Complete the Q1–Q4 interview (including Q3b — read the scenarios in `docs/01-02_e2e/` first
    if a spec exists, so the E2E criteria can be derived rather than asked from scratch). At Q3f,
    check the plan size against
@@ -369,6 +431,11 @@ completed:
 - [ ] If the plan changes a process in the scope of
       [`process-walkthrough.md`](process-walkthrough.md): it carries an AC requiring that
       walkthrough, naming its laps — a description-consistency AC alone does not satisfy this
+- [ ] In the drafting mode: the human was shown the expanded view and answered **every** question
+      in it (or, with no questions, approved the through-flow as a whole) before the plan file was
+      written; no ⚠️ reason, `n/a` reason, AC rewrite or scenario finding was settled by the agent;
+      and the Decision Log records the commit the view was generated from and each decision
+      ([`expanded-view.md`](expanded-view.md)「Record format」)
 - [ ] The priority tasks in `docs/07_ai_context/CONTEXT.md` have been updated
 
 Final report output by the agent:
@@ -377,6 +444,7 @@ Final report output by the agent:
 === Execution plan created ===
 
 File     : exec-plans/active/YYYY-MM-{name}.md
+Mode     : drafting（起点 `<commit>`、問い {n} 件に人が回答） | interview
 機能 AC  : AC-001, AC-002, ...
 E2E AC   : AC-NNN [E2E] ← E2E-001 (or "derived from US-XXX ゴール像")
 Sources  : {n}/{n} AC に起点あり  |  n/a {n} 件（{理由}）
