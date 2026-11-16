@@ -552,7 +552,8 @@ python3 .claude/scripts/check_doc_lint.py
   It is opt-in so the checks never require a Node toolchain; when those are unavailable, or the
   parser run itself fails, the finding is a **⚠️ under DOC-INV-010** and the exit code is unchanged
   — a check that could not run is not a passing check, and not a violation either
-- `--base <ref>` is **PR mode**, and only `pre-pr` ③ passes it — `<ref>` is the up-to-date branch
+- `--base <ref>` is **PR mode**, and only `pre-pr` ③ and the CI workflow
+  (`.github/workflows/docdd-checks.yml`) pass it — `<ref>` is the up-to-date branch
   the PR will merge into: after a fetch, `origin/main` (unless the PR targets another branch; see
   "Pass an up-to-date base" above). It changes which DOC-INV-012 ❌s block, and
   nothing else (「Which ❌ blocks which run」 above). `gc` ③ and a standalone run omit it, so every
