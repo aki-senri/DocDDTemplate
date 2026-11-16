@@ -36,7 +36,7 @@ flowchart TD
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
-        DRIVER["/run-exec-plan (opt-in)\nStep 0: prepare — plan, own branch,\nbaseline, docs, start record (0d)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here\n(after a sweep of pre-pr ①②).\n❌ → HALT (f); ✅/⚠️ → Step 4b pre-pr\n(report-only); Step 4c draft PR only\nif invoked with 「PR まで」\nHalts only on stop conditions;\neach HALT is a decision request"]
+        DRIVER["/run-exec-plan (opt-in)\nStep 0: prepare — plan, own branch,\nbaseline, docs, start record (0d)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\n(a) before any code for a functional AC:\nhold it, go on with unrelated ACs,\nask all held questions together\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here\n(after a sweep of pre-pr ①②).\n❌ with 人の判断が要る → HALT (f);\n❌ with only impl errors / missing tests\n→ self-repair + NEW review (max 2)\n✅/⚠️ → Step 4b pre-pr\n(report-only); Step 4c draft PR only\nif invoked with 「PR まで」\nHalts only on stop conditions;\neach HALT is a decision request"]
         SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction /\n  cannot be opened → HALT (a)"]
         REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe given/when/then from\n  the AC line AND its sources\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
         REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC /\n  source cannot be opened → HALT (a)\n· record it on the AC-NNN done line"]
@@ -65,7 +65,7 @@ flowchart TD
     DCR ==>|"autonomous: Step 4b\n(report-only), then Step 4c\ndraft PR if asked at invocation"| PREPR
     IMPL -.->|"optional, manual path\n(no run-exec-plan)"| DCR
     DRIVER ==>|"mandatory once every AC is - [x]\n(Step 4a)"| DCR
-    DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
+    DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌, each finding\n  classified 実装の誤り / テストの不足 /\n  人の判断が要る (by the reviewer)\n· Step 4a ❌: 人の判断が要る → HALT (f),\n  else driver repairs (max 2 rounds)"]
 
     subgraph PREPR_PHASE["Before PR Creation"]
         PREPR["/pre-pr\n① check-invariants\n② check-doc-freshness\n③ check-doc-invariants\n④ Confirm review_checklist\n⑤ run-tests + AC coverage check,\n   incl. [E2E] AC covered and green\n   (uncovered → blocks PR)\n   + red-first evidence per AC (⚠️ only)\n⑤b process-walkthrough evidence (⚠️ only)\n⑤c ## Sources + spec re-anchor record (⚠️ only)\n⑤d docode-review verdict recorded?\n   for autonomous completions (⚠️ only)\n⑥ Update exec-plan progress checkboxes\n⑦ Completion boundary: not completed → ℹ️,\n   ACs left → ⚠️, implementation changed\n   after the complete commit → ❌\n⑧ Confirmation sheet (every AC done):\n   evidence per AC + [E2E] demonstration,\n   in .claude/views/ (not committed)"]
@@ -405,9 +405,11 @@ All skills are manually invoked, and hooks do not block execution.
 > Inside `run-exec-plan`, once every AC is `- [x]`, Step 4a calls it as a **mandatory, blocking**
 > step: the driver and the reviewer of its own work would otherwise be the same agent from start to
 > finish, which is exactly the self-verification bias the other three checks above cannot see (they
-> all still run *inside* the same session that wrote the code). A ❌ verdict halts with stop
-> condition (f) rather than handing off — the skill itself is still opt-in, but once chosen, this
-> gate inside it is not.
+> all still run *inside* the same session that wrote the code). A ❌ verdict with a finding the
+> reviewer classified as needing a human's judgement halts with stop condition (f); one whose
+> findings are all implementation errors or missing tests is repaired by the driver under a fresh
+> review, at most twice, then halts with (f) — the skill itself is still opt-in, but once chosen,
+> this gate inside it is not.
 
 > **Spec version promotion** (`/promote-spec`) is a separate, human-gated event that runs at sprint
 > boundaries rather than on the linear path above. It merges a `spec/*` branch into `main`, tags the

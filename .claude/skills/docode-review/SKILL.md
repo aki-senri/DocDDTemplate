@@ -8,7 +8,8 @@ description: |
   each test expresses its AC rather than mirroring the implementation — the one check the agent
   that wrote both sides cannot perform on itself.
   Mandatory when `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill
-  before it runs `pre-pr` as its Step 4b, and halts on a ❌ verdict) — optional, as before, on the
+  before it runs `pre-pr` as its Step 4b; on ❌ it halts for a finding classified as needing a human's
+  judgement, and repairs the rest under a fresh review, at most twice) — optional, as before, on the
   manual `start-feature` path.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
@@ -319,18 +320,27 @@ implementation — with the line that gives it away}
 
 ### Findings
 
-| # | Severity | File | Line | Issue | Suggestion |
-|---|----------|------|------|-------|------------|
-| 1 | 🔴 Critical | ... | ... | ... | ... |
-| 2 | 🟠 High    | ... | ... | ... | ... |
-| 3 | 🟡 Medium  | ... | ... | ... | ... |
-| 4 | 🔵 Low     | ... | ... | ... | ... |
+| # | Severity | Kind | File | Line | Issue | Suggestion |
+|---|----------|------|------|------|-------|------------|
+| 1 | 🔴 Critical | 実装の誤り | ... | ... | ... | ... |
+| 2 | 🟠 High    | テストの不足 | ... | ... | ... | ... |
+| 3 | 🟡 Medium  | 人の判断が要る | ... | ... | ... | ... |
+| 4 | 🔵 Low     | 実装の誤り | ... | ... | ... | ... |
+
+**Kind** — classify every finding as exactly one of these. You classify; the implementer does not.
+
+| Kind | When | Never when |
+|------|------|------------|
+| 実装の誤り | The code does not do what the frozen sources state (the AC line, the US bullets, the spec section `## Sources` names) — or it has an unambiguous defect the sources do not cover (a crash, a security hole, an invariant violation) — and the fix changes **no frozen test's expectation** and widens no scope | The "right" behavior is a reading of an ambiguous source |
+| テストの不足 | A behavior the sources state has no test, or a test asserts what the code does rather than what the source states — and the gap can be closed by **adding** a test transcribed from the sources, leaving every frozen test as it is | Closing it needs a frozen test changed or removed (that is a test-expectation change) |
+| 人の判断が要る | Anything else: a source is ambiguous or two documents disagree, the fix would change or remove a frozen test, widen the scope or change the spec, the finding is about what to build rather than whether it was built — **or you are unsure which kind it is** | — |
 
 ### Summary
 - Critical issues: {count}
 - High issues: {count}
 - Medium issues: {count}
 - Low issues: {count}
+- By kind: 実装の誤り {count} / テストの不足 {count} / 人の判断が要る {count}
 
 ### Verdict
 ✅ Approved — no blocking issues
@@ -352,7 +362,7 @@ paths**:
 |---------|---------------------------------------|--------------------------------------|
 | ✅ Approved | Proceed to `/pre-pr` | The driver goes on to `pre-pr` (its Step 4b) |
 | ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` | The driver goes on to `pre-pr` (its Step 4b), mentioning the suggestions in its report and in a draft PR's body |
-| ❌ Changes requested | Address critical/high findings yourself, then re-run `/docode-review` | **Halt with stop condition (f) and surface the findings verbatim. Do not fix them and re-run** — see `run-exec-plan/SKILL.md` Step 4a. Deciding which findings to act on is a governance call the driver may not make on its own behalf, precisely because it is the same agent whose self-review this gate exists to check |
+| ❌ Changes requested | Address critical/high findings yourself, then re-run `/docode-review` | **Decided by the kinds you assigned, not by the driver** — see `run-exec-plan/SKILL.md` Step 4a. Any `人の判断が要る` finding: halt with stop condition (f) and surface the findings verbatim. Only `実装の誤り` / `テストの不足`: the driver fixes them and asks for a **new** review, at most twice; a third ❌ halts with (f). A finding with no kind counts as `人の判断が要る` |
 
 ---
 
@@ -370,8 +380,10 @@ Next step (manual path — a human ran this skill directly):
   ❌ Changes needed  → Fix issues above, then re-run /docode-review
 
 Next step (called from run-exec-plan Step 4a — see that skill, do not apply the manual-path row above):
-  ✅ / ⚠️  → Hand off to /pre-pr
-  ❌       → HALT with stop condition (f); do not fix and re-run
+  ✅ / ⚠️  → Go on to /pre-pr (run-exec-plan Step 4b)
+  ❌ with any 人の判断が要る → HALT with stop condition (f)
+  ❌ with only 実装の誤り / テストの不足 → the driver fixes them, then a NEW review (at most 2 rounds;
+                                          a third ❌ → HALT (f))
 ```
 
 ---

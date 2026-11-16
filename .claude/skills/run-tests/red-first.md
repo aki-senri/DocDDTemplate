@@ -131,7 +131,7 @@ to build* is present.
 | Call site | When it runs | Action when the test cannot be written / red cannot be observed |
 |-----------|--------------|------------------------------------------------------------------|
 | `run-exec-plan` (Step 0c) | Before the loop, for every `[E2E]` AC | **HALT** with stop condition (a) — the through-flow cannot be transcribed from the AC |
-| `run-exec-plan` (Step 2a) | Before implementing each functional AC, after Step 1b has read its sources | Not transcribable → **HALT** (a). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
+| `run-exec-plan` (Step 2a) | Before implementing each functional AC, after Step 1b has read its sources | Not transcribable → **HALT** (a), by holding the AC while the unrelated ACs go on (`run-exec-plan`「Holding an AC」). Invalid red → fix the test/harness within `MAX_REPAIR_ATTEMPTS`, then **HALT** (b). Green on first run and the two readings cannot be told apart → **HALT** (a) |
 | `run-tests` | Whenever it is invoked for a red-first run, and on every later run while an AC is unimplemented | Classify and report valid / invalid red. Never report an invalid red as "expected red". Report expected reds (above) apart from real failures |
 | `start-feature` (implementation order) | Manual implementation path | Present the situation to the user; the human decides (rewrite the AC, or proceed) |
 | `pre-pr` | After implementation | ⚠️ Report the missing evidence per AC. Does **not** block — the blocking checks remain AC coverage and E2E coverage |

@@ -15,7 +15,10 @@ description: |
   the code and the tests. Halts ONLY on explicit stop conditions
   (missing/ambiguous AC, tests still red after bounded retries, a test change required,
   an irreversible/outward action, an INV violation needing scope expansion, or the independent
-  review requesting changes).
+  review requesting a change that needs a human's judgement). A question that arises before any code
+  for an AC holds that AC and lets the unrelated ones go on, so the questions reach the human
+  together; review findings the reviewer classified as implementation errors or missing tests are
+  repaired by the driver under a fresh review, at most twice.
   One invocation covers the whole autonomous path: it prepares the run itself (what start-feature
   does on the manual path — plan, branch, baseline, readiness, sources, start record), and after the
   review it runs the pre-PR check. Only when the human says so at invocation ("PR まで") does it then
@@ -241,11 +244,55 @@ or this is a resumed run):
 
 ### Step 1: Pick the next AC
 
-- From the plan, take the first `- [ ]` (unchecked) AC in order.
+- From the plan, take the first `- [ ]` (unchecked) AC in order **that this run has not held, and that
+  is not waiting on a held AC** (「Holding an AC」 below). An `[E2E]` AC waits while any AC is held:
+  it is not checked this run, even if its test goes green, because the held AC's answer can change
+  the flow.
 - Step 0b already cleared the whole set for readiness. If implementing it nonetheless reveals that
   the AC is ambiguous or under-specified (e.g. it reads as testable but two incompatible readings
   both satisfy it), **halt** with stop-condition (a). Do not guess the intent.
 - If no unchecked AC remains, go to Step 4.
+- If unchecked ACs remain but every one is held or waiting, the run cannot go further: halt with
+  stop condition (a) and put **every held question together** to the human (「Holding an AC」).
+  Step 4 does not run — the independent review waits until every AC is done.
+
+#### Holding an AC (stop condition (a) before any code for it)
+
+A halt in the middle of the loop used to stop everything on the first question, and the human came
+back once per question. When the question arises **before any code for the AC exists**, nothing has
+been built that the answer could invalidate, so the run can hold that AC, finish the ones the answer
+cannot affect, and ask everything at once.
+
+| Holdable | Not holdable — halt the whole run, as before |
+|----------|---------------------------------------------|
+| Stop condition **(a)** fired at **Step 1b** (reading the sources) or **Step 2a** (drafting the test) for a **functional** AC — before its `red-first` entry and before any implementation code for it | Step 0b / 0c (the whole-plan gates: their questions are already asked together, before the loop); Step 3a (code exists); any `[E2E]` AC (it is the run's reference signal); stop conditions (b), (c), (d), (e), (f) |
+
+**Which ACs wait with it.** An unchecked AC is **related** to the held one, and waits with it, when
+its sources name the same US `AC-NNN` section, the same spec section or the same scenario step as the
+held AC, or the section the finding is about; when it builds on the held AC's outcome (it comes after
+it in the through-flow and uses what it produces); or when the answer to the held question could
+change what it must do. **If you cannot tell whether an AC is related, stop the whole run** with (a)
+as before — a hold is an optimization, and guessing wrong would build on an answer nobody gave.
+
+**Record each hold** as a Decision Log bullet that begins at the start of the line:
+
+```markdown
+- 保留: AC-003（停止条件 (a)、Step 1b）— <決めてほしいこと、製品の言葉で>。関連して待つ AC: AC-004
+```
+
+`保留:` is not `deferred:` (a plan waiting for a promotion, which stops the run at Step 0) and not
+`reconcile: deferred` — it names one AC in one run. **A hold is not carried to the next run as state.**
+A new run re-attempts every held AC from Step 1b, through the same checks: nothing was frozen for it
+(the hold comes before its `red-first` entry), so reading its sources and drafting its test again is
+not overwriting anything. If the human has decided — the AC rewritten, the document fixed on `main`,
+the AC withdrawn — the checks pass and it proceeds; if not, the same finding fires and it is held
+again (append a new bullet only if the question changed). No release marker is needed, so none can
+be forgotten.
+
+**When the run can go no further**, append the HALT entry naming every hold, and put the questions
+to the human together, in through-flow order, each as a decision request
+([`decision-requests.md`](decision-requests.md)). If the run ends on another stop condition while
+holds exist, the presentation carries both.
 
 ### Step 1b: Read the AC's sources (before drafting its test)
 
@@ -271,6 +318,9 @@ for.
 | **One column** is `n/a（理由）` (typically spec, when `/create-spec` was skipped) | Read the other one. A partial `n/a` is not an exemption — the goal simply lives one layer up |
 | **Both columns** are `n/a（理由）` | Nothing to read. The AC line is the whole goal — go to Step 2a |
 | The plan has **no** `## Sources` table (it predates the convention) | Continue, and say so in the run's report. Do not reconstruct sources by reading the code — that is the one reading this step forbids |
+
+For a functional AC, a (a) here — before any code for it — **holds** the AC instead of stopping the
+run, when the remaining ACs can go on without it (「Holding an AC」, Step 1).
 
 Reading is execution; resolving a disagreement between two frozen documents is governance. That is
 why the two conflict rows halt instead of choosing.
@@ -303,6 +353,8 @@ stopped measuring: fix that first, counting against `MAX_REPAIR_ATTEMPTS`.
 If the test cannot be written without deciding an expected result **neither the AC nor its sources**
 state, **halt** with stop-condition (a). That is a readiness escape (`R2` / `R3` slipped through
 Step 0b), and the fix is a human rewriting the AC — not the driver choosing what "correct" means.
+Before any code for the AC exists, that (a) holds the AC rather than stopping the run (「Holding an
+AC」, Step 1).
 Note the bar moved with Step 1b: an expected result that is missing from the one-liner but present
 in the US bullets is *transcription*, not invention, and does not halt.
 
@@ -468,13 +520,48 @@ pre-PR check (Step 4b).
   ### YYYY-MM-DD
   - docode-review (Step 4a): verdict {✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested}.
     {one-line summary of the findings, or "no findings"}.
+    {for ❌: 分類: 実装の誤り {n} / テストの不足 {n} / 人の判断が要る {n} → 自己修正 {k}/2 回目 | → HALT (f)}
   ```
 
 | Verdict | Action |
 |---------|--------|
 | ✅ Approved | Go to Step 4b |
 | ⚠️ Approved with suggestions | Go to Step 4b. Mention the suggestions in the report (and in the draft PR's body, Step 4c) so the human sees them, even though they do not block |
-| ❌ Changes requested | **Halt** with stop condition (f). Surface the findings verbatim. Do **not** attempt to fix them yourself and re-run — deciding which findings to act on (and how) is the same governance judgment as rewriting an AC, and this gate exists so a human makes it, not the agent that just finished implementing |
+| ❌ with **any** finding of kind `人の判断が要る` (or a finding with no kind) | **Halt** with stop condition (f). Surface every finding verbatim, and put the `人の判断が要る` ones to the human as decision requests ([`decision-requests.md`](decision-requests.md)). Do not fix the others first: the human's answer can change what they should be |
+| ❌ with only `実装の誤り` / `テストの不足`, and this is the 1st or 2nd ❌ in the current window (below) | **Self-repair**, then a **new** review — 「Self-repair after a ❌ review」 below |
+| ❌ with only `実装の誤り` / `テストの不足`, and this is the 3rd ❌ in the window | **Halt** with stop condition (f): two rounds of repair did not get the review to pass, so what to do next is a human's call |
+
+#### Self-repair after a ❌ review (at most two rounds)
+
+**The kinds are the reviewer's.** The independent agent classified each finding
+([`../docode-review/SKILL.md`](../docode-review/SKILL.md)「Findings」); the driver acts on that
+classification and never lowers it. A finding may only move **up** — while fixing a `実装の誤り` or a
+`テストの不足`, discovering that the fix would change a frozen test's expectation, widen the scope or
+change the spec makes it a human's: stop with (c), (e) or (f) as that discovery says. Nothing moves
+down to a kind the driver may fix.
+
+For each finding:
+
+| Kind | Repair |
+|------|--------|
+| `実装の誤り` | Fix the code. Then re-run Step 3 items 1–4 for the ACs it touches — `run-tests`, `check-invariants`, `check-doc-freshness`, the re-anchor — **without Step 3b**: the boxes are already checked, and no new `AC-NNN done.` entry is written (it would reset the round count below). **Every frozen test stays as it is** (a fix that needs a frozen expectation changed is (c)) |
+| `テストの不足` | **Add** a test, transcribed from the AC line and its sources exactly as Step 2a does — never from the code — and run it. Red → implement to green. Green on its first run → the behavior was there and is now measured; record that. Record the red as an `AC-NNN red-first:` entry, as Step 2a does; no new `done` entry (same reason as the row above). A test that mirrors the implementation is answered by the new test, not by editing or removing the old one; if the two cannot both hold, that is (c) |
+
+Record what was done, then go back through the sweep (Step 4, item 1) to a **new** Step 4a:
+
+```markdown
+- docode-review 指摘の修正（自己修正 {k}/2）: #1 {何を直したか}、#2 {追加したテスト `<file>::<name>`、赤/初回から緑}。テスト緑（{n} 件）。
+```
+
+**Counting the rounds from the files.** The window is everything in the Decision Log after the
+latest of: the last `AC-NNN done.` entry, the last `HALT` entry, and the last `- 再オープン:` bullet.
+Count the `docode-review (Step 4a):` entries with verdict ❌ inside it. A HALT resets the window: once
+a human has looked, the next run has its two rounds again. A resumed run counts the same way, so the
+budget survives a broken session.
+
+**Every round gets a fresh review.** Launch a new independent agent each time, as for any resumed
+run (below); never reuse a verdict, and never review the repair yourself. The repair budget is
+separate from `MAX_REPAIR_ATTEMPTS`, which counts repairs per AC inside the loop.
 
 **Do not call it twice to produce one report.** "Same pass" means: no new tool call boundary, no new
 message from the user, and no gap in which the human could have changed the repo — i.e., you are
@@ -561,12 +648,12 @@ in the conversation — never by the loop itself, which edits neither document.
 
 | ID | Condition | Why it is a human decision |
 |----|-----------|----------------------------|
-| (a) | An AC is missing, ambiguous, or under-specified. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); by **Step 0b** when a row names background material instead of a source, and by **Step 1b** when an expected result appears only in background material; by **Step 0b** (backstop **0c / 1b / 3a**) when an `E2E-NNN` states an outcome nowhere in its comparison set, or contradicts it, or the set cannot be assembled (complement detection, `../create-spec/e2e-interaction.md`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
+| (a) | An AC is missing, ambiguous, or under-specified. **Fired at Step 1b / 2a for a functional AC, before any code for it, the AC is held and the run goes on with the ACs unrelated to it; the run halts when no AC can go further, with every held question together (「Holding an AC」)**. Detected **before the loop** by the Step 0b readiness gate (any NOT READY criterion); by Step 0c / Step 2a when its test cannot be transcribed without inventing an expected result; by **Step 1b** when a source states a separate outcome or contradicts the AC line; by **Step 3a** when the spec section contradicts the AC; by **Step 0b / 1b / 3a** when a `## Sources` row names something that cannot be opened (not the same as `n/a`); by **Step 0b** when a row names background material instead of a source, and by **Step 1b** when an expected result appears only in background material; by **Step 0b** (backstop **0c / 1b / 3a**) when an `E2E-NNN` states an outcome nowhere in its comparison set, or contradicts it, or the set cannot be assembled (complement detection, `../create-spec/e2e-interaction.md`); and as a backstop during the loop — including a `[E2E]` AC whose test does not exist, so `run-tests` holds | Deciding *what to build* (and what the through-flow is) is outer-gate (spec-first principle). Choosing between two frozen documents that disagree is the same decision |
 | (b) | Tests still red after `MAX_REPAIR_ATTEMPTS` self-repair tries — including a red-first test that never reaches **valid red** | Repeated failure signals a real problem the human should see |
 | (c) | A test's *expectation* must change to pass — including any change to an expectation frozen by a Step 0c / Step 2a red observation | Test changes must be grounded in a spec change (INV-T01 / INV-T02) |
 | (d) | An irreversible / outward-facing action is next (create or push a PR, `promote-spec`, deleting tags) — except the push and the draft PR of Step 4c, when the human asked for them in the instruction that started this run | Outward effects require human authorization. The instruction at invocation is that authorization for exactly those two actions, and only for that invocation |
 | (e) | An INV violation cannot be resolved without expanding scope | Scope expansion is a planning decision, not execution |
-| (f) | `docode-review` (Step 4a), run mandatorily once every AC is `- [x]`, returns ❌ Changes requested | Deciding which findings to act on — and how — is the same governance judgment as rewriting an AC; the driver that just finished implementing is the one party who cannot make it objectively |
+| (f) | `docode-review` (Step 4a), run mandatorily once every AC is `- [x]`, returns ❌ Changes requested **with a finding the reviewer classified `人の判断が要る`**, or a ❌ remains after two rounds of self-repair (「Self-repair after a ❌ review」) | Deciding what to do about a finding that needs a judgement is the same governance call as rewriting an AC, and the driver that just finished implementing is the one party who cannot make it objectively. Findings the reviewer classified as plain implementation errors or missing tests are execution, so the driver repairs them — under a fresh review each time, and at most twice |
 
 If none apply, **keep going** — do not stop merely because progress feels "far enough" or to
 ask for reassurance. (This is the "context anxiety" failure mode the loop exists to avoid.)
@@ -602,6 +689,11 @@ iteration records enough state in the plan itself:
   - HALT at AC-NNN (stop condition <id>). <what is blocking> <what the human must decide>.
   ```
 
+- A **hold** — `- 保留: AC-NNN（停止条件 (a)、Step 1b | Step 2a）— <問い>。関連して待つ AC: …` — records an AC
+  this run set aside before any code for it (「Holding an AC」). It is a record, not state: the next
+  run re-attempts the AC from Step 1b.
+- A **self-repair after a ❌ review** — `- docode-review 指摘の修正（自己修正 k/2）: …` — is counted
+  with the ❌ entries to find how many rounds are left (「Self-repair after a ❌ review」).
 - A **deferral** is decided by a human, never by this skill — `deferred: spec/<label> の昇格まで — <所見>`,
   and later `deferred 解除: <日付・理由>`. The agent may draft the bullet in the conversation once
   the human has decided ([`decision-requests.md`](decision-requests.md)); the loop never writes it
@@ -637,7 +729,11 @@ When the budget is exhausted, halt with stop-condition (b).
 - [ ] Every processed AC's `done` entry carries a `spec 再アンカー:` line — the section it was
       checked against, or an explicit `n/a（理由）`
 - [ ] No test frozen by a red observation was edited to make it pass
-- [ ] Every AC reached is either `- [x]` (green) or recorded as a HALT in the Decision Log
+- [ ] Every AC reached is either `- [x]` (green), held (`- 保留:`, before any code for it, with no
+      unclear relation to the ACs that went on), or recorded as a HALT in the Decision Log; a run that
+      held ACs halted only when no AC could go further, with every held question put together
+- [ ] Every Step 4a ❌ was acted on by the reviewer's kinds: any `人の判断が要る` → HALT (f); otherwise
+      self-repair with a new review, at most two rounds, then HALT (f)
 - [ ] Decision Log updated per the resume-state convention
 - [ ] **If every AC reached `- [x]`**: `docode-review` was run (Step 4a) via the `Skill` tool and its
       verdict recorded in the Decision Log **before** Step 4b; a ❌ verdict halted with stop
@@ -663,6 +759,8 @@ Sources   : ✅ {n}/{n} AC の起点を読んでから起草 (Step 1b)   |   ⚠
 Red-first : ✅ {n}/{n} ACs で赤を観測してから実装   |   ⚠️ AC-NNN n/a ({理由})
 再アンカー: ✅ {n}/{n} AC を spec 該当節と照合 (Step 3a)   |   ➖ n/a ({理由})
 Processed : AC-001 ✅  AC-002 ✅  AC-003 ⏸ (HALT: stop condition c)  AC-004 …
+Held      : AC-003 (Step 1b) — 待つ AC: AC-004   |   none
+Review fix: 自己修正 {k}/2 — 実装の誤り {n} / テストの不足 {n}   |   none
 Tests     : ✅ {n} passing
 docode-review (Step 4a): ✅ Approved | ⚠️ Approved with suggestions | ❌ Changes requested → HALT (f)
                          | n/a (loop stopped before every AC was checked — see Stopped at)

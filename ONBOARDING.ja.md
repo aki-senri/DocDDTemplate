@@ -324,7 +324,8 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 > 人が起動するのは上段（**7 ＋ 周期 2**）。`create-spec` は承認済み要件からアプリ仕様を起草し、人間承認後に `create-exec-plan` へハンドオフする（任意・小さな変更ならスキップ）。自走の経路では `run-exec-plan` の起動1回が準備（`start-feature` 相当）・ループ・レビュー・`pre-pr` を担い、起動時に「PR まで」と指示すればドラフト PR まで作る。`start-feature` と `pre-pr` は手動の経路で人が起動する。下段の検証スキルは、上段スキルがそれぞれ必要な範囲で内部呼び出しする（例: `run-tests` は `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`、`check-*` は `run-exec-plan` / `pre-pr` / `gc`）。`update-context` は `gc` から呼ばれる（`complete-exec-plan` は CONTEXT.md を直接更新し、`update-context` は呼ばない）。
 >
 > `docode-review` は経路によって両方の段にまたがる。`run-exec-plan`（Step 4a）はプランの全 AC が
-> `- [x]` になった時点でこれを**内部から必須呼び出し**し、❌ なら `pre-pr`（Step 4b）へ進まず HALT する。
+> `- [x]` になった時点でこれを**内部から必須呼び出し**する。❌ のうちレビュー側が「人の判断が要る」と分類した指摘があれば
+> `pre-pr`（Step 4b）へ進まず HALT し、それ以外の指摘は driver が直して新しいレビューを受ける（最大2回）。
 > 一方、手動実装（`start-feature`）経路では従来どおり人が直接起動する任意スキルのままである
 > （`doc-review` と同じ扱い）。
 

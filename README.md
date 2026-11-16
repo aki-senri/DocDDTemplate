@@ -130,7 +130,7 @@ Run skills in Claude Code chat by typing `/skill-name`.
 | Skill | Purpose | When |
 |-------|---------|------|
 | `doc-review` | Independent agent reviews a requirements or spec document (AC testability via the shared readiness checks, completeness, references, and whether each conclusion has a recorded basis) | Optional, human-invoked when desired |
-| `docode-review` | Independent agent reviews changed code against the ACs and general quality | **Mandatory** once `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, human-invoked, on the manual `start-feature` path |
+| `docode-review` | Independent agent reviews changed code against the ACs and general quality | **Mandatory** once `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill before running `pre-pr`; on ❌ it halts for a finding classified as needing a human's judgement, and repairs the rest under a fresh review, at most twice) — optional, human-invoked, on the manual `start-feature` path |
 
 > `run-tests`, `doc-review`, and `docode-review` are model-invocable (callers invoke them via the Skill tool); the other internal skills are executed by higher-level skills following their `SKILL.md` steps inline. See CLAUDE.md "検証スキルの呼び出しポリシー".
 

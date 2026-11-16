@@ -207,7 +207,7 @@ file and merely warns on a section it cannot match.
 | Call site | Action |
 |-----------|--------|
 | `run-exec-plan` Step 0b (readiness) | The AC is **NOT READY**: `R2` cannot be judged against sources nobody can read, and the `n/a` fallback does not apply. **HALT** with stop condition (a) before the loop starts |
-| `run-exec-plan` Step 1b (drafting the test) | **HALT** with (a). Do not draft from the AC line alone |
+| `run-exec-plan` Step 1b (drafting the test) | **HALT** with (a) — for a functional AC, by holding it while the unrelated ACs go on (`run-exec-plan`「Holding an AC」). Do not draft from the AC line alone |
 | `run-exec-plan` Step 3a (re-anchor) | **HALT** with (a). Do not check the box against nothing |
 | `start-feature` Step 1b (readiness) and Step 2 | Present the row to the user — at Step 1b already, so one row does not get two verdicts two steps apart. Fixing it is theirs: point it at the moved file or section, or replace it with `n/a（理由）` if there is genuinely nothing to read |
 | `doc-review` §2 (advisory) | Report the row. `R2` for that AC is NOT READY, not judged on the line alone |
@@ -348,7 +348,7 @@ As with every exemption in DocDD, the `n/a` line is the record; silence is not a
 |-----------|------|--------|
 | `create-exec-plan` (Q3d) | Before the plan file is finalized | Write the `## Sources` table (in the drafting mode the agent drafts it — the sections each line was condensed from). Any AC whose source cannot be identified gets `n/a（理由）` — with the user, since "there is no spec for this" is a claim about the spec (in the drafting mode, as a question in the expanded view: `expanded-view.md`). Never name background material in a row (「When a row names background material」). A row naming an `E2E-NNN` freezes it — run complement detection first, and again for a row the readiness rewrite changes (`../create-spec/e2e-interaction.md`) |
 | `run-exec-plan` (Step 0b) | Before the loop, for every unchecked AC | Open what each row names so `R2` is judged against the sources. A row that cannot be opened, or that names background material → that AC is NOT READY → **HALT** (a). A row naming an `E2E-NNN` also gets complement detection (`../create-spec/e2e-interaction.md`) |
-| `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) |
+| `run-exec-plan` (Step 1b) | After picking the AC, **before** drafting its test | Read the sources. Refinement → use it. Separate outcome / contradiction / cannot be opened → **HALT** (a) — for a functional AC, held while the unrelated ACs go on, and asked with the other holds when the run can go no further (`run-exec-plan`「Holding an AC」) |
 | `run-exec-plan` (Step 3a) | Before the box becomes `- [x]` | Run the re-anchor above and record the result on the `done` line |
 | `start-feature` (Step 1b / Step 2) | Manual implementation path | Load the sources with the other required documents and show the user what the AC condenses. A human resolves a conflict — or a row that cannot be opened or names background material — in conversation rather than halting |
 | `doc-review` (§2) | Optional review | Load every section the rows name so `R2` is judged as the other gates judge it; a row that cannot be opened or names background material is reported, not judged on the line alone (advisory) |

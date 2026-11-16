@@ -331,7 +331,8 @@ absence; if the plan is still active, the rows are written at the plan from the 
 ### ⑤d docode-review evidence when run-exec-plan finished the ACs (⚠️ report only)
 
 `run-exec-plan` Step 4a makes `docode-review` **mandatory** once every AC in a plan reaches `- [x]`
-(it halts with stop condition (f) on a ❌ verdict rather than handing off — see
+(on a ❌ verdict it halts with stop condition (f), or — when the reviewer classified every finding as
+an implementation error or a missing test — repairs them under a fresh review, at most twice; see
 [`../run-exec-plan/SKILL.md`](../run-exec-plan/SKILL.md)). On the manual `start-feature` path,
 `docode-review` stays optional, as before.
 
