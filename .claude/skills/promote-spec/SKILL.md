@@ -266,8 +266,8 @@ grep -rn "E2E-<NNN>" exec-plans/completed/ 2>/dev/null || true   # frozen by a c
 
 A scenario can collide while none of its ACs does; report it even then — that is the case this check
 exists for. A **REMOVED** scenario that an active plan's row names is also a row this promotion
-breaks: list it with the moved sources below, so the human repoints the row (to a successor
-scenario) or writes `n/a（理由）` in Step 6, after the merge and before the push. When the same plan
+breaks: list it with the moved sources below, so the human decides the row's successor scenario
+or `n/a（理由）` in Step 6, after the merge and before the push. When the same plan
 collides on both an AC and the scenario, report both lines; the precedence rule below (in-flight
 wins over completed) applies to scenarios the same way.
 
@@ -367,9 +367,11 @@ the human reads anyway, and keeps the record of a no from becoming a file nobody
    auto-resolve. Proceed to Step 7 **only after the merge commit actually exists on `main`**.
 
    **Then, if Step 4 listed `## Sources` rows this promotion breaks**, stop again before tagging:
-   the human repoints those rows now, as a commit on `main` on top of the merge. This is the only
-   point where it works — the new paths exist, and nothing has been pushed. Do not repoint them
-   yourself (`../create-exec-plan/ac-sources.md`「When a source cannot be opened」).
+   the rows are repointed now, as a commit on `main` on top of the merge. This is the only
+   point where it works — the new paths exist, and nothing has been pushed. The human decides each
+   row's new target; do not pick one yourself (`../create-exec-plan/ac-sources.md`「When a source
+   cannot be opened」). Once they have, draft the row edits for their approval and commit them on
+   their instruction (`../run-exec-plan/decision-requests.md`).
 
    **If Step 4 listed plans deferred until `spec/<label>`**, remind their owners now that the
    promotion the deferral waits for is merged: each checks that the promoted documents state the

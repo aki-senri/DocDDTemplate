@@ -321,10 +321,10 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 | 人が直接使う（統治・判断） | `create-requirements` / `create-spec` / `create-exec-plan` / `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`<br>周期: `promote-spec` / `gc` | 人が起動し、判断する |
 | AI が内部で回す（実行・検証） | `run-tests` / `check-invariants` / `check-doc-freshness` / `check-doc-invariants` / `update-context` | 人は直接呼ばない（上位スキルが自動で回す） |
 
-> 人が起動するのは上段（**7 ＋ 周期 2**）。`create-spec` は承認済み要件からアプリ仕様を起草し、人間承認後に `create-exec-plan` へハンドオフする（任意・小さな変更ならスキップ）。`start-feature` は機能ごとに一度、自走を始める前の準備として起動する。下段の検証スキルは、上段スキルがそれぞれ必要な範囲で内部呼び出しする（例: `run-tests` は `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`、`check-*` は `run-exec-plan` / `pre-pr` / `gc`）。`update-context` は `gc` から呼ばれる（`complete-exec-plan` は CONTEXT.md を直接更新し、`update-context` は呼ばない）。
+> 人が起動するのは上段（**7 ＋ 周期 2**）。`create-spec` は承認済み要件からアプリ仕様を起草し、人間承認後に `create-exec-plan` へハンドオフする（任意・小さな変更ならスキップ）。自走の経路では `run-exec-plan` の起動1回が準備（`start-feature` 相当）・ループ・レビュー・`pre-pr` を担い、起動時に「PR まで」と指示すればドラフト PR まで作る。`start-feature` と `pre-pr` は手動の経路で人が起動する。下段の検証スキルは、上段スキルがそれぞれ必要な範囲で内部呼び出しする（例: `run-tests` は `start-feature` / `run-exec-plan` / `pre-pr` / `complete-exec-plan`、`check-*` は `run-exec-plan` / `pre-pr` / `gc`）。`update-context` は `gc` から呼ばれる（`complete-exec-plan` は CONTEXT.md を直接更新し、`update-context` は呼ばない）。
 >
 > `docode-review` は経路によって両方の段にまたがる。`run-exec-plan`（Step 4a）はプランの全 AC が
-> `- [x]` になった時点でこれを**内部から必須呼び出し**し、❌ なら `pre-pr` へ渡さず HALT する。
+> `- [x]` になった時点でこれを**内部から必須呼び出し**し、❌ なら `pre-pr`（Step 4b）へ進まず HALT する。
 > 一方、手動実装（`start-feature`）経路では従来どおり人が直接起動する任意スキルのままである
 > （`doc-review` と同じ扱い）。
 
@@ -334,15 +334,15 @@ DocDD では **「決定」は人、「実行」は AI** に分ける。人の�
 flowchart TD
     A["① ドキュメント整備<br/>create-requirements / create-spec / docs（何を作るか）"] --> B
     B["② AC を凍結<br/>create-exec-plan（受け入れ基準を決める）"] --> C
-    C["③ 準備して自走起動<br/>start-feature → run-exec-plan"]
+    C["③ 自走を起動（1回）<br/>run-exec-plan（準備も自分で行う。「PR まで」でドラフト PR まで）"]
     C --> D{AI が HALT?}
-    D -->|停止条件 a〜f| E["④ 人が判断<br/>仕様追記 / テスト期待値 / 不可逆操作 / レビュー指摘 など"]
+    D -->|停止条件 a〜f| E["④ 人が判断<br/>決定依頼に答える — 文書の修正は AI が起草し人が承認"]
     E --> C
-    D -->|全 AC 完了| F["⑤ レビュー & 確認<br/>pre-pr → 全 AC を確認（コミット or PR レビュー）"]
+    D -->|全 AC 完了・レビューと pre-pr 済み| F["⑤ 確認<br/>全 AC を確認（コミット or ドラフト PR）"]
     F --> G["⑥ 完了 & マージ<br/>complete-exec-plan（ブランチに complete コミット）→ マージ"]
 ```
 
-上図のボックス ①②③④⑤⑥ はいずれも人が起動する操作（③ は機能ごとに一度 `start-feature` で準備してから `run-exec-plan` を起動する）。ただし ③ で起動した後の「起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜f）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
+上図のボックス ①②③④⑤⑥ はいずれも人の操作（③ は `run-exec-plan` の起動1回。準備を自分で行い、ループの後に `docode-review` と `pre-pr` まで回す。手動の経路では `start-feature` と `pre-pr` を人が起動する）。ただし ③ で起動した後の「起点を読む→テストを先に赤で置く→実装→テスト→修正→spec 該当節へ再アンカー→次 AC」のループ（C↔D）は AI が自走し、人は AI が停止条件（CLAUDE.md「自律実装ループ」の a〜f）で HALT したとき（④）だけ戻ればよい。人の実装指示は基本「AC 番号を渡す」だけ。
 
 #### C. 責任分担表
 
@@ -373,16 +373,19 @@ flowchart TD
                           DocDD のプロセス（ループ・ゲート・再開・他が参照する規約）を変えるプランは
                           周回を辿る検証 AC を置く（記述の突き合わせだけでは足りない）
                           前向き6周に加え、変更を参照する既存地点を辿る「依存の逆流」1周
-2. /start-feature       → ドキュメント確認（## Sources が指す US / spec を含む）・
-                          AC readiness の再検査・ブランチ作成
-3. /run-exec-plan       → まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）
+2. /start-feature       → 手動の経路のみ: ドキュメント確認（## Sources が指す US / spec を含む）・
+                          AC readiness の再検査・ブランチ作成（run-exec-plan は Step 0 で自分で行う）
+3. /run-exec-plan       → 準備（プラン・専用ブランチ・baseline・開始記録）の後、まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）
                           次に [E2E] のテストを実装前に赤で配置（red-first / INV-T02）
                           通過後、AC を 1 つずつ自走実装
                           （起点を読む→テストを先に赤で置く→実装→テスト→修正→
                            その AC の spec 該当節へ再アンカー→次 AC）
                           内部で /run-tests・/check-invariants・/check-doc-freshness を自動実行
-                          停止条件（a〜f）に当たったときだけ人に確認
-4. /pre-pr              → PR 前の総合チェック
+                          停止条件（a〜f）に当たったときだけ人に確認（選択肢・推奨・選んだ場合の差分つきの決定依頼。
+                          文書の修正は AI が起草し人が承認）
+                          全 AC 完了後は docode-review → /pre-pr（報告のみ）。「PR まで」で起動すれば
+                          push してドラフト PR も作る
+4. /pre-pr              → 手動の経路: PR 前の総合チェック（run-exec-plan は自分で回し済み）
 5. 全 AC を確認         → コミットを見て、または PR レビューで（PR はこの前でも後でもよい）
 6. /complete-exec-plan  → 確認を記録し、計画を completed/ へ移動して同じブランチに
                           complete コミット（境界）を積む → マージ

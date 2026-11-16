@@ -8,7 +8,7 @@ description: |
   each test expresses its AC rather than mirroring the implementation — the one check the agent
   that wrote both sides cannot perform on itself.
   Mandatory when `run-exec-plan` finishes a plan autonomously (its Step 4a calls this skill
-  before handing off to `pre-pr`, and halts on a ❌ verdict) — optional, as before, on the
+  before it runs `pre-pr` as its Step 4b, and halts on a ❌ verdict) — optional, as before, on the
   manual `start-feature` path.
 # disable-model-invocation is intentionally false: this skill's core function is to spawn
 # an independent subagent via the Agent tool, which requires model invocation.
@@ -350,8 +350,8 @@ paths**:
 
 | Verdict | Manual path (a human ran this skill) | Called from `run-exec-plan` Step 4a |
 |---------|---------------------------------------|--------------------------------------|
-| ✅ Approved | Proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr` |
-| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` | Continue to reporting; hand off to `pre-pr`, mentioning the suggestions |
+| ✅ Approved | Proceed to `/pre-pr` | The driver goes on to `pre-pr` (its Step 4b) |
+| ⚠️  Approved with suggestions | Discuss items with user, then proceed to `/pre-pr` | The driver goes on to `pre-pr` (its Step 4b), mentioning the suggestions in its report and in a draft PR's body |
 | ❌ Changes requested | Address critical/high findings yourself, then re-run `/docode-review` | **Halt with stop condition (f) and surface the findings verbatim. Do not fix them and re-run** — see `run-exec-plan/SKILL.md` Step 4a. Deciding which findings to act on is a governance call the driver may not make on its own behalf, precisely because it is the same agent whose self-review this gate exists to check |
 
 ---

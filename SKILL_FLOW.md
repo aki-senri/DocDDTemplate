@@ -29,13 +29,14 @@ flowchart TD
         REQ -.->|small change: skip spec| PLAN
         PLAN["/create-exec-plan\n· Approved US: draft the plan, show the\n  expanded view, ask only the decisions\n  (scope, NOT READY, n/a, E2E findings)\n· No approved US: interview on goals & scope\n· Process-changing plan: require a\n  walkthrough AC (laps, not description matching)\n· Define AC-001~\n· Define at least one [E2E] AC\n  (AC-NNN: [E2E] ...) from E2E-NNN,\n  or from the US goal image if spec skipped\n· documentation-only plan: no [E2E] AC —\n  record E2E: n/a in the Decision Log\n· ## Sources: per-AC pointer to the US bullets\n  and spec section it condenses (n/a with a reason)\n· AC readiness check (R1-R5):\n  rewrite NOT READY ACs with the user\n· Save to exec-plans/active/\n· Update priority tasks in CONTEXT.md"]
         PLAN --> SF
-        SF["/start-feature\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md + the US/spec\n   sections in ## Sources\n⑥ Decide branch name\n⑦ Record start in progress log\n⑧ Implementation order: red-first,\n   then stable layer first"]
+        PLAN -.->|"autonomous path:\none run-exec-plan invocation"| DRIVER
+        SF["/start-feature (manual path)\nrun-exec-plan Step 0 does the same\non the autonomous path\n① Confirm baseline with run-tests\n② Select the exec-plan (AC)\n③ AC readiness check (R1-R5)\n   NOT READY → ask the user\n④ Load CONTEXT.md\n⑤ Load invariants.md + the US/spec\n   sections in ## Sources\n⑥ Decide branch name\n⑦ Record start in progress log\n⑧ Implementation order: red-first,\n   then stable layer first"]
     end
 
     SF --> IMPL
 
     subgraph IMPL["Implementation Loop"]
-        DRIVER["/run-exec-plan (opt-in)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here.\n❌ → HALT (f); ✅/⚠️ → hand off\nHalts only on stop conditions"]
+        DRIVER["/run-exec-plan (opt-in)\nStep 0: prepare — plan, own branch,\nbaseline, docs, start record (0d)\nStep 0b: AC readiness gate over ALL\nunchecked ACs — NOT READY → HALT (a),\nloop never starts\nStep 0c: place each [E2E] test RED\nbefore any AC is implemented\nThen per AC: read sources→red test→implement\n→verify→re-anchor→next\nStep 4a: once every AC is - [x], run\ndocode-review — MANDATORY here\n(after a sweep of pre-pr ①②).\n❌ → HALT (f); ✅/⚠️ → Step 4b pre-pr\n(report-only); Step 4c draft PR only\nif invoked with 「PR まで」\nHalts only on stop conditions;\neach HALT is a decision request"]
         SOURCES["Step 1b: read the AC's sources\n· the US bullets + spec section\n  named in the plan's ## Sources\n· NOT the implementation code\n· separate outcome / contradiction /\n  cannot be opened → HALT (a)"]
         REDFIRST["Write the failing test\n(red-first / INV-T02)\n· transcribe given/when/then from\n  the AC line AND its sources\n· run it: valid red required\n· record the red → expectation frozen\n· cannot transcribe → HALT (a)"]
         REANCHOR["Step 3a: spec re-anchor\n· does the implemented behavior do what\n  the AC's spec section describes?\n· impl gap → fix | test gap → new red-first test\n· spec contradicts the AC /\n  source cannot be opened → HALT (a)\n· record it on the AC-NNN done line"]
@@ -61,6 +62,7 @@ flowchart TD
     end
 
     IMPL --> PREPR
+    DCR ==>|"autonomous: Step 4b\n(report-only), then Step 4c\ndraft PR if asked at invocation"| PREPR
     IMPL -.->|"optional, manual path\n(no run-exec-plan)"| DCR
     DRIVER ==>|"mandatory once every AC is - [x]\n(Step 4a)"| DCR
     DCR["/docode-review\n(mandatory on autonomous completion,\noptional on the manual path)\n· Independent agent reviews the diff\n· Against ACs AND the US/spec sections\n  in the plan's ## Sources\n· Tests vs ACs (independence)\n· Process diffs: walks the laps, incl.\n  dependency backflow (call-site table,\n  then grep — the sites the diff did NOT\n  touch are the point)\n· No implementation context\n· Returns verdict: ✅/⚠️/❌\n· ❌ from Step 4a → HALT (f)"]
@@ -121,7 +123,7 @@ flowchart TD
 | `pre-pr` | `check-doc-freshness` | Internal call |
 | `pre-pr` | `check-doc-invariants` | Internal call |
 | `pre-pr` | `run-tests` | Internal call |
-| `start-feature` | `run-tests` | Internal call |
+| `start-feature` | `run-tests` | Internal call (manual path; on the autonomous path `run-exec-plan` Step 0 does the preparation) |
 | `run-exec-plan` | `run-tests` | Internal call (per AC — once for the red-first run before implementing, once to verify; via Skill tool, `run-tests` is model-invocable) |
 | `run-exec-plan` | `docs/01_requirements/` + `docs/01-02_e2e/` + `docs/02_spec/` | Not a skill call — Step 1b **reads** the sections the plan's `## Sources` names, and Step 3a re-reads the spec section before checking the box |
 | `run-exec-plan` | `check-invariants` | Internal call (per AC, inline) |
@@ -135,7 +137,9 @@ flowchart TD
 | `gc` | `update-context` | Internal call |
 | `promote-spec` | `create-exec-plan` | Handoff (suggests new-AC plans after promotion) |
 | `promote-spec` | `start-feature` | Handoff (reconcile exec-plan → begin reconciliation) |
-| `run-exec-plan` | `docode-review` | Internal call, **mandatory** (Step 4a) — runs once every AC is `- [x]`, before handoff to `pre-pr`; a ❌ verdict halts with stop condition (f) instead of handing off |
+| `run-exec-plan` | `docode-review` | Internal call, **mandatory** (Step 4a) — runs once every AC is `- [x]`, after the sweep and before `pre-pr` (Step 4b); a ❌ verdict halts with stop condition (f) |
+| `run-exec-plan` | `pre-pr` | Internal call (Step 4b, inline — `pre-pr` is not model-invocable), after a ✅/⚠️ review, in report-only mode so nothing the review saw changes |
+| `run-exec-plan` | —— | Step 4c: push the branch and open a **draft** PR — only when the human asked for it (「PR まで」) in the instruction that started this run, and Step 4b has no ❌ |
 | —— (human-invoked, optional) | `docode-review` | Standalone independent code review before `pre-pr`, on the manual (`start-feature`) path — spawns a subagent via the Agent tool (no internal caller on this path) |
 | `PostToolUse` hook | —— | Warning message only (no skill call) |
 
@@ -231,6 +235,16 @@ flowchart TD
 > only after the fact — for the same reason as readiness below: deciding an expected result the AC
 > does not state is an outer-gate call.
 >
+> **Shared reference file (not a skill):** `run-exec-plan` (every HALT), `start-feature`, `pre-pr` ③,
+> `create-spec`, `promote-spec` and `check-doc-invariants` apply
+> [`.claude/skills/run-exec-plan/decision-requests.md`](.claude/skills/run-exec-plan/decision-requests.md)
+> — the human decides, the agent writes it down. A decision is put to the human in product words,
+> with every option, what each changes (the edit as a diff), the routing where one is needed and a
+> recommendation. Once the human decides, the agent drafts the edit (the document that lost a
+> contradiction, a repointed `## Sources` row, a deferral bullet, a scenario migration, an AC
+> rewrite) and applies it only after the human approves that diff; landing it on `main` or
+> `spec/<label>` is on the human's instruction. The unattended loop still edits neither document.
+>
 > **Shared reference file (not a skill):** `create-exec-plan` (drafting mode) applies
 > [`.claude/skills/create-exec-plan/expanded-view.md`](.claude/skills/create-exec-plan/expanded-view.md)
 > — when the plan is drawn from an approved US, the agent drafts it and shows the human an expanded
@@ -277,8 +291,8 @@ flowchart TD
 | # | Bypass | Result | Severity |
 |---|--------|--------|----------|
 | B1 | Issue "implement this" without running `create-exec-plan` | Implementation starts with no AC / undefined spec | 🔴 Critical |
-| B2 | Begin implementation without running `start-feature` | Baseline tests unchecked; CONTEXT.md / invariants.md unread | 🟠 High |
-| B3 | exec-plan exists but implementation is instructed while skipping `start-feature` steps | Step 0 (baseline check) is skipped; pre-existing failing tests go unnoticed | 🟠 High |
+| B2 | Begin **manual** implementation without running `start-feature` (the autonomous path does not need it: `run-exec-plan` Step 0 prepares the run) | Baseline tests unchecked; CONTEXT.md / invariants.md unread | 🟠 High |
+| B3 | exec-plan exists but manual implementation is instructed while skipping `start-feature` steps | Step 0 (baseline check) is skipped; pre-existing failing tests go unnoticed | 🟠 High |
 
 ### 3-3. Bypasses During Implementation
 
@@ -333,7 +347,9 @@ flowchart TD
   A[Implementation request] --> R["create-requirements (optional)"]
   R --> S["create-spec (optional)"]
   S --> B["create-exec-plan (optional)"]
-  B --> C["start-feature (optional)"]
+  B --> C["start-feature (optional; manual path)"]
+  B -.->|"autonomous path"| RX["run-exec-plan: one invocation\nStep 0 prepare → loop → sweep\n→ docode-review → pre-pr\n→ draft PR if asked (「PR まで」)"]
+  RX ==> H
 
   C --> L[Implementation loop: optional checks]
   L --> L
