@@ -433,9 +433,9 @@ After the independent agent returns its report, present it verbatim and guide ne
 
 | Verdict | Recommended action |
 |---------|--------------------|
-| ✅ Approved | For US: proceed to `/create-spec`. For a spec: approve it, then `/create-exec-plan`. For exec-plan: proceed to `/start-feature` |
+| ✅ Approved | For US: proceed to `/create-spec`. For a spec: on the bundled path, proceed to `/create-exec-plan` on the same branch and approve everything in one PR; on the staged path, approve it, then `/create-exec-plan` (`../create-spec/bundled-approval.md`). For exec-plan: proceed to `/start-feature` |
 | ⚠️ Approved with suggestions | Discuss items with user, then proceed |
-| ❌ Revision needed | Fix critical/high issues, then re-run `/doc-review` |
+| ❌ Revision needed | Fix critical/high issues, then re-run `/doc-review`. On the bundled path, the agent fixes findings in text it drafted (spec, scenarios, plan) and turns findings about the human's text (the US story, AC conditions, goal image, non-goals) into questions (`../create-spec/bundled-approval.md`「Acting on the review findings」) |
 
 ---
 

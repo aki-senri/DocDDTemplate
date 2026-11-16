@@ -51,12 +51,15 @@ is a decision, and those stay with the human. The mode follows from what there i
 
 | Situation | Mode |
 |-----------|------|
-| The plan is drawn from a US that is approved (on `main`) — with its spec and `E2E-NNN` scenarios, or with `/create-spec` skipped and the US goal image as the through-flow | **Drafting** — the agent drafts every row marked *drafted* below, and puts only the rows marked *the human decides* to the human, through the expanded view ([`expanded-view.md`](expanded-view.md)) |
+| The plan is drawn from a US that is approved (on `main`), or that is in the same bundle (`../create-spec/bundled-approval.md`) — with its spec and `E2E-NNN` scenarios, or with `/create-spec` skipped and the US goal image as the through-flow | **Drafting** — the agent drafts every row marked *drafted* below, and puts only the rows marked *the human decides* to the human, through the expanded view ([`expanded-view.md`](expanded-view.md)) |
 | There is nothing approved to derive from — the plan's subject is the repository's own conventions (sources `n/a`), or the US is still a draft not on `main` | **Interview** — the questions are asked one at a time, in order, as below |
 
 The documents are read as they are on `main`. A US, spec or scenario that the current branch has
 edited but `main` does not have is not approved, and a draft is not derived from it: approve it first
-(merge it), or use the interview. Which US the plan is drawn from comes from the request
+(merge it), or use the interview — **except on the bundled path**, where the US, the spec and the
+scenarios are approved together with this plan in one PR: then the documents in the bundle are read
+from the definition branch, and the plan records the `一括承認:` line
+([`../create-spec/bundled-approval.md`](../create-spec/bundled-approval.md)). Which US the plan is drawn from comes from the request
 (`/create-exec-plan US-003`); when the request does not say, list the approved US `AC-NNN` sections
 that no plan's `## Sources` (in `exec-plans/active/` or `exec-plans/completed/`) names yet, grouped by
 US, and let the human pick — a US whose first plan left some of its ACs for later still has them
@@ -360,7 +363,8 @@ completed:
 **Drafting mode** (see **Two modes**) runs the same steps with the agent writing the answers, and
 three steps of its own around them:
 
-- **D1** — Before Step 1: confirm the US is approved (on `main`) and note the commit the documents
+- **D1** — Before Step 1: confirm the US is approved (on `main`) — or is in the same bundle, on this
+  definition branch ([`../create-spec/bundled-approval.md`](../create-spec/bundled-approval.md)) — and note the commit the documents
   are read at. Draft Q1–Q4 from the US, the spec and the scenarios, in the order of Steps 1–3, over
   the scope the agent proposes. Steps 1–3 still run in full — the plan size check, the walkthrough
   judgement, the sources, the scenario comparison and readiness — and every decision they raise

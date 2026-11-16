@@ -31,8 +31,10 @@ disable-model-invocation: true
 4. Optionally updates `docs/01_requirements/constraints.md` with new constraints
 4b. Records the material the requirement was decided from in the US's `## 関連` (Q6), drafting a
    research note under `docs/00_project/research/` for material that exists only outside the repository
-5. Suggests running `/create-spec` to draft the application spec from these requirements
-   (then `/create-exec-plan` after the spec is approved)
+5. Suggests continuing **on the same branch** with `/create-spec`, `/doc-review` and `/create-exec-plan`,
+   so the human approves the requirements, the spec, the scenarios and the plan in one PR — the
+   standard, bundled path ([`../create-spec/bundled-approval.md`](../create-spec/bundled-approval.md)).
+   Approving the US first and the rest later remains available
 
 ---
 
@@ -381,9 +383,10 @@ Constraints added: {count} (or "none")
 ADR 候補 : {n} 件 — ADR-NNN 追記 {n} / 見送り {n} (Q6); or "none"
            (a drafted research note or ADR is approved with the US — merge — like the US itself)
 
-Next step: Run /create-spec to draft the application spec (docs/02_spec/) and its E2E scenarios
-(docs/01-02_e2e/) from these requirements.
-  (Then, after the spec is reviewed and approved, run /create-exec-plan.)
+Next step: On this same branch, run /create-spec to draft the application spec (docs/02_spec/) and
+its E2E scenarios (docs/01-02_e2e/) from these requirements, then /doc-review, then
+/create-exec-plan — and approve all of it in one PR (bundled approval, the standard).
+  (Or approve this US first, by merging it, and continue from main — staged approval.)
   Suggested feature   : {Q1}
   ACs to spec for     : {AC list from Q3}
   ゴール像            : /create-spec turns 主要ユーザージャーニー into E2E scenarios

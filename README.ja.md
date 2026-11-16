@@ -63,6 +63,7 @@ Claude Code で以下を実行します：
 /create-exec-plan    ← 実行計画を作成（AC-001~ と [E2E] AC を定義し、各 AC の起点を
                        記録して AC readiness を検査。承認済みの US からは起草され、
                        人は「決めてほしいこと」にだけ答える）
+   （標準: 上の3つを同じブランチで続け、1つの PR でまとめて承認する）
 /start-feature       ← 実装前の確認・AC readiness の再検査・ブランチ作成
                        （手動の経路。run-exec-plan は準備を自分で行う）
 /run-exec-plan       ← AC を1つずつ自走実装（起点を読む→テストを先に赤で置く→実装→

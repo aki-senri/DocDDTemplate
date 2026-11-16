@@ -63,6 +63,7 @@ This collects project overview, tech stack, development rules, and platform via 
 /create-exec-plan    ← create an execution plan (define AC-001~ and the [E2E] AC,
                        record each AC's sources, check AC readiness;
                        from an approved US: drafted, you answer only the decisions)
+   (standard: run the three above on one branch and approve them all in one PR)
 /start-feature       ← pre-implementation review, AC readiness re-check, branch creation
                        (manual path; run-exec-plan prepares itself)
 /run-exec-plan       ← autonomously implement ACs one by one: read the AC's sources,

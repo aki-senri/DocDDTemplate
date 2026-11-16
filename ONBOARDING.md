@@ -334,7 +334,7 @@ The table below lists the main skills used in the daily implementation flow. Bey
 ```mermaid
 flowchart TD
     A["① Maintain docs<br/>create-requirements / create-spec / docs (what to build)"] --> B
-    B["② Freeze the ACs<br/>create-exec-plan (decide acceptance criteria)"] --> C
+    B["② Freeze the ACs<br/>create-exec-plan — approve ①② together in one PR"] --> C
     C["③ Start the loop — one invocation<br/>run-exec-plan (prepares itself; add 「PR まで」 for a draft PR)"]
     C --> D{Does the AI HALT?}
     D -->|Stop conditions a–f| E["④ Human decides<br/>answer the decision request — the AI drafts the edit, you approve it"]
@@ -363,9 +363,11 @@ Every box ①②③④⑤⑥ is a human action (at ③ a single `run-exec-plan` 
 0. /create-requirements → Define User Stories / goal image / AC conditions (optional, recommended)
                           Goal image = what the user can do when done / primary journey / non-goals (required)
 0.5 /create-spec        → Draft the application spec (docs/02_spec/) and E2E scenarios (docs/01-02_e2e/) from approved requirements
-                          (optional; skip for small changes. Needs human approval before create-exec-plan)
+                          (optional; skip for small changes. Standard: continue 0–1 on the same branch and
+                           approve the requirements, spec, scenarios and plan in one PR — bundled approval.
+                           Approving the US and the spec first, stage by stage, remains available)
 1. /create-exec-plan    → Define the implementation plan and acceptance criteria (ACs)
-                          From an approved US: the AI drafts the plan and writes an expanded view
+                          From an approved US (or one approved in the same PR): the AI drafts the plan and writes an expanded view
                           (.claude/views/, not committed); you answer only the decisions it lists
                           At least one [E2E] AC in addition to the functional ones
                           (documentation-only plans carry none — record E2E: n/a)
