@@ -240,7 +240,7 @@ tracks:
 | `.claude/skills/start-feature/SKILL.md` | Step 2 の読み込みドキュメント一覧 | パスを自分のドキュメント構造に合わせる |
 | `.claude/skills/check-doc-freshness/SKILL.md` | `tracks:` フィールドの探索対象 | 独自ディレクトリを追加 |
 | `.claude/skills/init-project/SKILL.md` | Phase 0/1 の生成ファイルリスト | 不要なドキュメントを除外 |
-| `CLAUDE.md` | スキル一覧の説明 | 不要なスキルを削除 |
+| `CLAUDE.md` | スキル一覧の説明・プロジェクト固有の規約 | 不要なスキルを削除。固有の規約は追記する（毎セッション読まれるので短く。長い手順は別ファイルにして名指す） |
 
 #### 最小限の変更で DocDD を導入する場合
 
@@ -250,7 +250,8 @@ tracks:
 - `.claude/hooks/spec-gate.py` — 仕様ファーストゲート
 - `.claude/hooks/post-tool-notify.py` — コード変更後の通知
 - `.claude/settings.json` — フックの設定
-- `CLAUDE.md` — Claude への行動規範（図ルール・スキル一覧を含む）
+- `CLAUDE.md` — Claude への行動規範（毎セッション読む規約。図ルール・スキル一覧を含む）
+- `.claude/skills/docdd-reference.md` — 必要なときに開く参照（単一ソースの索引と、stale の扱い・昇格などの手順。`CLAUDE.md` が名指す）
 - `.claude/skills/create-exec-plan/` — 実行計画の作成（共通の AC readiness 基準 `ac-readiness.md` を含む）
 - `.claude/skills/pre-pr/` — PR 前チェック
 
@@ -375,6 +376,7 @@ flowchart TD
                           DocDD のプロセス（ループ・ゲート・再開・他が参照する規約）を変えるプランは
                           周回を辿る検証 AC を置く（記述の突き合わせだけでは足りない）
                           前向き6周に加え、変更を参照する既存地点を辿る「依存の逆流」1周
+                          （状態遷移を変えず、他が読むものだけを変える変更は「依存の逆流」だけ）
 2. /start-feature       → 手動の経路のみ: ドキュメント確認（## Sources が指す US / spec を含む）・
                           AC readiness の再検査・ブランチ作成（run-exec-plan は Step 0 で自分で行う）
 3. /run-exec-plan       → 準備（プラン・専用ブランチ・baseline・開始記録）の後、まず AC readiness ゲート（NOT READY があればコードを書く前に HALT）

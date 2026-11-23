@@ -291,7 +291,11 @@ exactly where it applies. Scope table in
 documents, skip this section.
 
 Do not check only that the steps read consistently. Walk the process and name the state after each
-step, at least for these laps:
+step, at least for these laps — the first three where the document describes a state transition (a
+loop, a resumable run, a stop condition, a gate, an exemption), and dependency backflow wherever
+other documents consume what it states; for a rule document with no transition of its own, walk the
+first three from any consumer the backflow lap finds starting, halting, holding or releasing
+differently:
 
 - **second iteration** — the state the first pass leaves behind is the next pass's input;
 - **resume** — a fresh session starting from the files alone, mid-process;

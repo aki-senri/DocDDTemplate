@@ -253,10 +253,14 @@ Perform a thorough review covering:
    - Applies when the diff changes a **documented process** — a loop, a resumable run, a stop
      condition, a gate, an exemption, or a rule other rules consume (skill definitions, CLAUDE.md,
      hooks). Skip for ordinary feature diffs.
-   - Do not stop at "every call site describes the rule the same way". Walk the process and name the
-     state after each step, at least: the **second iteration** (the state the first pass leaves is
-     the next pass's input), a **resume** from the files alone mid-process, and the **exemption**
-     path (does every downstream gate know about it?).
+   - Do not stop at "every call site describes the rule the same way". Where the diff alters a
+     **state transition** (the first row of the scope table in `process-walkthrough.md`), walk the
+     process and name the state after each step, at least: the **second iteration** (the state the
+     first pass leaves is the next pass's input), a **resume** from the files alone mid-process, and
+     the **exemption** path (does every downstream gate know about it?). Where it alters only
+     something other sites read (the middle row), the dependency-backflow lap below is the one that
+     applies — walk the forward laps from any consumer it finds starting, halting, holding or
+     releasing differently.
    - **Dependency backflow** — the lap that needs the diff, so it belongs here more than anywhere:
      for each rule, single source, record format or step label the diff changed, walk the sites that
      name it **from the top of each one's own file**, using the referrer contents supplied under

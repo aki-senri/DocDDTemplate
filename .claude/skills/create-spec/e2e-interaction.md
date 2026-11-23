@@ -241,7 +241,7 @@ Only a Decision Log **bullet that begins** `- deferred: spec/` is a deferral, an
 `- deferred 解除:` lifts it; the words appearing mid-sentence — in a resolution record (「このプランを
 deferred」), a review note, this very format quoted — are not. A plan is deferred while its latest
 deferral bullet has no later lifting bullet. The marker
-is not `reconcile: deferred` (CLAUDE.md, read by `gc`'s spec-drift backstop) — that one says an AC is
+is not `reconcile: deferred` (`../docdd-reference.md`「現バージョン修正による stale の扱い」, read by `gc`'s spec-drift backstop) — that one says an AC is
 not being reconciled yet; this one says the plan must not run until a promotion. A deferral is a
 human's decision, and so is lifting it; the bullet itself may be drafted by the agent once the human
 has decided (`../run-exec-plan/decision-requests.md`). Who reads it:

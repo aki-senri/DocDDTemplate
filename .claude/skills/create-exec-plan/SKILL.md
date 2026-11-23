@@ -85,7 +85,7 @@ expanded view.
 | Q3 | List the acceptance criteria to consider this plan complete (numbered as `AC-001`, `AC-002`, ...) | `## Acceptance Criteria` | *drafted* — one line per US `AC-NNN` section in scope, restating only what the section says |
 | Q3b | Which end-to-end scenario must work when every criterion above is met? For a refactoring plan: which existing through-flow must still work unchanged? (see **E2E acceptance criteria** below) | `## Acceptance Criteria` (last entries) | *drafted* — one `[E2E]` AC per `E2E-NNN` in scope (the US goal image when the spec was skipped) |
 | Q3f | Can **one branch implement every criterion above, and one confirmation by you cover them all**? If not, which criteria go to a separate plan? (see **Plan size** below) | `## Acceptance Criteria` (criteria moved out), `## Decision Log` (the split) | **the human decides** — the agent proposes the scope; every US AC whose inclusion is a real choice, and any split the size calls for, is a question |
-| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption, or a rule other rules consume (including renaming a step or question number others point at)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) | *drafted* — judged by the scope table in [`process-walkthrough.md`](process-walkthrough.md) |
+| Q3e | Does this plan change a **process** — a loop, a resumable run, a stop condition, a gate, an exemption (laps 1–7), or only something other sites read: a rule other rules consume, a record format, a step or question number others point at (lap 7, escalating where a consumer's transitions change)? If so, add the walkthrough AC (see **Process changes** below) | `## Acceptance Criteria` (verification AC) | *drafted* — judged by the scope table in [`process-walkthrough.md`](process-walkthrough.md) |
 | Q3d | For each criterion: which US `AC-NNN` section and which spec section does it condense? (see **AC sources** below) | `## Sources` | *drafted* — the sections each line was condensed from are its sources. **The human decides** every `n/a（理由）` and every finding of the scenario comparison |
 | Q3c | *(not asked — run by the agent)* Check **every criterion the plan will contain** — Q3, Q3b and the Q3e walkthrough AC — against the five readiness checks and rewrite the failing ones with the user (see **AC readiness** below) | `## Acceptance Criteria`, `## Decision Log` | run by the agent; **the human decides** every NOT READY rewrite and every ⚠️ reason |
 | Q4 | Break down the tasks (in checklist format) | `## Task Breakdown` | *drafted* — how to build is not a decision about what to build |
@@ -118,9 +118,17 @@ This is not a readiness check. Readiness (`ac-readiness.md`) asks whether each c
 measured; Q3f asks whether the plan as a whole can be finished and confirmed at once. A plan can pass
 one and fail the other.
 
+Read the signs (S1–S6 there) off the drafted criteria and list the ones that apply, each with the
+count or the ACs that make it apply. With none applying, Q3f asks nothing about size. With one or
+more, the split is a question — in the drafting mode in the expanded view, proposing the split line
+the table gives — and the answer decides the row below. Read the signs again whenever an answer
+changes which criteria the plan holds (a scope answer, an AC removed or moved) before the plan file
+is written: a size question answered for a different set of criteria does not answer this one.
+
 | Answer | Action here |
 |--------|-------------|
-| Fits | Continue |
+| Fits (no sign applies) | Continue |
+| Kept whole although a sign applies | Continue, and record the user's reason in the `## Decision Log` (`- 大きさ: <sign>（<count / ACs>）に当たるが分割しない — <理由>`). The reason is the user's; do not write one for them |
 | Does not fit | Agree with the user which criteria move out, and run this skill again for them as a separate plan — implemented on a branch of its own, not alongside this one (`completion-boundary.md`「When part of a plan has to merge before the rest」). Record the split in this plan's `## Decision Log` (`- 分割: AC-… を <別プラン名> へ — <理由>`). Each plan that implements functionality keeps its own `[E2E]` AC |
 
 Which criteria a plan delivers is the user's decision; propose a split, do not make it.
@@ -221,10 +229,9 @@ path the change created. The AC must therefore require lap 7 by name.
 
 | Plan changes… | Verification AC to write |
 |---------------|--------------------------|
-| A process in the scope of `process-walkthrough.md` | An AC requiring the walkthrough — naming the laps (happy / second iteration / resume / exemption / gate boundary / success moment / dependency backflow) and requiring the findings and their fixes in the Decision Log |
-| A **single source, a record format, or a step's inputs** that other sites consume | The same AC. Lap 7 (dependency backflow) is the one that matters most here, and the one the plan is most likely to skip: the sites it visits are ones this plan never intended to edit |
-| **Only a rename or renumbering** of a step, question or ID others point at | An AC requiring **lap 7 alone**, and saying why laps 1–6 do not apply (a rename carries no state transitions). Use the lap-7-only record variant in `process-walkthrough.md` — writing a 7-lap AC here produces a criterion that its own correct execution cannot satisfy |
-| Only descriptions with no state transitions, and nothing points at what changed | The ordinary cross-site consistency AC is enough |
+| A **state transition** — a loop, a resumable run, a stop condition, a gate, an exemption (the first row of the scope table in `process-walkthrough.md`) | An AC requiring the walkthrough — naming the laps (happy / second iteration / resume / exemption / gate boundary / success moment / dependency backflow) and requiring the findings and their fixes in the Decision Log |
+| **Something other sites read, with no state transition of its own** — a single source's rule, a record format, a step's inputs or outputs, or a rename / renumbering of a step, question or ID others point at (the middle row) | An AC requiring **lap 7 (dependency backflow)**, its escalation (laps 1–6 from any consumer that now starts, halts, holds or releases differently), and saying why laps 1–6 do not otherwise apply. Use the lap-7-only record variant in `process-walkthrough.md` — writing a 7-lap AC here produces a criterion that its own correct execution cannot satisfy. Lap 7 is the one the plan is most likely to skip: the sites it visits are ones this plan never intended to edit |
+| Only descriptions no consumer's verdict depends on, and nothing outside the file points at what changed (the last row) | The ordinary cross-site consistency AC is enough |
 
 The walkthrough AC **replaces nothing**: readiness still applies to it (it is an ordinary AC and
 must state a single observable outcome), and a plan that also implements functionality still carries
@@ -241,7 +248,7 @@ add up.
 |------------------|:------:|-----------------|
 | New / changed functionality from requirements | **Required** | the new through-flow works end to end |
 | **Refactoring** of code that realizes functionality | **Required** | the *existing* through-flow still works unchanged |
-| A reconcile plan re-opening AC-IDs (see CLAUDE.md) | **Required** | the through-flow covering the re-opened ACs holds |
+| A reconcile plan re-opening AC-IDs (see `../docdd-reference.md`「現バージョン修正による stale の扱い」) | **Required** | the through-flow covering the re-opened ACs holds |
 | Nothing functional — documentation, doc restructuring | **Must not** carry one | — (record `E2E: n/a`) |
 
 **Refactoring is not an exception.** It is the case that most needs the criterion: the whole claim
@@ -420,8 +427,9 @@ three steps of its own around them:
       `E2E: n/a (documentation-only)` is recorded in the Decision Log instead
 - [ ] The plan states that it is not complete while any `[E2E]` criterion is unchecked, and that it
       is completed by the human confirming every AC and is not merged in an intermediate state
-- [ ] The plan size was checked at Q3f: one branch can implement every criterion and one human
-      confirmation can cover them, or the plan was split with the user and the split recorded
+- [ ] The plan size was checked at Q3f against the signs in `completion-boundary.md`「Plan size」:
+      none applies, or the user split the plan (`- 分割:` recorded), or the user kept it whole and
+      their reason is recorded (`- 大きさ:`)
 - [ ] The plan has a `## Sources` table with **a row for every criterion**, each naming a section
       (not just a file) or an explicit `n/a（理由）` — no blank cells, and no colon directly after
       `AC-NNN` inside the table (see [`ac-sources.md`](ac-sources.md)), and no row naming background
