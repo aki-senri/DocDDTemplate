@@ -86,14 +86,36 @@ A plan is written to the size that **one branch can implement in full, and one h
 can cover in full**. `create-exec-plan` asks this before the plan is finalized; a plan that does not
 fit is split there, where splitting costs nothing.
 
-Signs that a plan should be split (a guide, not a limit):
+"Fits in one branch and one confirmation" alone lets a large plan through: whoever drafts the plan
+answers it about their own draft, and every plan fits if the branch is allowed to grow. So the
+question is asked against **signs that can be read off the drafted plan**. They are not limits — a
+plan may stay whole — but a sign that applies makes the split **a question to the human**, and
+keeping the plan whole is a decision with its reason on record.
 
-| Sign | Split along |
-|------|-------------|
-| Some ACs could ship and be used without the others | The groups that are useful on their own — each gets its own `[E2E]` AC |
-| An AC waits on a decision or a promotion that has not happened | Put that AC in a later plan |
-| The human could not confirm every AC's behaviour in one sitting | Smaller plans, each confirmable at once |
-| Roughly more than ten functional ACs | Usually one of the lines above already applies |
+| # | Sign (read off the drafted plan) | Split along |
+|---|----------------------------------|-------------|
+| S1 | Some ACs could ship and be used without the others | The groups that are useful on their own — each gets its own `[E2E]` AC |
+| S2 | Two or more `[E2E]` ACs whose through-flows share no functional AC | One plan per flow — independent flows are independent plans |
+| S3 | An AC waits on a decision or a promotion that has not happened | Put that AC in a later plan |
+| S4 | More than ten functional ACs (not counting `[E2E]` ACs or a process-walkthrough AC) | Usually S1 or S2 already names the line; if neither does, the human decides whether one sitting can confirm them all |
+| S5 | A plan that changes how DocDD runs alters **more than one** state transition or single source (`../create-exec-plan/process-walkthrough.md`「When it applies」, first two rows) | One plan per rule. Each carries its own walkthrough, and a lap finding in one rule reopens the confirmation of everything bundled with it |
+| S6 | The human could not confirm every AC's behaviour in one sitting | Smaller plans, each confirmable at once |
+
+**What `create-exec-plan` does with them (Q3f).** It lists the signs that apply to the drafted plan,
+with the count or the ACs that make each apply, and asks the split as a question — in the drafting
+mode in the expanded view, which proposes the split line from the table. With no sign applying it
+asks nothing about size. When the human keeps a plan whole although a sign applies, the plan's
+Decision Log records it:
+
+```markdown
+- 大きさ: S4（機能 AC 14 件）に当たるが分割しない — <人の理由>
+```
+
+The reason is the human's, as with a readiness ⚠️ — the agent does not write it. A split is recorded
+as before (`- 分割: …`). The signs are read when the plan is written; a plan that grows afterwards
+(a reconcile plan's re-opened ACs) is governed by the rule against appending to a plan already
+being implemented ([`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」),
+not by re-reading the signs.
 
 **Do not split across an `[E2E]` AC's through-flow.** The ACs a scenario's flow passes through
 belong to the plan that carries that `[E2E]` AC; split between flows, not inside one.
@@ -304,10 +326,10 @@ counted by the command above. Two things it can bring in still matter, and both 
 | What came in from `main` | Why it matters | Check |
 |--------------------------|----------------|-------|
 | A change to a file the plan's `## Sources` names — including its move or rename | The human confirmed against a target that has since moved. Whether the named *section* changed is a reading, so it is reported, not blocked. This is also the only check that sees a Sources row broken after the complete commit: DOC-INV-012 reads `active/` plans only | `git diff --name-only --no-renames <boundary> HEAD` (so a renamed file shows its **old** path) intersected with the `## Sources` paths → the human decides whether to reopen |
-| An unchecked AC inside the completed plan | A fix on `main` appended a re-opened AC to this plan while it was in flight. CLAUDE.md closes a reconcile plan to appends once its implementation has started, but from `main` that is not always visible — this branch's plan was still in `active/` there. Git carries the appended line into the moved file, and a completed plan with an unchecked AC is one nobody will implement | `grep -nE '^- \[ \] AC-[0-9]{3}:' exec-plans/completed/<plan>.md` → reopen |
+| An unchecked AC inside the completed plan | A fix on `main` appended a re-opened AC to this plan while it was in flight. The stale procedure ([`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」) closes a reconcile plan to appends once its implementation has started, but from `main` that is not always visible — this branch's plan was still in `active/` there. Git carries the appended line into the moved file, and a completed plan with an unchecked AC is one nobody will implement | `grep -nE '^- \[ \] AC-[0-9]{3}:' exec-plans/completed/<plan>.md` → reopen |
 
 In either case reopen the plan in this branch and record why, the same as a stale in-progress plan
-(CLAUDE.md「現バージョン修正による stale の扱い」: a plan completed on a branch that has not merged is
+([`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」: a plan completed on a branch that has not merged is
 still in progress). If the PR is merged without the branch first taking in `main`, git combines them
 at the merge and no check on the branch sees it — `gc` reports an unchecked AC in a completed plan on
 `main` afterwards.
@@ -339,7 +361,7 @@ as to any re-opened AC), `pre-pr` runs again, and the human confirms every AC ag
 complete commit. The earlier `- 人の確認:` bullet stays in the log and no longer counts.
 
 **After the merge** nothing is reopened in place. A completed plan on `main` is history; a later
-change to what it delivered follows CLAUDE.md「現バージョン修正による stale の扱い」 (a reconcile plan
+change to what it delivered follows [`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」 (a reconcile plan
 re-opens the same AC-ID) or a new plan.
 
 **A plan merged without its complete commit** — the merge condition was skipped, or the plan predates
@@ -354,7 +376,7 @@ path.
 
 | Call site | When | Action |
 |-----------|------|--------|
-| `create-exec-plan` | Before the plan is finalized | Ask whether one branch can implement every AC and one confirmation cover them (**Plan size**); split there if not. In the drafting mode the agent proposes the scope and a split is a question in the expanded view — the human decides it (`../create-exec-plan/expanded-view.md`) |
+| `create-exec-plan` | Before the plan is finalized | Read the signs in **Plan size** off the drafted plan; any that applies makes the split a question, and keeping the plan whole records the human's reason (`- 大きさ:`). Split there if not. In the drafting mode the agent proposes the scope and a split is a question in the expanded view — the human decides it (`../create-exec-plan/expanded-view.md`) |
 | `run-exec-plan` | Handoff after the loop | Runs `pre-pr` itself (Step 4b) and, only when the human asked for it at invocation, opens a draft PR (Step 4c); then names the next steps: the human's confirmation and `complete-exec-plan` **on this branch, before the merge**. Never completes the plan itself — the confirmation is not the driver's |
 | `.claude/scripts/check_completion_boundary.py` | Run by `pre-pr` ⑦ and by CI | Implements the mechanical part of this file — finding the plan of this branch, the boundary, an implementation change after it or inside it, an unchecked AC in a completed plan (❌, exit 1), and the non-blocking states (⚠️ / ℹ️ / ➖) — so the judgement is written once |
 | CI (`.github/workflows/docdd-checks.yml`) | Every PR | Runs the script (and the document lint of `check-doc-invariants`, in PR mode); a ❌ fails the job, which stops the merge once the job is a required check |

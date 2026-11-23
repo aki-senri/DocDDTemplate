@@ -35,21 +35,34 @@ gate is not on the path the change created. That is what lap 7 is for.
 
 ## When it applies
 
-| The change touches… | Walkthrough |
-|---------------------|:-----------:|
-| A loop, an iteration order, a retry budget | **Required** |
-| A resumable / interruptible run (state carried in files between sessions) | **Required** |
-| A stop / halt condition, or anything that starts or refuses to start a run | **Required** |
-| A gate that holds, blocks or releases (`pre-pr`, `complete-exec-plan`, hooks) | **Required** |
-| An exemption or an `n/a` path through any of the above | **Required** |
-| A rule other rules consume (a single source with call sites) | **Required** |
-| **Renaming or renumbering a step, question or ID** that other documents point at (`Q3d`, `Step 0b`, `⑤c`) | **Lap 7 only** |
-| Wording, formatting, examples — no state transitions and nothing points at them | Not required |
+The scope is decided by **what the change alters**, in three rows. Laps 1–6 walk state transitions,
+so they apply only where the change creates or alters one; lap 7 walks the sites that read what
+changed, so it applies wherever another site reads it.
+
+| The change alters… | Laps |
+|--------------------|:----:|
+| **A state transition** — a loop, an iteration order or a retry budget; a resumable / interruptible run (state carried in files between sessions); a stop / halt condition, or anything that starts or refuses to start a run; a gate that holds, blocks or releases (`pre-pr`, `complete-exec-plan`, hooks); an exemption or an `n/a` path through any of these | **1–7** |
+| **Something other sites read, with no state transition of its own** — what a single source requires a consumer to judge or to have in hand, a record format, what a step produces for a later gate, or the name or number of a step, question or ID others point at (`Q3d`, `Step 0b`, `⑤c`) | **7 only** — then escalate (below) |
+| **Neither** — wording, formatting, examples, or an explanation added to a single source that changes no consumer's verdict and no consumer's required input; or a change inside one file that no other file names | Not required |
+
+**Escalation from lap 7.** A rule with no transition of its own can still change one at a consumer:
+in the case under lap 7 below, a readiness rule changed and an unchanged Step 0b could no longer
+start the loop. So when lap 7 finds a consumer that now starts, halts, holds, blocks or releases
+differently, the change *does* alter a state transition — at that consumer. Walk laps 1–6 from that
+consumer, and record that the walk was escalated and from where. A lap 7 that finds no such consumer
+ends there.
 
 Rule of thumb: if the text does not let you answer **"what happens on the second lap, on resume, and
-on the exempt path?"**, the change is in scope. And if anything outside the changed file names what
-you changed, lap 7 is in scope even when the rest is not — a rename carries no state transitions and
-still leaves every pointer to it wrong.
+on the exempt path?"**, the change alters a state transition and the first row applies. And if
+anything outside the changed file names what you changed, lap 7 is in scope even when the rest is
+not — a rename carries no state transitions and still leaves every pointer to it wrong.
+
+**Why the middle row is not 1–7.** Walking six forward laps from a change that creates no transition
+walks a path that does not exist: the laps start at the change, and the change sets nothing in
+motion. What such a change can break is the sites that read it, and those are lap 7's — plus,
+through the escalation, the transitions at those sites. A plan whose own change is wide (several
+single sources at once) is better split than walked as one (`../complete-exec-plan/completion-boundary.md`
+「Plan size」).
 
 ---
 
@@ -189,17 +202,21 @@ The other six laps are falsifiable from the record alone — a reader can re-wal
 PASS" is not: without the enumeration there is no way to tell a lap that found nothing from a lap
 that looked nowhere.
 
-**When only lap 7 applies** — a rename or renumbering, per the scope table — the record says so
-outright rather than claiming a count:
+**When only lap 7 applies** — the middle row of the scope table — the record says so outright rather
+than claiming a count, and says whether lap 7 escalated:
 
 ```markdown
-- AC-NNN process walkthrough: 依存の逆流のみ（{変更}は状態遷移を伴わない改称のため
-  1〜6周は適用外）。列挙: 呼び出し地点表 ＋ `grep -rn "{旧ラベル}" .claude/ exec-plans/active/ docs/ *.md`
-  → {参照元}（うち履歴 {n} 件は対象外）。検出 {n} 件: {…} → {修正}。PASS。
+- AC-NNN process walkthrough: 依存の逆流のみ（{変更}は状態遷移を伴わない{改称 | 単一ソースの規則の変更 |
+  記録書式の変更}のため 1〜6周は適用外）。列挙: 呼び出し地点表 ＋
+  `grep -rn "{ファイル名・旧ラベル・規則の ID}" .claude/ exec-plans/active/ docs/ *.md`
+  → {参照元}（うち履歴 {n} 件は対象外）。検出 {n} 件: {…} → {修正}。
+  昇格: なし（開始・停止・保留・ブロックの仕方が変わった参照元は無い）| {参照元} で {変化} →
+  そこから 1〜6周を辿った（{各周の所見}）。PASS。
 ```
 
 Writing "1周辿った" for this case would be indistinguishable from the under-specified record this
-file exists to replace. Name the lap, and name why the others do not apply.
+file exists to replace. Name the lap, name why the others do not apply, and name the escalation's
+result — "昇格: なし" is a finding of lap 7 step 3, not a default.
 
 ---
 
@@ -225,7 +242,7 @@ finding either way — an unresolved lap finding is still a result.
 
 | Case | Why |
 |------|-----|
-| Changes with no state transitions (wording, naming, examples) | There is no second lap to walk |
+| Changes in the scope table's last row (wording, examples, an explanation no consumer's verdict depends on) | There is no second lap to walk and no site whose input changed. A rename is **not** here — it is the middle row (lap 7) |
 | Executable processes covered by tests | Tests are the stronger measurement; walk the laps only for the parts no test exercises (typically the resume and exemption paths) |
 
 The walkthrough AC itself is **exempt from red-first** — its result is the record, with no runtime

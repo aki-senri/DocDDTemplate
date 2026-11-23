@@ -240,7 +240,7 @@ An approach that keeps your custom doc structure while changing the skills' path
 | `.claude/skills/start-feature/SKILL.md` | The list of docs loaded in Step 2 | Match the paths to your own doc structure |
 | `.claude/skills/check-doc-freshness/SKILL.md` | The search targets for the `tracks:` field | Add your custom directories |
 | `.claude/skills/init-project/SKILL.md` | The list of files generated in Phase 0/1 | Exclude unneeded docs |
-| `CLAUDE.md` | The skill-list descriptions | Remove unneeded skills |
+| `CLAUDE.md` | The skill-list descriptions, project-specific rules | Remove unneeded skills. Append project rules (it is read every session, so keep them short; put a long procedure in its own file and name it) |
 
 #### Adopting DocDD with minimal changes
 
@@ -250,7 +250,8 @@ If changing the whole skill set is too large, you can adopt just the following m
 - `.claude/hooks/spec-gate.py` — Spec-first gate
 - `.claude/hooks/post-tool-notify.py` — Post-code-change notification
 - `.claude/settings.json` — Hook configuration
-- `CLAUDE.md` — Code of conduct for Claude (includes diagram rules and the skill list)
+- `CLAUDE.md` — Code of conduct for Claude (the rules read every session; includes diagram rules and the skill list)
+- `.claude/skills/docdd-reference.md` — The reference opened when needed (the index of single sources, and procedures such as stale handling and promotion; `CLAUDE.md` names it)
 - `.claude/skills/create-exec-plan/` — Creating exec plans (includes `ac-readiness.md`, the shared AC testability checks)
 - `.claude/skills/pre-pr/` — Pre-PR checks
 
@@ -378,6 +379,8 @@ Every box ①②③④⑤⑥ is a human action (at ③ a single `run-exec-plan` 
                           carries a process-walkthrough AC — walk the laps, don't just match descriptions
                           Six laps forward, plus "dependency backflow": the existing sites that
                           consume what changed, walked from the top of each one
+                          (a change that alters no state transition, only what others read,
+                          walks the backflow lap alone)
 2. /start-feature       → Manual path only: confirm docs (incl. the US / spec sections in ## Sources),
                           re-check AC readiness, and create a branch (run-exec-plan Step 0 does this itself)
 3. /run-exec-plan       → Prepares the run (plan, own branch, baseline, start record), then gates on AC readiness — a NOT READY criterion halts before any code is written

@@ -47,7 +47,7 @@ otherwise contain a decision only a human may make:
 
 | Source of the question | Example in product words |
 |------------------------|--------------------------|
-| **Scope** (`SKILL.md`「Plan size」) — a US AC whose inclusion is a real choice (the through-flow does not need it, or the size suggests a split) | 「タグの削除」をこのプランに入れますか？ |
+| **Scope** (`SKILL.md`「Plan size」) — a US AC whose inclusion is a real choice (the through-flow does not need it), or a split a size sign calls for (`../complete-exec-plan/completion-boundary.md`「Plan size」 S1–S6 — the question names the sign and its count) | 「タグの削除」をこのプランに入れますか？ |
 | **NOT READY** (`ac-readiness.md`) — an AC that fails R1 / R2 / R5, or R3 / R4 with no reason recorded by a human | 同じタグを2回付けたときの結果が要件にも仕様にも書かれていません |
 | **⚠️ reason** — R3 / R4 unmet; the reason is a claim about the spec, so it comes from the human (`ac-readiness.md`「Who may state the ⚠️ reason」) | 応答時間の基準が仕様にありません。今回は基準なしで進めますか？ |
 | **`n/a（理由）` for a source that cannot be identified** — "there is nothing to read" is a claim about the spec (`ac-sources.md`). The `/create-spec`-skipped row is not one: it follows from the fact that no spec exists | この AC の振る舞いは仕様のどの節にも書かれていません |

@@ -121,7 +121,7 @@ Review the status of each document according to the following `status:` transiti
 **Spec-drift backstop (in-version stale):**
 
 Detects already-shipped ACs whose defining spec changed *after* completion but were never
-re-opened for reconciliation (the safety net for the procedure in CLAUDE.md
+re-opened for reconciliation (the safety net for the procedure in [`../docdd-reference.md`](../docdd-reference.md)
 "現バージョン修正による stale の扱い"). Results are **candidates requiring human confirmation**,
 not definitive stale flags — the timestamp signal is heuristic (see caveats in step 3).
 
@@ -135,7 +135,7 @@ not definitive stale flags — the timestamp signal is heuristic (see caveats in
    assume a single doc carries both `ac_ids:` and `tracks:`.
    - **If no defining US is found**, that absence is itself a drift signal — the AC was likely
      removed or renamed by a later in-version correction (a REMOVED-AC case). Flag it as an
-     untracked-drift candidate and recommend reconcile/deprecation per CLAUDE.md
+     untracked-drift candidate and recommend reconcile/deprecation per `docdd-reference.md`
      "現バージョン修正による stale の扱い", rather than assuming the lookup cannot fail.
 3. Decide whether **this AC's spec actually moved** after completion — not merely any edit to the file:
    ```bash
@@ -156,7 +156,7 @@ not definitive stale flags — the timestamp signal is heuristic (see caveats in
      `reconcile: n/a` in the relevant active plan) → a deliberate decision not to reconcile yet;
      suppress, do not re-flag.
    - Otherwise → flag as **untracked spec drift (candidate)**: recommend re-opening the AC in a
-     reconcile plan per the CLAUDE.md procedure. Do not auto-create — reconciliation scope is a
+     reconcile plan per the stale procedure in `docdd-reference.md`. Do not auto-create — reconciliation scope is a
      human/agent decision.
 
 **E2E backstop (keyed on `E2E-NNN`):**
@@ -170,7 +170,7 @@ Results are **candidates for a human**, never auto-filed, like the backstop abov
 **There is no ledger file.** Which scenario each plan took up is derived on every run from the
 scenario files and the `## Sources` rows of `exec-plans/active/` and `exec-plans/completed/`. A
 hand-kept index (`E2E-NNN → plan`) would be a second copy that nothing forces anyone to update —
-the reason CLAUDE.md gives for not keeping a separate Spec Drift Log: it goes unscanned and stale.
+the reason `docdd-reference.md` gives for not keeping a separate Spec Drift Log: it goes unscanned and stale.
 
 1. **Collect the scenarios and what names them.** Scenarios: each `docs/01-02_e2e/E2E-*.md`, and
    each `### E2E-NNN:` block in a spec's old-layout `## E2E シナリオ` section (a block takes the spec
@@ -215,7 +215,7 @@ the reason CLAUDE.md gives for not keeping a separate Spec Drift Log: it goes un
 
    | The freezing plan is… | It is tracked when… | Otherwise |
    |-----------------------|---------------------|-----------|
-   | **completed** | another plan — active or completed, a reconcile plan normally — names the scenario under an `[E2E]` AC in its `## Sources` and was frozen on or after the change (it verifies the new text); or a plan — active or completed — that froze the scenario before the change records the change in its Decision Log, dated on or after it (the in-flight owner that took it on, below — `promote-spec` Step 7's `E2E-NNN は <label> の昇格で変更` is such a record); or a plan — active or completed — has `reconcile: deferred — E2E-NNN` / `reconcile: n/a — E2E-NNN` recorded on or after the change | **Untracked E2E drift (candidate)** — recommend re-opening the `[E2E]` AC in a reconcile plan (CLAUDE.md「現バージョン修正による stale の扱い」) |
+   | **completed** | another plan — active or completed, a reconcile plan normally — names the scenario under an `[E2E]` AC in its `## Sources` and was frozen on or after the change (it verifies the new text); or a plan — active or completed — that froze the scenario before the change records the change in its Decision Log, dated on or after it (the in-flight owner that took it on, below — `promote-spec` Step 7's `E2E-NNN は <label> の昇格で変更` is such a record); or a plan — active or completed — has `reconcile: deferred — E2E-NNN` / `reconcile: n/a — E2E-NNN` recorded on or after the change | **Untracked E2E drift (candidate)** — recommend re-opening the `[E2E]` AC in a reconcile plan ([`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」) |
    | **active** | its Decision Log mentions the scenario's ID in an entry about the change, dated on or after it — its own `E2E 凍結` record does not count | **Unrecorded edit to a frozen scenario (candidate)** — the plan's target moved without a record; its owner records it and decides what it means for the frozen `[E2E]` test |
 
    **In-flight wins**, as in `promote-spec`'s precedence rule: when an active plan froze the scenario

@@ -342,7 +342,7 @@ references), which ask whether a reference resolves *right now* — skip `exec-p
 
 A plan is a working note, not a reference document. This repository's own convention already says so:
 a completed plan on `main` is archived and *not referenced* — which is why a reconcile record goes
-to the **active** plan rather than the completed one (CLAUDE.md「現バージョン修正による stale の扱い」).
+to the **active** plan rather than the completed one ([`../docdd-reference.md`](../docdd-reference.md)「現バージョン修正による stale の扱い」).
 (Between its complete commit and the merge, a plan in `completed/` is still read — by `pre-pr` ⑦,
 `run-tests` and `docode-review` — and its rows are covered there, not here:
 `../complete-exec-plan/completion-boundary.md`.) A

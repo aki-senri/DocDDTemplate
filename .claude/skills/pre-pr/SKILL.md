@@ -272,15 +272,17 @@ the plan's `## Decision Log` for a walkthrough record naming its laps.
 ```
 Process walkthrough:
   ✅ AC-008 → 7周（happy / 2周目 / 再開 / 免除 / ゲート境界 / 成功時 / 依存の逆流）、検出 2 件 → 修正済み
-  ✅ AC-004 → 依存の逆流のみ（改称のため 1〜6周は適用外と明記）、列挙あり、検出 1 件 → 修正済み
+  ✅ AC-004 → 依存の逆流のみ（状態遷移を伴わない変更のため 1〜6周は適用外と明記）、列挙あり、昇格なし、検出 1 件 → 修正済み
+  ⚠️ 依存の逆流のみの記録に昇格の結果がない（遷移が変わった参照元が無かったのか、見ていないのかを判別できない）
   ⚠️ 記録なし（プロセスを変更しているが、記述の突き合わせしか行われていない可能性）
   ⚠️ 依存の逆流の記録に参照元の列挙がない（何も見つからなかったのか、どこも見なかったのかを判別できない）
   ➖ n/a（状態遷移を伴わず、変更した箇所を指す記述も他に無い）
 ```
 
-A lap-7-only record is **not** an under-specified one: the scope table in the single source admits a
-rename as lap 7's own case, and the record format for it requires saying which laps do not apply and
-why. Read for that sentence rather than for a lap count.
+A lap-7-only record is **not** an under-specified one: the scope table in the single source gives a
+change with no state transition of its own (a rename, a single source's rule, a record format) lap 7
+alone, and the record format for it requires saying which laps do not apply and why, and what the
+escalation found. Read for those sentences rather than for a lap count.
 
 **When the change has no plan at all**, see the note under the ①–⑥ overview above — it governs ⑤,
 ⑤b, ⑤c, ⑤d and ⑥ alike, and is stated once there rather than repeated per check.

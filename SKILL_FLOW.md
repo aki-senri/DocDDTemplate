@@ -175,7 +175,10 @@ flowchart TD
 > descriptions agree and the states do not. The laps run in two directions — six forward through
 > what the change added, and one (**dependency backflow**) inward from every existing site that
 > consumes what changed, since a single-source edit alters those sites' input requirements without
-> editing a character of them.
+> editing a character of them. The six forward laps apply where the change alters a state transition;
+> a change that only alters what other sites read (a single source's rule, a record format, a step
+> name) walks the backflow lap alone, and walks the forward laps from any consumer it finds
+> behaving differently.
 >
 > **Shared reference file (not a skill):**
 > [`.claude/skills/create-exec-plan/ac-sources.md`](.claude/skills/create-exec-plan/ac-sources.md)
@@ -289,7 +292,7 @@ flowchart TD
 > *internal-call* callees, it now has **two** call paths: `run-exec-plan` Step 4a invokes it via the
 > Skill tool as a **mandatory** internal call once every AC is `- [x]`, while on the manual
 > (`start-feature`) path it still has no internal caller and the human invokes it directly.
-> See CLAUDE.md "検証スキルの呼び出しポリシー".
+> See `.claude/skills/docdd-reference.md` "検証スキルの呼び出しポリシー".
 
 ---
 

@@ -474,7 +474,7 @@ looks wrong, that is a spec change — outer gate, stop condition (a).
   run, an exemption, or a rule other rules consume — `create-exec-plan` Q3e placed the AC), walk the
   laps now and record them, per
   [`../create-exec-plan/process-walkthrough.md`](../create-exec-plan/process-walkthrough.md). On
-  this path the driver **is** the implementer CLAUDE.md's 措置表 assigns that duty to, and an
+  this path the driver **is** the implementer that file's call-site table (「Where this is applied」) assigns that duty to, and an
   unrecorded walkthrough counts as not performed. A lap finding the plan cannot fix without widening
   its scope is stop condition (e). **If a lap finding was fixed here, return to Step 3** before
   checking the box — a lap fix edits process documents after Step 3's verification already ran, and
